@@ -105,7 +105,6 @@ export function EmployeeTable({
       columns={columns}
       actions={actions}
       loading={loading}
-      searchable
     />
   );
 }

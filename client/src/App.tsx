@@ -12,6 +12,7 @@ import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import EmployeeList from "@/pages/employees/EmployeeList";
+import EmployeeDetail from "@/pages/employees/EmployeeDetail";
 import DepartmentList from "@/pages/departments/DepartmentList";
 import LeaveRequestList from "@/pages/leaves/LeaveRequestList";
 import CalendarPage from "@/pages/calendar/CalendarPage";
@@ -38,6 +39,7 @@ function AppRoutes() {
       >
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="employees" element={<EmployeeList />} />
+        <Route path="employees/:id" element={<EmployeeDetail />} />
         <Route path="departments" element={<DepartmentList />} />
         <Route path="leave-requests" element={<LeaveRequestList />} />
         <Route path="calendar" element={<CalendarPage />} />

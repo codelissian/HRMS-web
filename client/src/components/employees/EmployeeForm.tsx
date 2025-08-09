@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { insertEmployeeSchema, InsertEmployee } from '@shared/schema';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,7 @@ export function EmployeeForm({
     handleSubmit,
     formState: { errors },
     reset,
-    setValue,
+    control,
   } = useForm<InsertEmployee>({
     resolver: zodResolver(insertEmployeeSchema),
     defaultValues: initialData,
@@ -119,44 +119,62 @@ export function EmployeeForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="department_id">Department <span className="text-red-500">*</span></Label>
-                <Select onValueChange={(value) => setValue('department_id', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="dept-1">Engineering</SelectItem>
-                    <SelectItem value="dept-2">HR</SelectItem>
-                    <SelectItem value="dept-3">Marketing</SelectItem>
-                    <SelectItem value="dept-4">Finance</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="department_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dept-1">Engineering</SelectItem>
+                        <SelectItem value="dept-2">HR</SelectItem>
+                        <SelectItem value="dept-3">Marketing</SelectItem>
+                        <SelectItem value="dept-4">Finance</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="designation_id">Designation <span className="text-red-500">*</span></Label>
-                <Select onValueChange={(value) => setValue('designation_id', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Designation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="desig-1">Senior Developer</SelectItem>
-                    <SelectItem value="desig-2">Junior Developer</SelectItem>
-                    <SelectItem value="desig-3">Team Lead</SelectItem>
-                    <SelectItem value="desig-4">Manager</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="designation_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Designation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="desig-1">Senior Developer</SelectItem>
+                        <SelectItem value="desig-2">Junior Developer</SelectItem>
+                        <SelectItem value="desig-3">Team Lead</SelectItem>
+                        <SelectItem value="desig-4">Manager</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="shift_id">Shift</Label>
-                <Select onValueChange={(value) => setValue('shift_id', value)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Shift" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="shift-1">Day Shift (9 AM - 6 PM)</SelectItem>
-                    <SelectItem value="shift-2">Night Shift (10 PM - 7 AM)</SelectItem>
-                    <SelectItem value="shift-3">Flexible</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="shift_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Shift" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="shift-1">Day Shift (9 AM - 6 PM)</SelectItem>
+                        <SelectItem value="shift-2">Night Shift (10 PM - 7 AM)</SelectItem>
+                        <SelectItem value="shift-3">Flexible</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="joining_date">Joining Date</Label>
