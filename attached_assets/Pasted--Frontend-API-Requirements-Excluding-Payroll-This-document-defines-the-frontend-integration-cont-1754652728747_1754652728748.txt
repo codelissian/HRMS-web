@@ -1,0 +1,334 @@
+# Frontend API Requirements (Excluding Payroll)
+
+This document defines the frontend integration contract for HRMS-web, aligned with the existing backend. All endpoints are mounted under `CONTEXT_PATH` (default: `/api/v1`). Only POST/PUT/PATCH are supported; no GET.
+
+## Global Conventions
+- Auth: Bearer JWT in `Authorization` header (except `/auth`)
+- Content-Type: `application/json` (multipart only for image upload)
+- Standard success response:
+```
+{
+  "status": true,
+  "message": "Successful",
+  "data": <any>,
+  // For paginated responses only
+  "total_count": number,
+  "page_count": number,
+  "page_size": number,
+  "page": number
+}
+```
+- Pagination body for list/filter endpoints:
+```
+{
+  "page": 1,
+  "page_size": 50,
+  "sort": { "field": "created_at", "order": "desc" },
+  "select": { /* prisma select */ },
+  "include": { /* prisma include */ },
+  "search": { /* text or field search */ },
+  // plus filter fields per resource
+}
+```
+
+## Roles and Users
+- System Admin (super admin): unrestricted
+- Organisation Admin: org-scoped admin
+- HR Manager: org-scoped HR
+- Employee: self-service
+
+Use `/auth/*/permissions` to fetch permissions for UI gating.
+
+---
+
+## Authentication (/auth)
+
+### POST /auth/admin/register
+Req:
+```
+{ "email": string, "full_name": string, "password": string, "mobile"?: string }
+```
+Res: `data` contains OTP delivery meta.
+
+### POST /auth/admin/verify
+Req:
+```
+{ "email": string, "otp": string }
+```
+Res: `data` { admin, organisation, tokens }
+
+### POST /auth/admin/login
+Req:
+```
+{ "email"?: string, "mobile"?: string, "password": string }
+```
+Res: `data` { admin, organisation, access_token, refresh_token }
+
+### POST /auth/admin/reset-password
+Req:
+```
+{ "email"?: string, "mobile"?: string, "otp": string, "new_password": string }
+```
+Res: success
+
+### POST /auth/admin/permissions
+Req:
+```
+{ "admin_id": string, "organisation_id": string }
+```
+Res:
+```
+{ "permissions": Array<{ resource: string, actions: string[] }> }
+```
+
+### POST /auth/employee/login
+Req:
+```
+{ "email"?: string, "mobile"?: string, "password": string }
+```
+Res: `data` { employee, organisation, access_token, refresh_token }
+
+### POST /auth/employee/reset-password
+Req:
+```
+{ "email"?: string, "mobile"?: string, "otp": string, "new_password": string }
+```
+Res: success
+
+### POST /auth/employee/permissions
+Req:
+```
+{ "employee_id": string, "organisation_id": string }
+```
+Res:
+```
+{ "permissions": Array<{ resource: string, actions: string[] }> }
+```
+
+---
+
+## Settings (/settings)
+(Open endpoints except for general CRUD inherited)
+
+### POST /settings/send/sms
+Req:
+```
+{ "to": string, "message": string, "provider"?: string }
+```
+Res: provider ack
+
+### POST /settings/send/email
+Req:
+```
+{ "to": string, "subject": string, "html"?: string, "text"?: string, "template_id"?: string, "params"?: object }
+```
+Res: provider ack
+
+### POST /settings/images/upload (multipart)
+Req multipart form-data:
+- files[]: binary
+- folder_path: string
+Res: array of uploaded file URLs/keys
+
+---
+
+## Generic CRUD Patterns (All resource controllers)
+For resources: `admins`, `employees`, `organisations`, `departments`, `designations`, `shifts`, `roles`, `permissions`, `attendance-policies`, `attendance`, `leaves`, `leave-requests`, `leave-encashments`, `provider_configurations`, `currency-exchange-rates`.
+
+Base paths: `/<resource>`
+
+### POST /<resource>/create
+Req: entity fields (see schema summaries below)
+Res: created entity
+
+### PUT /<resource>/update
+Req: entity fields including `id`
+Res: updated entity
+
+### POST /<resource>/list
+Req: pagination + filter fields
+Res: paginated list (uses paginated response format)
+
+### POST /<resource>/one
+Req: filter fields (e.g., `{ id }`), optional `select/include`
+Res: single entity or null
+
+### PATCH /<resource>/delete
+Req:
+```
+{ "id": string }
+```
+Res: soft-delete result
+
+Internal variants exist for batch ops: `/internal`, `/internal/filter`, `/internal/many`, etc. Use only if needed for admin dashboards.
+
+---
+
+## Schema Summaries (for request payloads)
+
+Below are key fields to include in create/update payloads and filter inputs. All entities also have: `active_flag?`, `delete_flag?`, `created_by?`, `modified_by?` handled server-side in many flows.
+
+### admins
+- Fields: `full_name?`, `mobile?`, `email?`, `password?`, `image?`, `username?`, `alternate_mobile?`, `address?`, `documents?` (string[]), `city?`, `state?`, `country?`, `pin_code?`, `adhaar_number?`, `driving_license_number?`
+
+### organisations
+- Fields: `admin_id?`, `name` (unique), `plan?` (default Free), `active_modules?` (ModuleType[])
+
+### employees
+- Fields: `name`, `mobile`, `email?`, `password?`, `included_in_payroll?` (bool), `date_of_birth?`, `address?`, `emergency_contact?`, `pan_number?`, `status?`, `joining_date?`, `organisation_id?`, `department_id?`, `designation_id?`, `shift_id?`, `bank_details?` (Json), `role_id?`
+
+### departments
+- Fields: `name`, `organisation_id`
+
+### designations
+- Fields: `name`, `organisation_id`
+
+### shifts
+- Fields: `name`, `start`, `end`, `grace_minutes`, `organisation_id`
+
+### roles
+- Fields: `name`, `description?`, `organisation_id`
+
+### permissions
+- Fields: `resource`, `actions` (string[]), `description?`, `organisation_id?`
+
+### attendance-policies
+- Fields: `organisation_id`, `name`, `geo_tracking_enabled?`, `geo_radius_meters?`, `selfie_required?`, `web_attendance_enabled?`, `mobile_attendance_enabled?`, `grace_period_minutes?`, `overtime_threshold_hours?`, `break_management_enabled?`, `regularization_enabled?`
+
+### attendance
+- Fields: `employee_id`, `organisation_id`, `event_type?`, `event_time?`, `event_location?` (Json), `event_selfie?`
+
+### leaves
+- Fields: `name`, `code`, `description?`, `color?`, `icon?`, `organisation_id`, `category?`, `accrual_method?`, `accrual_rate`, `initial_balance?`, `max_balance?`, `min_balance?`, `allow_carry_forward?`, `carry_forward_limit?`, `carry_forward_expiry_months?`, `allow_encashment?`, `encashment_rate?`, `requires_approval?`, `requires_documentation?`, `required_documents?` (Json), `auto_approve_for_days?`, `approval_levels?`, `min_service_months?`, `min_advance_notice_days?`, `max_consecutive_days?`, `blackout_dates?` (Json)
+
+### leave-requests
+- Fields: `employee_id`, `leave_id`, `organisation_id`, `start_date`, `end_date`, `total_days`, `reason?`, `comments?`, `status?`, `is_half_day?`, `work_handover_to?`, `handover_notes?`, `emergency_contact_name?`, `emergency_contact_phone?`, `approver_comments?`, `approved_at?`, `rejected_at?`, `attachments?` (Json[]), `approvals?` (Json[])
+
+### leave-encashments
+- Fields: `employee_id`, `leave_id`, `organisation_id`, `encashment_date`, `days_encashed`, `encashment_rate`, `total_amount`, `currency?`, `status?`, `approved_by?`, `approved_at?`, `payment_method?`, `payment_reference?`, `payment_date?`, `taxable_amount?`, `tax_amount?`, `net_amount?`, `comments?`, `rejection_reason?`
+
+### provider_configurations
+- Fields: `provider_type`, `name`, `description?`, `contact_number?`, `email?`, `identifier?`, `url?`, `type?`, `employee_name?`, `password?`, `client_id?`, `client_password?`, `api_key?`, `api_secret?`, `status?`, `sender_details?` (Json), `outlet_reference?`, `redirect_url?`, `additional_properties?` (Json[]), `sender_id?`, `account_usage_type_id?`, `access_key_id?`, `secret_access_key?`, `region?`, `bucket?`, `cdn?`, `project_id?`, `key_file_name?`, `cloud_name?`
+
+### currency-exchange-rates
+- Fields: `base_currency`, `target_currency`, `rate`, `effective_date`
+
+### settings
+- Fields: `organisation_id?`, `admin_authentication_mode?` ("email"|...), `is_sms_otp_mode_live?`, `is_email_otp_mode_live?`, `is_default?`
+
+---
+
+## UI Access Mapping (High-Level)
+- System Admin: all modules (global)
+- Org Admin: organisations (own), employees, departments, designations, shifts, roles, permissions, attendance, attendance-policies, leaves, leave-requests, leave-encashments, provider_configurations, settings
+- HR Manager: employees, departments, designations, shifts, attendance, attendance-policies (read), leaves, leave-requests, leave-encashments
+- Employee: attendance (self), leave-requests (self), leaves (read), settings (profile image upload), auth
+
+Use permissions data to fine-tune visibility/actions per resource.
+
+---
+
+## Frontend Implementation Plan (HRMS-web)
+
+1) Auth & Bootstrap
+- Build auth service for admin/employee login, token storage, interceptor
+- After login, call `/auth/*/permissions` and hydrate RBAC store
+
+2) Generic CRUD UI Shell
+- Create reusable ListTable, FormModal, Filters, Pagination components
+- Wire to generic endpoints: `/create`, `/update`, `/list`, `/one`, `/delete`
+
+3) Modules (exclude payroll)
+- Organisations: org settings forms + module toggles
+- Employees: list, profile, create/edit; bank_details JSON editor
+- Departments/Designations/Shifts: simple CRUD screens
+- Roles & Permissions: assign `actions[]` per `resource`
+- Attendance Policies: config forms per schema
+- Attendance: capture (clock in/out) and admin listing
+- Leaves: type config; Leave Requests: submission + approvals UI
+- Leave Encashments: initiation + approvals + payment meta
+- Settings: email/SMS configuration; image upload via multipart
+- Providers & Currency Rates: admin-only CRUD
+
+4) Error/Loading/Empty States
+- Standardize based on API success shape; handle validation errors
+
+5) Testing
+- Mock requests in Replit; verify paginated and single responses
+
+Notes: All reads must use POST-based list/one. Avoid GET completely. Attach bearer token for protected routes. 
+
+---
+
+## Replit Frontend Implementation (HRMS-web)
+
+- Backend Base URL: `https://hrms-backend-omega.vercel.app/api/v1`
+- Only `/auth/*` is open; all other routes require Bearer JWT.
+- Do not use GET. Use POST/PUT/PATCH exactly as defined above.
+
+### 1) Environment and HTTP Client
+- Create a frontend env var: `NEXT_PUBLIC_API_BASE_URL=https://hrms-backend-omega.vercel.app/api/v1`
+- Configure a single HTTP client (e.g., Axios) with:
+  - `baseURL: process.env.NEXT_PUBLIC_API_BASE_URL`
+  - Request interceptor to attach `Authorization: Bearer <access_token>` if present
+  - Default `Content-Type: application/json`
+  - For uploads only, use `multipart/form-data`
+
+### 2) Minimal Client Calls (examples)
+- Admin login (open): POST `/auth/admin/login` with `{ email|mobile, password }`
+- Admin permissions: POST `/auth/admin/permissions` with `{ admin_id, organisation_id }`
+- List employees (protected): POST `/employees/list` with pagination body and optional filters
+- Upload image (protected): POST `/settings/images/upload` as multipart with `files[]` and `folder_path`
+
+### 3) Required Request Shapes
+- Reads:
+  - Single record: POST `/<resource>/one` with `{ id }` or filter fields
+  - Lists: POST `/<resource>/list` with `{ page, page_size, sort?, select?, include?, search?, ...filters }`
+- Writes:
+  - Create: POST `/<resource>/create` with entity fields
+  - Update: PUT `/<resource>/update` with entity fields including `id`
+  - Delete: PATCH `/<resource>/delete` with `{ id }`
+
+### 4) Multi-tenant Notes
+- Always include `organisation_id` where applicable (employees, attendance, leaves, requests, policies, roles, permissions, etc.).
+- Use permissions API to gate UI actions per user.
+
+### 5) Error/State Handling
+- Success responses follow the documented success shape.
+- Implement standardized loaders, empty states, and error toasts per module.
+
+### 6) Build Order (suggested)
+1. Auth (admin + employee), token store, interceptor
+2. Generic CRUD shell (List, Form, Filters, Pagination)
+3. Employees, Departments, Designations, Shifts
+4. Roles & Permissions
+5. Leaves, Leave Requests, Leave Encashments
+6. Attendance Policies, Attendance
+7. Organisations, Settings, Providers, Currency Rates
+
+### 7) Testing in Replit
+- Validate all reads via POST (`/list`, `/one`) and no GET calls.
+- Verify protected routes fail without token and succeed with Bearer JWT.
+- Test multipart upload for images with required `folder_path`. 
+
+---
+
+## Architecture Compliance (STRICT)
+
+You must strictly follow the existing architecture in `HRMS-web` (do not restructure, rename, or introduce new libraries unless already used there):
+
+- Project structure: keep the same folder/layout conventions (pages/routes, feature modules, components, hooks, services, store). Add new files only within the relevant existing module folders.
+- HTTP client: reuse the existing API client wrapper and interceptors; configure only the base URL env (`NEXT_PUBLIC_API_BASE_URL`). Do not create parallel clients.
+- State management: use the existing state management layer (e.g., Redux/Zustand/Context as present). Extend existing slices/stores; do not introduce a new state library.
+- RBAC & auth: reuse the existing route guards/HOCs/hooks for auth and permissions. Drive UI enable/disable from `/auth/*/permissions`.
+- UI components: extend the existing design system/components (buttons, inputs, tables, modals). Do not add new UI libraries; follow current styling (CSS modules/Tailwind/styled-components as present).
+- Forms & validation: use the existing form framework and validation utilities (e.g., React Hook Form + Yup/Zod if present). Follow established error messaging and field components.
+- Tables & pagination: reuse the shared table component and pagination pattern for all `/list` endpoints.
+- Types & DTOs: place/request/response types where the repo currently keeps them (e.g., `types/` or per-feature). Align naming with existing conventions.
+- Services: add per-module service functions under the existing services/API layer; mirror endpoint names and HTTP verbs as in this spec.
+- Routing: add screens/pages using the repo’s routing approach (Next.js App/Pages Router or React Router) without changing route organization.
+- Theming/i18n: use existing theming and localization mechanisms if present; do not hardcode strings or colors.
+- Lint/format: comply with repo ESLint/Prettier rules. No disabling rules unless already allowed.
+- Testing: extend existing testing setup/utilities; follow existing test folder structure and patterns.
+
+Any deviation from the established architecture should be avoided. If a capability appears missing, implement it by following the closest existing pattern in the repo rather than introducing a new approach. 

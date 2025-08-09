@@ -1,0 +1,65 @@
+import { httpClient } from '@/services/httpClient';
+import { API_ENDPOINTS as API } from '@/services/api/endpoints';
+import { LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth';
+
+function normalizeAuthResponse(raw: any): AuthResponse {
+  const payload = (raw && typeof raw === 'object' && 'data' in raw ? raw.data : raw) || raw;
+
+  const access_token = payload?.access_token || payload?.token || payload?.jwt || payload?.tokens?.access || '';
+  const refresh_token = payload?.refresh_token || payload?.tokens?.refresh || '';
+
+  const admin = payload?.admin || (payload?.user?.role === 'admin' ? payload.user : undefined);
+  const employee = payload?.employee || (payload?.user?.role === 'employee' ? payload.user : undefined);
+
+  const organisation = payload?.organisation || payload?.organization || { id: '', name: '' } as any;
+
+  return {
+    admin,
+    employee,
+    organisation,
+    access_token,
+    refresh_token,
+  } as AuthResponse;
+}
+
+class AuthService {
+  async adminLogin(credentials: LoginRequest): Promise<AuthResponse> {
+    const resp = await httpClient.post(API.AUTH_ADMIN_LOGIN, credentials, { requireAuth: false });
+    return normalizeAuthResponse(resp.data);
+  }
+
+  async employeeLogin(credentials: LoginRequest): Promise<AuthResponse> {
+    const resp = await httpClient.post(API.AUTH_EMPLOYEE_LOGIN, credentials, { requireAuth: false });
+    return normalizeAuthResponse(resp.data);
+  }
+
+  // Convenience method to preserve existing callers
+  async login(credentials: LoginRequest & { user_type?: 'admin' | 'employee' }): Promise<AuthResponse> {
+    const userType = credentials.user_type || 'employee';
+    return userType === 'admin' ? this.adminLogin(credentials) : this.employeeLogin(credentials);
+  }
+
+  async adminRegister(data: RegisterRequest): Promise<any> {
+    const resp = await httpClient.post(API.AUTH_ADMIN_REGISTER, data, { requireAuth: false });
+    return resp.data;
+  }
+
+  async adminVerify(email: string, otp: string): Promise<AuthResponse> {
+    const response = await httpClient.post<AuthResponse>(API.AUTH_ADMIN_VERIFY, {
+      email,
+      otp,
+    }, { requireAuth: false });
+    return normalizeAuthResponse(response.data);
+  }
+
+  async resetPassword(data: {
+    email?: string;
+    mobile?: string;
+    otp: string;
+    new_password: string;
+  }): Promise<void> {
+    await httpClient.post(API.AUTH_ADMIN_RESET_PASSWORD, data, { requireAuth: false });
+  }
+}
+
+export const authService = new AuthService();
