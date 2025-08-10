@@ -35,6 +35,16 @@ httpClient.interceptors.response.use(
   }
 );
 
+// Add convenience methods for common HTTP verbs
+export const httpClientWithMethods = {
+  ...httpClient,
+  get: httpClient.get,
+  post: httpClient.post,
+  put: httpClient.put,
+  patch: httpClient.patch,
+  delete: httpClient.delete,
+};
+
 export type RequestOptions = {
   headers?: Record<string, string>;
   params?: Record<string, any>;
