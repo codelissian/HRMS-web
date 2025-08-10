@@ -25,7 +25,6 @@ const baseNavigation = [
   { name: 'Dashboard', href: 'dashboard', icon: BarChart3, section: 'Dashboard' },
   { name: 'Employees', href: 'employees', icon: Users, section: 'Employee Management', roles: ['admin', 'hr_manager'] },
   { name: 'Departments', href: 'departments', icon: Building, section: 'Employee Management', roles: ['admin', 'hr_manager'] },
-  { name: 'Designations', href: 'designations', icon: IdCard, section: 'Employee Management', roles: ['admin', 'hr_manager'] },
   { name: 'Shifts', href: 'shifts', icon: Clock, section: 'Employee Management', roles: ['admin', 'hr_manager'] },
   { name: 'Attendance', href: 'attendance', icon: CalendarCheck, section: 'Attendance & Leave' },
   { name: 'Leave Management', href: 'leaves', icon: Calendar, section: 'Attendance & Leave', roles: ['admin', 'hr_manager'] },
@@ -58,7 +57,7 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
   return (
     <>
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white/95 dark:bg-gray-850/95 backdrop-blur-md border-r border-gray-200 dark:border-gray-700 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 shadow-xl lg:shadow-none",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-white/95 dark:bg-gray-850/95 backdrop-blur-md border-r border-gray-200 dark:border-gray-700 transform transition-all duration-300 ease-in-out lg:translate-x-0 shadow-xl",
         open ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">

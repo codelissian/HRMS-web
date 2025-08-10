@@ -15,6 +15,7 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen flex bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      {/* Fixed Sidebar */}
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       {/* Backdrop for mobile */}
@@ -25,11 +26,13 @@ export function AppLayout({ children }: AppLayoutProps) {
         />
       )}
       
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main content area - positioned to account for fixed sidebar */}
+      <div className="flex-1 flex flex-col lg:ml-64 min-w-0">
+        {/* Header within main content area */}
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         
-        <main className="flex-1 overflow-auto p-4 lg:p-6 animate-fade-in">
+        {/* Scrollable main content */}
+        <main className="flex-1 overflow-auto p-3 lg:p-4 animate-fade-in">
           {children}
           <Outlet />
         </main>
