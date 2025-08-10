@@ -65,11 +65,14 @@ export const employees = pgTable("employees", {
 export const departments = pgTable("departments", {
   id: varchar("id").primaryKey(),
   name: text("name").notNull(),
+  description: text("description"),
   organisation_id: varchar("organisation_id").notNull(),
   active_flag: boolean("active_flag").default(true),
   delete_flag: boolean("delete_flag").default(false),
   created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
+  modified_at: timestamp("modified_at").defaultNow(),
+  created_by: varchar("created_by"),
+  modified_by: varchar("modified_by"),
 });
 
 export const designations = pgTable("designations", {
