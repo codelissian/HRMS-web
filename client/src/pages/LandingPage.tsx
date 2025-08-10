@@ -12,7 +12,7 @@ export default function LandingPage() {
     {
       icon: Users,
       title: "Employee Management",
-      description: "Comprehensive employee profiles, onboarding, and organizational structure management."
+      description: "Comprehensive employee profiles, onboarding, and organisational structure management."
     },
     {
       icon: Calendar,
@@ -32,12 +32,12 @@ export default function LandingPage() {
     {
       icon: Shield,
       title: "Role-Based Access",
-      description: "Secure access control with customizable permissions for different organizational roles."
+      description: "Secure access control with customizable permissions for different organisational roles."
     },
     {
       icon: FileText,
       title: "Document Management",
-      description: "Centralized storage for employee documents, contracts, and organizational policies."
+      description: "Centralized storage for employee documents, contracts, and organisational policies."
     }
   ];
 
@@ -67,7 +67,7 @@ export default function LandingPage() {
                 Complete Human Resource Management System
               </p>
               <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                Streamline your HR operations with our comprehensive platform designed for modern organizations. 
+                Streamline your HR operations with our comprehensive platform designed for modern organisations. 
                 Manage employees, track attendance, process leave requests, and gain valuable insights - all in one place.
               </p>
             </div>
@@ -146,7 +146,7 @@ export default function LandingPage() {
                         </div>
                         <div>
                           <CardTitle className="text-lg">Admin Login</CardTitle>
-                          <CardDescription>Manage your organization</CardDescription>
+                          <CardDescription>Manage your organisation</CardDescription>
                         </div>
                       </div>
                       <ArrowRight className="w-5 h-5 text-purple-500" />

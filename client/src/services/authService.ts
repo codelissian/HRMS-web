@@ -1,6 +1,7 @@
-import { httpClient } from '@/services/httpClient';
+import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS as API } from '@/services/api/endpoints';
 import { LoginRequest, RegisterRequest, AuthResponse } from '@/types/auth';
+import { authToken } from '@/services/authToken';
 
 function normalizeAuthResponse(raw: any): AuthResponse {
   const payload = (raw && typeof raw === 'object' && 'data' in raw ? raw.data : raw) || raw;
@@ -12,7 +13,7 @@ function normalizeAuthResponse(raw: any): AuthResponse {
   const employee = payload?.employee || (payload?.user?.role === 'employee' ? payload.user : undefined);
 
   // Try multiple possible locations for organisation data
-  let organisation = payload?.organisation || payload?.organization;
+  let organisation = payload?.organisation || payload?.organisation;
   
   // If no organisation in payload, try to get it from admin/employee data
   if (!organisation && admin?.organisation) {
@@ -42,13 +43,23 @@ function normalizeAuthResponse(raw: any): AuthResponse {
 
 class AuthService {
   async adminLogin(credentials: LoginRequest): Promise<AuthResponse> {
-    const resp = await httpClient.post(API.AUTH_ADMIN_LOGIN, credentials, { requireAuth: false });
-    return normalizeAuthResponse(resp.data);
+    const resp = await httpClient.post(API.AUTH_ADMIN_LOGIN, credentials, { includeorganisationId: false });
+    const authResponse = normalizeAuthResponse(resp.data);
+    
+    // Process login response to extract and store organisation_id
+    authToken.processLoginResponse(resp.data);
+    
+    return authResponse;
   }
 
   async employeeLogin(credentials: LoginRequest): Promise<AuthResponse> {
-    const resp = await httpClient.post(API.AUTH_EMPLOYEE_LOGIN, credentials, { requireAuth: false });
-    return normalizeAuthResponse(resp.data);
+    const resp = await httpClient.post(API.AUTH_EMPLOYEE_LOGIN, credentials, { includeorganisationId: false });
+    const authResponse = normalizeAuthResponse(resp.data);
+    
+    // Process login response to extract and store organisation_id
+    authToken.processLoginResponse(resp.data);
+    
+    return authResponse;
   }
 
   // Convenience method to preserve existing callers
@@ -58,7 +69,7 @@ class AuthService {
   }
 
   async adminRegister(data: RegisterRequest): Promise<any> {
-    const resp = await httpClient.post(API.AUTH_ADMIN_REGISTER, data, { requireAuth: false });
+    const resp = await httpClient.post(API.AUTH_ADMIN_REGISTER, data, { includeorganisationId: false });
     return resp.data;
   }
 
@@ -66,8 +77,13 @@ class AuthService {
     const response = await httpClient.post<AuthResponse>(API.AUTH_ADMIN_VERIFY, {
       email,
       otp,
-    }, { requireAuth: false });
-    return normalizeAuthResponse(response.data);
+    }, { includeorganisationId: false });
+    const authResponse = normalizeAuthResponse(response.data);
+    
+    // Process login response to extract and store organisation_id
+    authToken.processLoginResponse(response.data);
+    
+    return authResponse;
   }
 
   async resetPassword(data: {
@@ -76,7 +92,7 @@ class AuthService {
     otp: string;
     new_password: string;
   }): Promise<void> {
-    await httpClient.post(API.AUTH_ADMIN_RESET_PASSWORD, data, { requireAuth: false });
+    await httpClient.post(API.AUTH_ADMIN_RESET_PASSWORD, data, { includeorganisationId: false });
   }
 }
 

@@ -6,7 +6,7 @@ export default function DepartmentList() {
     <EmptyState
       icon={Building}
       title="Departments"
-      description="Department management interface will be implemented here. This page will allow you to create, edit, and manage organizational departments."
+      description="Department management interface will be implemented here. This page will allow you to create, edit, and manage organisational departments."
       action={{
         label: 'Add Department',
         onClick: () => console.log('Add department clicked')

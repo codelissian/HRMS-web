@@ -60,7 +60,7 @@ This document outlines the complete integration of Employee Modules API in the H
 - Employee avatar with initials
 - Status badges
 - Information cards
-- Tabbed content organization
+- Tabbed content organisation
 - Action buttons
 
 ### 4. Employee Table Component (`client/src/components/employees/EmployeeTable.tsx`)

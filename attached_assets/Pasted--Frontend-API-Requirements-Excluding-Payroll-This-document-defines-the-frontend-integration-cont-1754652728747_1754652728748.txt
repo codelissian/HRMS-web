@@ -326,7 +326,7 @@ You must strictly follow the existing architecture in `HRMS-web` (do not restruc
 - Tables & pagination: reuse the shared table component and pagination pattern for all `/list` endpoints.
 - Types & DTOs: place/request/response types where the repo currently keeps them (e.g., `types/` or per-feature). Align naming with existing conventions.
 - Services: add per-module service functions under the existing services/API layer; mirror endpoint names and HTTP verbs as in this spec.
-- Routing: add screens/pages using the repo’s routing approach (Next.js App/Pages Router or React Router) without changing route organization.
+- Routing: add screens/pages using the repo’s routing approach (Next.js App/Pages Router or React Router) without changing route organisation.
 - Theming/i18n: use existing theming and localization mechanisms if present; do not hardcode strings or colors.
 - Lint/format: comply with repo ESLint/Prettier rules. No disabling rules unless already allowed.
 - Testing: extend existing testing setup/utilities; follow existing test folder structure and patterns.

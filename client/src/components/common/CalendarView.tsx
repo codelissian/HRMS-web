@@ -144,7 +144,7 @@ export function CalendarView({
             Calendar View
           </h2>
           <p className="text-gray-500 dark:text-gray-400">
-            {showAllEmployees ? 'Organization calendar' : 'Your personal calendar'}
+            {showAllEmployees ? 'organisation calendar' : 'Your personal calendar'}
           </p>
         </div>
         

@@ -55,7 +55,7 @@ export default function Dashboard() {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl p-6 text-white">
         <h1 className="text-2xl font-bold mb-2">Welcome back! 👋</h1>
-        <p className="text-blue-100">Here's what's happening with your organization today.</p>
+        <p className="text-blue-100">Here's what's happening with your organisation today.</p>
       </div>
 
       {/* Stats Cards */}

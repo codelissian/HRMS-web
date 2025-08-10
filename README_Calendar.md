@@ -56,7 +56,7 @@ A feature-rich calendar view with filtering, search, and management capabilities
 - Event details modal
 - Create/edit event functionality
 - Export capabilities
-- Employee-specific or organization-wide views
+- Employee-specific or organisation-wide views
 - Comprehensive legend and status indicators
 
 #### Props:
@@ -179,7 +179,7 @@ function EmployeeDashboard({ employeeId }) {
 - Track remaining leave days
 
 ### HR Administration
-- Organization-wide calendar view
+- organisation-wide calendar view
 - Holiday and policy management
 - Attendance monitoring and reporting
 

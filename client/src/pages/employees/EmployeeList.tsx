@@ -201,7 +201,7 @@ export default function EmployeeList() {
             Employees
           </h2>
           <p className="text-gray-500 dark:text-gray-400">
-            Manage your organization's employees ({totalCount} total)
+            Manage your organisation's employees ({totalCount} total)
           </p>
         </div>
         <div className="flex gap-2">

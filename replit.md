@@ -2,9 +2,9 @@
 
 ## Overview
 
-OneHR is a comprehensive Human Resource Management System built as a full-stack web application. It provides role-based access control for managing employees, departments, leave requests, and organizational operations. The system supports multiple user roles including system administrators, organization administrators, HR managers, and employees, each with specific permissions and capabilities.
+OneHR is a comprehensive Human Resource Management System built as a full-stack web application. It provides role-based access control for managing employees, departments, leave requests, and organisational operations. The system supports multiple user roles including system administrators, organisation administrators, HR managers, and employees, each with specific permissions and capabilities.
 
-The application follows a modern full-stack architecture with a React frontend and Express backend, utilizing PostgreSQL for data persistence and Drizzle ORM for database operations. It's designed to handle multi-tenant organizations with proper isolation and security.
+The application follows a modern full-stack architecture with a React frontend and Express backend, utilizing PostgreSQL for data persistence and Drizzle ORM for database operations. It's designed to handle multi-tenant organisations with proper isolation and security.
 
 ## User Preferences
 
@@ -36,16 +36,16 @@ The backend architecture includes:
 ### Database Schema
 The application uses PostgreSQL with Drizzle ORM for type-safe database operations. The schema supports multi-tenant architecture with proper relationships between entities:
 
-- **Admins**: System and organization administrators with full profile information
-- **Organizations**: Tenant isolation with plan-based feature access
+- **Admins**: System and organisation administrators with full profile information
+- **organisations**: Tenant isolation with plan-based feature access
 - **Employees**: Employee records with comprehensive personal and professional details
-- **Departments**: Organizational structure management
+- **Departments**: organisational structure management
 - **Leave Management**: Leave types and leave request tracking with approval workflows
 
 The database implements soft deletion patterns with `delete_flag` and `active_flag` fields for data integrity and audit trails.
 
 ### Authentication and Authorization
-The system implements JWT-based authentication with role-based access control (RBAC). It supports multiple authentication methods including email/mobile login for both admins and employees. The authorization system provides fine-grained permissions based on user roles and organizational context.
+The system implements JWT-based authentication with role-based access control (RBAC). It supports multiple authentication methods including email/mobile login for both admins and employees. The authorization system provides fine-grained permissions based on user roles and organisational context.
 
 Key features include:
 - Multi-role authentication (admin/employee)
@@ -82,7 +82,7 @@ The application features a comprehensive calendar component system for managing 
 - Responsive design with mobile optimization
 - Dark/light mode compatibility
 - Event click handlers and date selection
-- Employee-specific and organization-wide views
+- Employee-specific and organisation-wide views
 - Export and management capabilities
 
 **Event Types Supported:**
