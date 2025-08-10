@@ -11,7 +11,25 @@ function normalizeAuthResponse(raw: any): AuthResponse {
   const admin = payload?.admin || (payload?.user?.role === 'admin' ? payload.user : undefined);
   const employee = payload?.employee || (payload?.user?.role === 'employee' ? payload.user : undefined);
 
-  const organisation = payload?.organisation || payload?.organization || { id: '', name: '' } as any;
+  // Try multiple possible locations for organisation data
+  let organisation = payload?.organisation || payload?.organization;
+  
+  // If no organisation in payload, try to get it from admin/employee data
+  if (!organisation && admin?.organisation) {
+    organisation = admin.organisation;
+  } else if (!organisation && employee?.organisation) {
+    organisation = employee.organisation;
+  }
+  
+  // If still no organisation, try to get it from the user object
+  if (!organisation && payload?.user?.organisation) {
+    organisation = payload.user.organisation;
+  }
+  
+  // Fallback to empty organisation if none found
+  if (!organisation) {
+    organisation = { id: '', name: '' };
+  }
 
   return {
     admin,
