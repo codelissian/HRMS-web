@@ -14,6 +14,8 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
+import { useDepartments } from '@/hooks/useDepartments';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EmployeeFormProps {
   open: boolean;
@@ -34,6 +36,9 @@ export function EmployeeForm({
   title = 'Add New Employee',
   description = 'Fill in the employee details below.'
 }: EmployeeFormProps) {
+  
+  // ✅ Hook to fetch departments data - only when form is open
+  const { departments, isLoading: departmentsLoading } = useDepartments(open);
   
   const {
     register,
@@ -101,11 +106,21 @@ export function EmployeeForm({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="date_of_birth">Date of Birth</Label>
-                <Input
-                  id="date_of_birth"
-                  type="date"
-                  {...register('date_of_birth')}
-                  error={errors.date_of_birth?.message}
+                <Controller
+                  name="date_of_birth"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="date_of_birth"
+                      type="date"
+                      value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        const date = e.target.value ? new Date(e.target.value) : undefined;
+                        field.onChange(date);
+                      }}
+                      error={errors.date_of_birth?.message}
+                    />
+                  )}
                 />
               </div>
             </div>
@@ -124,14 +139,15 @@ export function EmployeeForm({
                   control={control}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value || undefined}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Department" />
+                      <SelectTrigger disabled={departmentsLoading}>
+                        <SelectValue placeholder={departmentsLoading ? "Loading..." : "Select Department"} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="dept-1">Engineering</SelectItem>
-                        <SelectItem value="dept-2">HR</SelectItem>
-                        <SelectItem value="dept-3">Marketing</SelectItem>
-                        <SelectItem value="dept-4">Finance</SelectItem>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   )}
@@ -178,11 +194,21 @@ export function EmployeeForm({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="joining_date">Joining Date</Label>
-                <Input
-                  id="joining_date"
-                  type="date"
-                  {...register('joining_date')}
-                  error={errors.joining_date?.message}
+                <Controller
+                  name="joining_date"
+                  control={control}
+                  render={({ field }) => (
+                    <Input
+                      id="joining_date"
+                      type="date"
+                      value={field.value ? new Date(field.value).toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        const date = e.target.value ? new Date(e.target.value) : undefined;
+                        field.onChange(date);
+                      }}
+                      error={errors.joining_date?.message}
+                    />
+                  )}
                 />
               </div>
             </div>

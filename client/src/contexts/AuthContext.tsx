@@ -17,7 +17,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (tokenUser) {
             const stored = localStorage.getItem('user_data');
             if (stored) {
-              setUser(JSON.parse(stored));
+              const parsedUser = JSON.parse(stored);
+              setUser(parsedUser);
             }
           }
         } else {
