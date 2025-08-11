@@ -43,7 +43,7 @@ function normalizeAuthResponse(raw: any): AuthResponse {
 
 class AuthService {
   async adminLogin(credentials: LoginRequest): Promise<AuthResponse> {
-    const resp = await httpClient.post(API.AUTH_ADMIN_LOGIN, credentials, { includeorganisationId: false });
+    const resp = await httpClient.post(API.AUTH_ADMIN_LOGIN, credentials, { includeOrganisationId: false });
     const authResponse = normalizeAuthResponse(resp.data);
     
     // Process login response to extract and store organisation_id
@@ -53,7 +53,7 @@ class AuthService {
   }
 
   async employeeLogin(credentials: LoginRequest): Promise<AuthResponse> {
-    const resp = await httpClient.post(API.AUTH_EMPLOYEE_LOGIN, credentials, { includeorganisationId: false });
+    const resp = await httpClient.post(API.AUTH_EMPLOYEE_LOGIN, credentials, { includeOrganisationId: false });
     const authResponse = normalizeAuthResponse(resp.data);
     
     // Process login response to extract and store organisation_id
@@ -69,7 +69,7 @@ class AuthService {
   }
 
   async adminRegister(data: RegisterRequest): Promise<any> {
-    const resp = await httpClient.post(API.AUTH_ADMIN_REGISTER, data, { includeorganisationId: false });
+    const resp = await httpClient.post(API.AUTH_ADMIN_REGISTER, data, { includeOrganisationId: false });
     return resp.data;
   }
 
@@ -77,7 +77,7 @@ class AuthService {
     const response = await httpClient.post<AuthResponse>(API.AUTH_ADMIN_VERIFY, {
       email,
       otp,
-    }, { includeorganisationId: false });
+    }, { includeOrganisationId: false });
     const authResponse = normalizeAuthResponse(response.data);
     
     // Process login response to extract and store organisation_id
@@ -92,7 +92,7 @@ class AuthService {
     otp: string;
     new_password: string;
   }): Promise<void> {
-    await httpClient.post(API.AUTH_ADMIN_RESET_PASSWORD, data, { includeorganisationId: false });
+    await httpClient.post(API.AUTH_ADMIN_RESET_PASSWORD, data, { includeOrganisationId: false });
   }
 }
 

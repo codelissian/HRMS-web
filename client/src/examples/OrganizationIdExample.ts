@@ -47,7 +47,7 @@ export const disableorganisationIdExample = async () => {
   try {
     // This request will NOT include organisation_id
     const publicSettings = await httpClient.get('/public/settings', {
-      includeorganisationId: false
+      includeOrganisationId: false
     });
     console.log('Public settings fetched without organisation_id');
     
@@ -56,7 +56,7 @@ export const disableorganisationIdExample = async () => {
       custom_field: 'value',
       organisation_id: 'custom_org_id' // Handle manually
     }, {
-      includeorganisationId: false
+      includeOrganisationId: false
     });
     console.log('Custom data sent with manual organisation_id handling');
     
@@ -118,7 +118,7 @@ export const authEndpointsExample = async () => {
       email: 'user@example.com',
       password: 'password123'
     }, {
-      includeorganisationId: false // No organisation_id for login
+      includeOrganisationId: false // No organisation_id for login
     });
     console.log('Login successful - organisation_id NOT included in request');
     
@@ -128,7 +128,7 @@ export const authEndpointsExample = async () => {
       email: 'newuser@example.com',
       password: 'password123'
     }, {
-      includeorganisationId: false
+      includeOrganisationId: false
     });
     console.log('Registration successful - organisation_id NOT included in request');
     
@@ -136,7 +136,7 @@ export const authEndpointsExample = async () => {
     const forgotPasswordResponse = await httpClient.post('/auth/forgot-password', {
       email: 'user@example.com'
     }, {
-      includeorganisationId: false
+      includeOrganisationId: false
     });
     console.log('Forgot password request sent - organisation_id NOT included');
     
@@ -194,7 +194,7 @@ export const conditionalorganisationIdExample = async (includeOrgId: boolean) =>
     const data = { name: 'Conditional User', email: 'conditional@example.com' };
     
     const result = await httpClient.post('/conditional-endpoint', data, {
-      includeorganisationId: includeOrgId
+      includeOrganisationId: includeOrgId
     });
     
     if (includeOrgId) {

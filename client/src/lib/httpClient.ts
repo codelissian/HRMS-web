@@ -107,7 +107,18 @@ axiosInstance.interceptors.response.use(
 );
 
 // Request options type
-export interface RequestOptions {
+// export interface RequestOptions {
+// // Add convenience methods for common HTTP verbs
+// export const httpClientWithMethods = {
+//   ...httpClient,
+//   get: httpClient.get,
+//   post: httpClient.post,
+//   put: httpClient.put,
+//   patch: httpClient.patch,
+//   delete: httpClient.delete,
+// };
+
+export type RequestOptions = {
   headers?: Record<string, string>;
   params?: Record<string, any>;
   responseType?: AxiosRequestConfig['responseType'];

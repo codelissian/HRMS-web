@@ -146,22 +146,22 @@ describe('HTTP Client organisation ID Tests', () => {
   });
 
   describe('Explicit Control', () => {
-    test('should respect includeorganisationId: false', async () => {
-      const data = { name: 'Test User' };
-      await httpClient.post('/custom-endpoint', data, { includeorganisationId: false });
-      
-      expect(httpClient.post).toHaveBeenCalledWith(
-        '/custom-endpoint',
-        data, // Should NOT include organisation_id
-        expect.objectContaining({
-          includeorganisationId: false
-        })
-      );
-    });
+      test('should respect includeOrganisationId: false', async () => {
+    const data = { name: 'Test User' };
+    await httpClient.post('/custom-endpoint', data, { includeOrganisationId: false });
+    
+    expect(httpClient.post).toHaveBeenCalledWith(
+      '/custom-endpoint',
+      data, // Should NOT include organisation_id
+      expect.objectContaining({
+        includeOrganisationId: false
+      })
+    );
+  });
 
-    test('should respect includeorganisationId: true (default)', async () => {
+    test('should respect includeOrganisationId: true (default)', async () => {
       const data = { name: 'Test User' };
-      await httpClient.post('/custom-endpoint', data, { includeorganisationId: true });
+      await httpClient.post('/custom-endpoint', data, { includeOrganisationId: true });
       
       expect(httpClient.post).toHaveBeenCalledWith(
         '/custom-endpoint',
@@ -170,7 +170,7 @@ describe('HTTP Client organisation ID Tests', () => {
           organisation_id: 'test_org_123'
         }),
         expect.objectContaining({
-          includeorganisationId: true
+          includeOrganisationId: true
         })
       );
     });
@@ -278,7 +278,7 @@ export const runManualTests = async () => {
     
     // Test 4: Test with explicit control
     console.log('🎛️ Testing explicit control...');
-    await httpClient.post('/test-endpoint', { name: 'Test' }, { includeorganisationId: false });
+    await httpClient.post('/test-endpoint', { name: 'Test' }, { includeOrganisationId: false });
     
     console.log('✅ All manual tests completed successfully!');
     
