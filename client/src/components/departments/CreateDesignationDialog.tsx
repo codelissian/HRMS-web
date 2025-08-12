@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,13 @@ interface CreateDesignationDialogProps {
   departmentName: string;
   departmentId: string;
   onSuccess?: () => void;
+  // New props for edit mode
+  editMode?: boolean;
+  designationToEdit?: {
+    id: string;
+    name: string;
+    description?: string;
+  } | null;
 }
 
 export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = ({
@@ -22,7 +29,9 @@ export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = (
   onClose,
   departmentName,
   departmentId,
-  onSuccess
+  onSuccess,
+  editMode = false,
+  designationToEdit = null
 }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -30,6 +39,19 @@ export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = (
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editMode && designationToEdit) {
+      setFormData({
+        name: designationToEdit.name || '',
+        description: designationToEdit.description || ''
+      });
+    } else {
+      // Reset form for create mode
+      setFormData({ name: '', description: '' });
+    }
+  }, [editMode, designationToEdit, isOpen]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({
@@ -55,39 +77,55 @@ export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = (
       // Get organisation_id from localStorage
       const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-88b4-7505e4aa88f7';
       
-      const payload = {
-        name: formData.name.trim(),
-        department_id: departmentId,
-        organisation_id: organisationId,
-        description: formData.description.trim() || undefined
-      };
+      if (editMode && designationToEdit) {
+        // Update existing designation
+        const payload = {
+          id: designationToEdit.id,
+          name: formData.name.trim(),
+          department_id: departmentId,
+          organisation_id: organisationId,
+          description: formData.description.trim() || undefined
+        };
 
-      console.log('Creating designation with payload:', payload);
-      
-      const response = await designationService.createDesignation(payload);
-      
-      console.log('Create designation API response:', response);
-      
-      if (response.status && response.data) {
-        // Show success message
-        console.log('Designation created successfully:', response.data);
+        console.log('Updating designation with payload:', payload);
         
-        // Reset form
-        setFormData({ name: '', description: '' });
+        const response = await designationService.updateDesignation(payload);
         
-        // Close dialog
-        onClose();
+        console.log('Update designation API response:', response);
         
-        // Notify parent component to refresh data
-        if (onSuccess) {
-          onSuccess();
+        if (response.status && response.data) {
+          console.log('Designation updated successfully:', response.data);
+          handleClose();
+          if (onSuccess) onSuccess();
+        } else {
+          setError(response.message || 'Failed to update designation. Please try again.');
         }
       } else {
-        setError(response.message || 'Failed to create designation. Please try again.');
+        // Create new designation
+        const payload = {
+          name: formData.name.trim(),
+          department_id: departmentId,
+          organisation_id: organisationId,
+          description: formData.description.trim() || undefined
+        };
+
+        console.log('Creating designation with payload:', payload);
+        
+        const response = await designationService.createDesignation(payload);
+        
+        console.log('Create designation API response:', response);
+        
+        if (response.status && response.data) {
+          console.log('Designation created successfully:', response.data);
+          handleClose();
+          if (onSuccess) onSuccess();
+        } else {
+          setError(response.message || 'Failed to create designation. Please try again.');
+        }
       }
     } catch (err) {
-      console.error('Error creating designation:', err);
-      setError('Failed to create designation. Please try again.');
+      console.error('Error saving designation:', err);
+      setError(`Failed to ${editMode ? 'update' : 'create'} designation. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -99,13 +137,17 @@ export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = (
     onClose();
   };
 
+  const dialogTitle = editMode ? 'Edit Designation' : 'Create New Designation';
+  const submitButtonText = editMode ? 'Update Designation' : 'Create Designation';
+  const submittingText = editMode ? 'Updating...' : 'Creating...';
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white">
-              Create New Designation
+              {dialogTitle}
             </DialogTitle>
           </div>
           
@@ -117,7 +159,7 @@ export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = (
               </div>
               <div>
                 <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  Creating designation for
+                  {editMode ? 'Editing designation in' : 'Creating designation for'}
                 </p>
                 <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
                   {departmentName} Department
@@ -201,10 +243,10 @@ export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = (
               {isSubmitting ? (
                 <div className="flex items-center space-x-2">
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Creating...</span>
+                  <span>{submittingText}</span>
                 </div>
               ) : (
-                'Create Designation'
+                submitButtonText
               )}
             </Button>
           </div>

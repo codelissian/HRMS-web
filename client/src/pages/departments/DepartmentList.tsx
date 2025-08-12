@@ -59,6 +59,11 @@ export default function DepartmentList() {
   // Department selector dialog state
   const [isDepartmentSelectorOpen, setIsDepartmentSelectorOpen] = useState(false);
 
+  // New state for editing designations
+  const [isEditDesignationDialogOpen, setIsEditDesignationDialogOpen] = useState(false);
+  const [designationToEdit, setDesignationToEdit] = useState<{ id: string; name: string; description?: string } | null>(null);
+  const [selectedDepartmentForEdit, setSelectedDepartmentForEdit] = useState<{ id: string; name: string } | null>(null);
+
   useEffect(() => {
     if (activeTab === 'departments') {
       fetchDepartments();
@@ -451,6 +456,19 @@ export default function DepartmentList() {
     setSelectedDepartmentForDesignation(null);
   };
 
+  // New handlers for editing designations
+  const handleOpenEditDesignationDialog = (designation: { id: string; name: string; description?: string }, departmentId: string, departmentName: string) => {
+    setDesignationToEdit(designation);
+    setSelectedDepartmentForEdit({ id: departmentId, name: departmentName });
+    setIsEditDesignationDialogOpen(true);
+  };
+
+  const handleCloseEditDesignationDialog = () => {
+    setIsEditDesignationDialogOpen(false);
+    setDesignationToEdit(null);
+    setSelectedDepartmentForEdit(null);
+  };
+
   // Department selector handlers
   const handleOpenDepartmentSelector = () => {
     setIsDepartmentSelectorOpen(true);
@@ -783,7 +801,13 @@ export default function DepartmentList() {
                               </div>
                               
                               <div className="flex items-center space-x-2">
-                                <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600 transition-colors duration-200">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                                  onClick={() => handleOpenEditDesignationDialog(designation, department.id, department.name)}
+                                  title="Edit Designation"
+                                >
                                   <Edit className="w-4 h-4" />
                                 </Button>
                                 <Button 
@@ -874,6 +898,12 @@ export default function DepartmentList() {
                         variant="ghost" 
                         size="sm" 
                         className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        onClick={() => {
+                          const department = departments.find(d => d.id === designation.department_id);
+                          if (department) {
+                            handleOpenEditDesignationDialog(designation, department.id, department.name);
+                          }
+                        }}
                         title="Edit Designation"
                       >
                         <Edit className="w-4 h-4" />
@@ -1059,6 +1089,26 @@ export default function DepartmentList() {
         onSuccess={() => {
           // Refresh designations for the specific department
           fetchDesignations(selectedDepartmentForDesignation.id);
+          // Also refresh all designations if we're on the designations tab
+          if (activeTab === 'designations') {
+            fetchAllDesignationsForOrg();
+          }
+        }}
+      />
+    )}
+
+    {/* Edit Designation Dialog */}
+    {selectedDepartmentForEdit && designationToEdit && (
+      <CreateDesignationDialog
+        isOpen={isEditDesignationDialogOpen}
+        onClose={handleCloseEditDesignationDialog}
+        departmentName={selectedDepartmentForEdit.name}
+        departmentId={selectedDepartmentForEdit.id}
+        editMode={true}
+        designationToEdit={designationToEdit}
+        onSuccess={() => {
+          // Refresh designations for the specific department
+          fetchDesignations(selectedDepartmentForEdit.id);
           // Also refresh all designations if we're on the designations tab
           if (activeTab === 'designations') {
             fetchAllDesignationsForOrg();

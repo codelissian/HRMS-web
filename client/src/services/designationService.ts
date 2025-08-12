@@ -32,6 +32,14 @@ interface CreateDesignationRequest {
   description?: string;
 }
 
+interface UpdateDesignationRequest {
+  id: string;
+  name: string;
+  department_id: string;
+  organisation_id: string;
+  description?: string;
+}
+
 class DesignationService {
   async getDesignations(filters: GetDesignationsRequest): Promise<ApiResponse<Designation[]>> {
     const response = await httpClient.post<ApiResponse<Designation[]>>(
@@ -54,6 +62,15 @@ class DesignationService {
   async createDesignation(data: CreateDesignationRequest): Promise<ApiResponse<Designation>> {
     const response = await httpClient.post<ApiResponse<Designation>>(
       API_ENDPOINTS.DESIGNATIONS_CREATE,
+      data
+    );
+    return response.data;
+  }
+
+  // Update designation method
+  async updateDesignation(data: UpdateDesignationRequest): Promise<ApiResponse<Designation>> {
+    const response = await httpClient.put<ApiResponse<Designation>>(
+      API_ENDPOINTS.DESIGNATIONS_UPDATE,
       data
     );
     return response.data;
