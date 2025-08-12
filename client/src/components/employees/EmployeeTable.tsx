@@ -4,6 +4,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Employee } from '@shared/schema';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useState, useEffect } from 'react';
+import { departmentService } from '@/services/departmentService';
+import { designationService } from '@/services/designationService';
 
 interface EmployeeTableProps {
   employees: Employee[];
@@ -21,6 +24,11 @@ export function EmployeeTable({
   onDelete 
 }: EmployeeTableProps) {
   
+  // State for department and designation names
+  const [departmentNames, setDepartmentNames] = useState<Record<string, string>>({});
+  const [designationNames, setDesignationNames] = useState<Record<string, string>>({});
+  const [isLoadingNames, setIsLoadingNames] = useState(false);
+  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -28,6 +36,63 @@ export function EmployeeTable({
       .join('')
       .toUpperCase();
   };
+
+  // Fetch department and designation names
+  useEffect(() => {
+    const fetchNames = async () => {
+      if (employees.length === 0) return;
+      
+      setIsLoadingNames(true);
+      try {
+        // Get unique department and designation IDs
+        const deptIds = [...new Set(employees.map(emp => emp.department_id).filter(Boolean))];
+        const desigIds = [...new Set(employees.map(emp => emp.designation_id).filter(Boolean))];
+        
+        // Get organisation_id from localStorage
+        const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-884-7505e4aa88f7';
+        
+        // Fetch departments
+        if (deptIds.length > 0) {
+          const deptResponse = await departmentService.getDepartments({
+            organisation_id: organisationId,
+            page: 1,
+            page_size: 1000
+          });
+          
+          if (deptResponse.data) {
+            const deptMap: Record<string, string> = {};
+            deptResponse.data.forEach(dept => {
+              deptMap[dept.id] = dept.name;
+            });
+            setDepartmentNames(deptMap);
+          }
+        }
+        
+        // Fetch designations
+        if (desigIds.length > 0) {
+          const desigResponse = await designationService.getDesignations({
+            organisation_id: organisationId,
+            page: 1,
+            page_size: 1000
+          });
+          
+          if (desigResponse.data) {
+            const desigMap: Record<string, string> = {};
+            desigResponse.data.forEach(desig => {
+              desigMap[desig.id] = desig.name;
+            });
+            setDesignationNames(desigMap);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching names:', error);
+      } finally {
+        setIsLoadingNames(false);
+      }
+    };
+    
+    fetchNames();
+  }, [employees]);
 
   const columns: Column<Employee>[] = [
     {
@@ -54,12 +119,20 @@ export function EmployeeTable({
     {
       key: 'department_id',
       header: 'Department',
-      render: (value) => value || '-',
+      render: (value, employee) => {
+        if (!value) return '-';
+        if (isLoadingNames) return 'Loading...';
+        return departmentNames[value] || value;
+      },
     },
     {
       key: 'designation_id',
       header: 'Designation',
-      render: (value) => value || '-',
+      render: (value, employee) => {
+        if (!value) return '-';
+        if (isLoadingNames) return 'Loading...';
+        return designationNames[value] || value;
+      },
     },
     {
       key: 'status',
