@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
+import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { Employee, InsertEmployee } from '@shared/schema';
 import { Plus, Filter, Download, Upload } from 'lucide-react';
@@ -19,6 +20,15 @@ export default function EmployeeList() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  
+  // Confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+  
+  // Edit employee state
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [isLoadingEditData, setIsLoadingEditData] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -78,6 +88,9 @@ export default function EmployeeList() {
         title: 'Success',
         description: 'Employee updated successfully',
       });
+      setShowForm(false);
+      setIsEditMode(false);
+      setEmployeeToEdit(null);
       queryClient.invalidateQueries({ queryKey: ['employees', 'list'] });
     },
     onError: (error) => {
@@ -112,18 +125,61 @@ export default function EmployeeList() {
     createEmployeeMutation.mutate(data);
   };
 
+  const handleUpdateEmployee = async (data: InsertEmployee) => {
+    if (employeeToEdit) {
+      updateEmployeeMutation.mutate({
+        id: employeeToEdit.id,
+        ...data
+      });
+    }
+  };
+
   const handleViewEmployee = (employee: Employee) => {
     navigate(`/admin/employees/${employee.id}`);
   };
 
-  const handleEditEmployee = (employee: Employee) => {
-    // TODO: Implement edit employee functionality
-    console.log('Edit employee:', employee);
+  const handleEditEmployee = async (employee: Employee) => {
+    try {
+      setIsEditMode(true);
+      setShowForm(true);
+      setIsLoadingEditData(true);
+      
+      // Fetch complete employee data for editing
+      const response = await employeeService.getEmployee(employee.id);
+      if (response.status && response.data) {
+        setEmployeeToEdit(response.data);
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to fetch employee details for editing',
+          variant: 'destructive',
+        });
+        // Close form if data fetch failed
+        setShowForm(false);
+        setIsEditMode(false);
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch employee details for editing',
+        variant: 'destructive',
+      });
+      // Close form if data fetch failed
+      setShowForm(false);
+      setIsEditMode(false);
+    } finally {
+      setIsLoadingEditData(false);
+    }
   };
 
-  const handleDeleteEmployee = async (employee: Employee) => {
-    if (window.confirm(`Are you sure you want to delete ${employee.name}?`)) {
-      deleteEmployeeMutation.mutate(employee.id);
+  const handleDeleteEmployee = (employee: Employee) => {
+    setEmployeeToDelete(employee);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteEmployee = async () => {
+    if (employeeToDelete) {
+      deleteEmployeeMutation.mutate(employeeToDelete.id);
     }
   };
 
@@ -312,12 +368,35 @@ export default function EmployeeList() {
       )}
 
       {/* Employee Form Modal */}
-      <EmployeeForm
-        open={showForm}
-        onOpenChange={setShowForm}
-        onSubmit={handleCreateEmployee}
-        loading={createEmployeeMutation.isPending}
-      />
-    </div>
-  );
-}
+              <EmployeeForm
+          open={showForm}
+          onOpenChange={(open) => {
+            setShowForm(open);
+            if (!open) {
+              setIsEditMode(false);
+              setEmployeeToEdit(null);
+            }
+          }}
+          onSubmit={isEditMode ? handleUpdateEmployee : handleCreateEmployee}
+          loading={createEmployeeMutation.isPending || updateEmployeeMutation.isPending}
+          initialData={isEditMode ? employeeToEdit : undefined}
+          title={isEditMode ? 'Edit Employee' : 'Add New Employee'}
+          description={isEditMode ? 'Update the employee details below.' : 'Fill in the employee details below.'}
+          isEditMode={isEditMode}
+        />
+        
+        {/* Confirmation Dialog */}
+        <ConfirmationDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title="Delete Employee"
+          description="Are you sure you want to delete this employee? This action cannot be undone."
+          type="delete"
+          confirmText="Delete Employee"
+          onConfirm={confirmDeleteEmployee}
+          loading={deleteEmployeeMutation.isPending}
+          itemName={employeeToDelete?.name}
+        />
+      </div>
+    );
+  }
