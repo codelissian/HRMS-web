@@ -1,0 +1,121 @@
+## OneHR Frontend Architecture Guide
+
+Purpose: This file describes the base architecture, directory layout, patterns, and conventions to follow when creating or extending a project using this codebase.
+
+### Tech Stack
+- React 18 (functional components + hooks)
+- React Router v6 (routing)
+- MUI v5 (UI system) with custom theme factory and tokens
+- Context API (app-wide state)
+- Axios (HTTP) with a thin wrapper (`httpClient`)
+- Vite (dev/build)
+
+### Directory Layout
+```
+src/
+├─ assets/
+│  ├─ theme.js                 # createAppTheme(mode) factory (light/dark)
+│  └─ tokens.js                # color tokens used by theme
+├─ components/
+│  ├─ Auth/                    # Authentication-only UI
+│  │  ├─ AuthLayout.jsx        # Split brand/form layout for auth pages
+│  │  ├─ EmployeeLoginForm.jsx # Employee login form
+│  │  └─ AdminLoginForm.jsx    # Admin login form
+│  ├─ Layout/                  # App shell (global chrome)
+│  │  ├─ AppBar.jsx
+│  │  ├─ SidebarDrawer.jsx
+│  │  └─ ProtectedRoute.jsx
+│  └─ UI/                      # Reusable, generic UI primitives
+│     ├─ CustomCard.jsx
+│     ├─ CustomTable.jsx
+│     └─ CustomForm.jsx
+├─ context/
+│  ├─ AuthContext.jsx          # Auth/session state
+│  └─ ThemeModeContext.jsx     # Light/dark mode state
+├─ hooks/
+│  ├─ useApi.js                # useApi/useApiCall/useApiEffect
+│  └─ useBranches.js           # Example domain hook
+├─ pages/
+│  ├─ admin/                   # Admin-only screens
+│  ├─ employee/                # Employee-only screens
+│  ├─ Login.jsx                # Tabs → Employee/Admin forms
+│  ├─ Register.jsx             # Sign-up
+│  ├─ VerifyEmail.jsx          # Post-signup verification
+│  └─ ForgotPassword.jsx       # Reset flow
+├─ services/
+│  ├─ api/
+│  │  ├─ authApi.js
+│  │  └─ employeeApi.js        # Add more domain APIs here
+│  ├─ authToken.js             # JWT storage/helpers
+│  └─ httpClient.js            # Axios instance + interceptors
+├─ config/
+│  ├─ api.js                   # API config helpers (endpoints, errors)
+│  └─ endpoints.js             # Absolute endpoints map (optional)
+├─ App.jsx                     # Routing + Providers
+└─ main.jsx                    # App entry
+```
+
+### Responsibilities by Layer
+- Components/Auth: Authentication-only UI elements (forms/layout). No business logic besides form state/validation.
+- Components/Layout: Global chrome (app bar, drawer, route guard). No domain logic.
+- Components/UI: Reusable generic UI widgets (tables, cards, form wrapper).
+- Pages: Screen composition layer. Orchestrates hooks + services, renders domain UI.
+- Context: App-wide state (auth, theme). Side-effects contained here when possible.
+- Hooks: Reusable logic (API lifecycle, domain-specific helpers).
+- Services: Network access and integration with API (no UI code).
+- Config: API base URL, endpoints, misc helpers.
+- Assets: Theme tokens and theme factory.
+
+### Theming & Design System
+- Use `createAppTheme(mode)` with tokens from `assets/tokens.js`.
+- Never hardcode colors in components; prefer `theme.palette.*`, `theme.typography.*`, `theme.shape.*`, `theme.spacing()`.
+- Apply `CssBaseline` once in `App.jsx`.
+- Respect light/dark mode via `ThemeModeContext`.
+
+### Routing & Access Control
+- Declare routes in `App.jsx`.
+- Wrap protected routes in `ProtectedRoute` with `allowedRoles={["admin"] | ["employee"]}`.
+- Redirect based on role inside `ProtectedRoute`.
+
+### Authentication Flow (frontend)
+- `AuthContext` exposes: `login(identifier, password, apiResponse?)`, `register(userData)`, `logout()`, role helpers, and `loading`.
+- Token handling in `authToken` (set/get/clear, decode, expiry checks).
+- `httpClient` attaches token in request interceptor and handles 401 redirects.
+
+### API Integration Pattern
+- Create a service under `services/api/*Api.js` per domain (auth, employee, leaves, payroll...).
+- Each method returns `response.data` and maps server errors to friendly messages.
+- In components/pages, use `useApiCall` for single-shot actions or `useApi` for multiple calls.
+- Base URL from `VITE_API_BASE_URL` (see `.env`).
+
+### Creating a New Feature (Checklist)
+1) Service: `services/api/<feature>Api.js` with CRUD methods.
+2) Hook (optional): `hooks/use<Feature>.js` to encapsulate data flow and state.
+3) UI primitives if reusable: `components/UI/*`.
+4) Page(s): `pages/<role>/Feature.jsx` composing the hook + UI.
+5) Route(s): add in `App.jsx` under the correct role.
+6) Access: guard with `ProtectedRoute` and role-aware navigation.
+
+### Naming & Conventions
+- PascalCase for components/files (e.g., `EmployeeList.jsx`).
+- camelCase for functions/variables (e.g., `fetchEmployees`).
+- Services: `<domain>Api.js` with clear verbs (`get*`, `create*`, `update*`, `delete*`).
+- Avoid abbreviations; use descriptive names.
+
+
+### Tables
+- Use `CustomTable` for consistent head/body/pagination.
+- Chip/status columns via `type: 'chip'` and `chipColor` mapping.
+
+### Env & Config
+- `.env` keys: `VITE_API_BASE_URL`, optional debugging flags.
+- Keep all endpoint paths centralized (either in `config/api.js` or `config/endpoints.js`).
+
+### Performance
+- Prefer memoized selectors/hooks for heavy views.
+- Lazy-load large pages/routes when needed.
+- Cancel inflight requests on unmount via `useApi` / `AbortController`.
+
+
+
+This guide is the single source of truth for structure and patterns. New projects should copy this file and scaffold directories accordingly before development starts. 
