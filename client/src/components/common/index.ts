@@ -5,4 +5,5 @@ export { DataTable } from './DataTable';
 export { EmptyState } from './EmptyState';
 export { LoadingSpinner } from './LoadingSpinner';
 export { default as Snackbar } from './Snackbar';
-export { ConfirmationDialog } from './ConfirmationDialog'; 
+export { ConfirmationDialog } from './ConfirmationDialog';
+export { ColorPicker } from './ColorPicker'; 
