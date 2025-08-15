@@ -20,6 +20,8 @@ export function AttendancePolicyTable({
   onDelete
 }: AttendancePolicyTableProps) {
 
+
+
   const getStatusColor = (active: boolean) => {
     return active ? 'default' : 'secondary';
   };
@@ -79,7 +81,7 @@ export function AttendancePolicyTable({
     },
     {
       key: 'overtime_threshold_hours',
-      header: 'Overtime Threshold',
+      header: 'Overtime',
       render: (value) => (
         <span className="text-sm text-gray-900 dark:text-white">
           {value} hrs
@@ -88,26 +90,62 @@ export function AttendancePolicyTable({
     },
     {
       key: 'geo_tracking_enabled',
+      header: 'Location',
+      render: (_, policy) => (
+        <div className="space-y-1">
+          {policy.geo_tracking_enabled ? (
+            <div className="flex items-center gap-1">
+              <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                GPS
+              </Badge>
+              <span className="text-xs text-gray-500">
+                {policy.geo_radius_meters}m radius
+              </span>
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400">Disabled</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'web_attendance_enabled',
+      header: 'Attendance Methods',
+      render: (_, policy) => (
+        <div className="flex flex-wrap gap-1">
+          {policy.mobile_attendance_enabled && (
+            <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+              Mobile
+            </Badge>
+          )}
+          {policy.web_attendance_enabled && (
+            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+              Web
+            </Badge>
+          )}
+          {!policy.mobile_attendance_enabled && !policy.web_attendance_enabled && (
+            <span className="text-xs text-gray-400">None</span>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'selfie_required',
       header: 'Features',
       render: (_, policy) => (
         <div className="flex flex-wrap gap-1">
-          {policy.geo_tracking_enabled && (
-            <Badge variant="outline" className="text-xs">
-              Geo-tracking
-            </Badge>
-          )}
           {policy.selfie_required && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200">
               Selfie
             </Badge>
           )}
           {policy.break_management_enabled && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-200">
               Break Mgmt
             </Badge>
           )}
           {policy.regularization_enabled && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs bg-indigo-50 text-indigo-700 border-indigo-200">
               Regularization
             </Badge>
           )}
@@ -116,11 +154,18 @@ export function AttendancePolicyTable({
     },
     {
       key: 'created_at',
-      header: 'Created',
-      render: (date) => (
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {formatDate(date)}
-        </span>
+      header: 'Last Modified',
+      render: (_, policy) => (
+        <div className="space-y-1">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {formatDate(policy.modified_at || policy.created_at)}
+          </span>
+          {policy.modified_by && (
+            <div className="text-xs text-gray-400">
+              by {policy.modified_by}
+            </div>
+          )}
+        </div>
       ),
     },
   ];
@@ -150,7 +195,7 @@ export function AttendancePolicyTable({
       columns={columns}
       actions={actions}
       loading={loading}
-      searchable={true}
+      searchable={false}
       filterable={true}
     />
   );

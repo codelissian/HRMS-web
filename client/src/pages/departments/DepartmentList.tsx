@@ -569,29 +569,41 @@ export default function DepartmentList() {
   return (
     <>
       <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          {activeTab === 'departments' ? 'Departments' : 'Designations'}
-        </h1>
-        {activeTab === 'departments' ? (
-          <Button 
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => setIsAddDialogOpen(true)}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Department
-          </Button>
-        ) : (
-          <Button 
-            className="bg-green-600 hover:bg-green-700"
-            onClick={handleOpenDepartmentSelector}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Designation
-          </Button>
-        )}
-      </div>
+      {/* Search and Actions */}
+      <Card className="mb-6">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder={activeTab === 'departments' ? "Search departments..." : "Search designations..."}
+                value={activeTab === 'departments' ? searchTerm : designationSearchTerm}
+                onChange={(e) => activeTab === 'departments' ? setSearchTerm(e.target.value) : setDesignationSearchTerm(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              {activeTab === 'departments' ? (
+                <Button 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => setIsAddDialogOpen(true)}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Department
+                </Button>
+              ) : (
+                <Button 
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={handleOpenDepartmentSelector}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Designation
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
 
 
@@ -619,16 +631,7 @@ export default function DepartmentList() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-        <Input
-          placeholder={activeTab === 'departments' ? "Search departments..." : "Search designations..."}
-          value={activeTab === 'departments' ? searchTerm : designationSearchTerm}
-          onChange={(e) => activeTab === 'departments' ? setSearchTerm(e.target.value) : setDesignationSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+
 
       {/* Departments Tab Content */}
       {activeTab === 'departments' && (

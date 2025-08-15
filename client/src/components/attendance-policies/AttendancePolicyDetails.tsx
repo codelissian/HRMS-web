@@ -249,7 +249,7 @@ export function AttendancePolicyDetails({
           </Card>
 
           {/* Timestamps */}
-          {(policy.created_at || policy.updated_at) && (
+          {(policy.created_at || policy.modified_at) && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">System Information</CardTitle>
@@ -264,16 +264,26 @@ export function AttendancePolicyDetails({
                       <p className="text-sm text-gray-900 dark:text-white">
                         {formatDate(policy.created_at)}
                       </p>
+                      {policy.created_by && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          by {policy.created_by}
+                        </p>
+                      )}
                     </div>
                   )}
-                  {policy.updated_at && (
+                  {policy.modified_at && (
                     <div>
                       <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                        Last Updated
+                        Last Modified
                       </label>
                       <p className="text-sm text-gray-900 dark:text-white">
-                        {formatDate(policy.updated_at)}
+                        {formatDate(policy.modified_at)}
                       </p>
+                      {policy.modified_by && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          by {policy.modified_by}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>

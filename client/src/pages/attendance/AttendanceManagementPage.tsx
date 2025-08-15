@@ -13,8 +13,7 @@ import {
   Filter,
   Download,
   TrendingUp,
-  TrendingDown,
-  RefreshCw
+  TrendingDown
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService, AttendanceRecord, AttendanceStats } from '@/services/attendanceService';
@@ -55,21 +54,7 @@ export default function AttendanceManagementPage() {
   // Show loading state if either stats or attendance is loading
   const isLoading = statsLoading || attendanceLoading;
 
-  const handleRefresh = async () => {
-    try {
-      await Promise.all([refetchStats(), refetchAttendance()]);
-      toast({
-        title: "Success",
-        description: "Attendance data refreshed successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to refresh attendance data",
-        variant: "destructive",
-      });
-    }
-  };
+
 
   const stats = statsResponse?.data;
   const attendanceRecords = attendanceResponse?.data || [];
@@ -124,32 +109,32 @@ export default function AttendanceManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-            Attendance Management
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Monitor employee attendance and manage work schedules
-          </p>
-        </div>
-        
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-          <Button>
-            <Calendar className="h-4 w-4 mr-2" />
-            Generate Report
-          </Button>
-        </div>
-      </div>
+      {/* Search and Actions */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search employees..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
+            
+                         <div className="flex gap-2">
+               <Button variant="outline">
+                 <Download className="h-4 w-4 mr-2" />
+                 Export Report
+               </Button>
+               <Button>
+                 <Calendar className="h-4 w-4 mr-2" />
+                 Generate Report
+               </Button>
+             </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Month/Year Selection */}
       <Card>
