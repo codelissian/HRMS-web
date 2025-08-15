@@ -28,6 +28,19 @@ export function AttendancePolicyTable({
     return active ? 'Active' : 'Inactive';
   };
 
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return '-';
+    }
+  };
+
   const columns: Column<AttendancePolicy>[] = [
     {
       key: 'name',
@@ -101,6 +114,15 @@ export function AttendancePolicyTable({
         </div>
       ),
     },
+    {
+      key: 'created_at',
+      header: 'Created',
+      render: (date) => (
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {formatDate(date)}
+        </span>
+      ),
+    },
   ];
 
   const actions: TableAction<AttendancePolicy>[] = [
@@ -128,8 +150,8 @@ export function AttendancePolicyTable({
       columns={columns}
       actions={actions}
       loading={loading}
-      searchable={false}
-      filterable={false}
+      searchable={true}
+      filterable={true}
     />
   );
 }

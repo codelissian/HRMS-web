@@ -17,7 +17,6 @@ export interface Designation {
 }
 
 interface GetDesignationsRequest {
-  organisation_id: string;
   department_id?: string; // Make department_id optional
 }
 
@@ -28,7 +27,6 @@ interface DeleteDesignationRequest {
 interface CreateDesignationRequest {
   name: string;
   department_id: string;
-  organisation_id: string;
   description?: string;
 }
 
@@ -36,7 +34,6 @@ interface UpdateDesignationRequest {
   id: string;
   name: string;
   department_id: string;
-  organisation_id: string;
   description?: string;
 }
 
@@ -50,10 +47,10 @@ class DesignationService {
   }
 
   // New method to get all designations for an organization
-  async getAllDesignations(organisationId: string): Promise<ApiResponse<Designation[]>> {
+  async getAllDesignations(): Promise<ApiResponse<Designation[]>> {
     const response = await httpClient.post<ApiResponse<Designation[]>>(
       API_ENDPOINTS.DESIGNATIONS_LIST,
-      { organisation_id: organisationId }
+      {}
     );
     return response.data;
   }

@@ -74,16 +74,12 @@ export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = (
       setIsSubmitting(true);
       setError(null);
 
-      // Get organisation_id from localStorage
-      const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-88b4-7505e4aa88f7';
-      
       if (editMode && designationToEdit) {
         // Update existing designation
         const payload = {
           id: designationToEdit.id,
           name: formData.name.trim(),
           department_id: departmentId,
-          organisation_id: organisationId,
           description: formData.description.trim() || undefined
         };
 
@@ -105,7 +101,6 @@ export const CreateDesignationDialog: React.FC<CreateDesignationDialogProps> = (
         const payload = {
           name: formData.name.trim(),
           department_id: departmentId,
-          organisation_id: organisationId,
           description: formData.description.trim() || undefined
         };
 

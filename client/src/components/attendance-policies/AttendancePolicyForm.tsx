@@ -100,24 +100,12 @@ export function AttendancePolicyForm({
   }, [policy, mode, reset]);
 
   const onSubmit = async (data: AttendancePolicyFormData) => {
-    if (!user?.organisation_id) {
-      toast({
-        title: "Error",
-        description: "Organization ID not found",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setLoading(true);
     try {
       if (mode === 'create') {
         await import('@/services/attendancePolicyService').then(
           ({ AttendancePolicyService }) => 
-            AttendancePolicyService.create({
-              ...data,
-              organisation_id: user.organisation_id,
-            })
+            AttendancePolicyService.create(data)
         );
         toast({
           title: "Success",
@@ -129,7 +117,6 @@ export function AttendancePolicyForm({
             AttendancePolicyService.update({
               ...data,
               id: policy.id,
-              organisation_id: user.organisation_id,
             })
         );
         toast({

@@ -105,8 +105,7 @@ export function ShiftForm({ isOpen, onOpenChange }: ShiftFormProps) {
         name: formData.name,
         start: convertTimeToISO(formData.start),
         end: convertTimeToISO(formData.end),
-        grace_minutes: formData.grace_minutes,
-        organisation_id: organisationId
+        grace_minutes: formData.grace_minutes
       };
 
       try {

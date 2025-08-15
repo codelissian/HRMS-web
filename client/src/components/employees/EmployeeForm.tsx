@@ -160,7 +160,6 @@ export function EmployeeForm({
       const organisationId = getCurrentOrganizationId();
       
       const response = await designationService.getDesignations({
-        organisation_id: organisationId,
         department_id: departmentId
       });
 

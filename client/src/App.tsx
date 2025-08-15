@@ -19,6 +19,8 @@ import LeaveRequestList from "@/pages/leaves/LeaveRequestList";
 import CalendarPage from "@/pages/calendar/CalendarPage";
 import { ShiftsPage } from "@/pages/shifts";
 import { AttendancePoliciesPage } from "@/pages/attendance-policies";
+import { AttendanceManagementPage } from "@/pages/attendance";
+import LeaveTypesPage from "@/pages/leaves/LeaveTypesPage";
 import NotFound from "@/pages/not-found";
 import VerifyEmail from "@/pages/VerifyEmail";
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
@@ -88,9 +90,10 @@ function AppRoutes() {
         <Route path="employees/:id" element={<EmployeeDetail />} />
         <Route path="departments" element={<DepartmentList />} />
         <Route path="shifts" element={<ShiftsPage />} />
-        <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
-        <Route path="leave-requests" element={<LeaveRequestList />} />
-        <Route path="calendar" element={<CalendarPage />} />
+                                   <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
+                  <Route path="attendance" element={<AttendanceManagementPage />} />
+                  <Route path="leave-types" element={<LeaveTypesPage />} />
+                  <Route path="leaves" element={<LeaveRequestList />} />
         <Route path="" element={<Navigate to="/admin/dashboard" replace />} />
       </Route>
 
@@ -106,7 +109,6 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
         <Route path="leave-requests" element={<LeaveRequestList />} />
-        <Route path="calendar" element={<CalendarPage />} />
         <Route path="" element={<Navigate to="/employee/dashboard" replace />} />
       </Route>
 

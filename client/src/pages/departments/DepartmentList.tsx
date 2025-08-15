@@ -80,19 +80,15 @@ export default function DepartmentList() {
       
       // Check if user is authenticated
       if (!authToken.isAuthenticated()) {
-        setErrorMessage('Please log in to view departments');
         setLoading(false);
+        setErrorMessage('Please log in to view departments');
         return;
       }
       
-      // Get organisation_id from localStorage
-      const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-88b4-7505e4aa88f7';
-      
-      console.log('Fetching departments with organisation_id:', organisationId);
+      console.log('Fetching departments...');
       console.log('Auth token exists:', !!authToken.getToken());
       
       const response = await departmentService.getDepartments({
-        organisation_id: organisationId,
         active_flag: true,
         delete_flag: false,
         page: 1,
@@ -116,7 +112,7 @@ export default function DepartmentList() {
         setDepartments(departmentsWithDesignations);
         
         // Now fetch designations for all departments
-        await fetchAllDesignations(departmentsWithDesignations, organisationId);
+        await fetchAllDesignations(departmentsWithDesignations);
       } else {
         setErrorMessage(response.message || 'Failed to fetch departments');
       }
@@ -144,12 +140,9 @@ export default function DepartmentList() {
         return;
       }
       
-      // Get organisation_id from localStorage
-      const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-88b4-7505e4aa88f7';
+      console.log('Fetching all designations...');
       
-      console.log('Fetching all designations with organisation_id:', organisationId);
-      
-      const response = await designationService.getAllDesignations(organisationId);
+      const response = await designationService.getAllDesignations();
       
       console.log('Designations API Response:', response);
 
@@ -173,7 +166,7 @@ export default function DepartmentList() {
     setDesignationSearchTerm('');
   };
 
-  const fetchAllDesignations = async (departmentsList: DepartmentWithDesignations[], organisationId: string) => {
+  const fetchAllDesignations = async (departmentsList: DepartmentWithDesignations[]) => {
     try {
       console.log('Fetching designations for all departments...');
       
@@ -188,7 +181,6 @@ export default function DepartmentList() {
       const designationPromises = departmentsList.map(async (dept) => {
         try {
           const response = await designationService.getDesignations({
-            organisation_id: organisationId,
             department_id: dept.id
           });
           
@@ -251,16 +243,12 @@ export default function DepartmentList() {
       setErrorMessage(null);
       setSuccessMessage(null);
       
-      // Get organisation_id from localStorage
-      const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-88b4-7505e4aa88f7';
-      
-      console.log('Creating department with data:', { ...data, organisation_id: organisationId });
+      console.log('Creating department with data:', data);
       
       // Make API call to create department
       const response = await departmentService.createDepartment({
         name: data.name,
-        description: data.description || undefined,
-        organisation_id: organisationId
+        description: data.description || undefined
       });
       
       console.log('Create department API response:', response);
@@ -350,22 +338,17 @@ export default function DepartmentList() {
       setErrorMessage(null);
       setSuccessMessage(null);
       
-      // Get organisation_id from localStorage
-      const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-88b4-7505e4aa88f7';
-      
       console.log('Updating department with data:', { 
         id: data.id,
         name: data.name,
-        description: data.description,
-        organisation_id: organisationId 
+        description: data.description
       });
       
       // Make API call to update department
       const response = await departmentService.updateDepartment({
         id: data.id,
         name: data.name,
-        description: data.description,
-        organisation_id: organisationId
+        description: data.description
       });
       
       console.log('Update department API response:', response);
@@ -485,10 +468,7 @@ export default function DepartmentList() {
 
   const fetchDesignations = async (departmentId: string) => {
     try {
-      // Get organisation_id from localStorage
-      const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-88b4-7505e4aa88f7';
-      
-      // Update the department to show loading state
+      // Set the department to loading state
       setDepartments(prev => prev.map(dept => 
         dept.id === departmentId 
           ? { ...dept, designationsLoading: true, designationsError: undefined }
@@ -496,7 +476,6 @@ export default function DepartmentList() {
       ));
       
       const response = await designationService.getDesignations({
-        organisation_id: organisationId,
         department_id: departmentId
       });
       

@@ -48,13 +48,9 @@ export function EmployeeTable({
         const deptIds = [...new Set(employees.map(emp => emp.department_id).filter(Boolean))];
         const desigIds = [...new Set(employees.map(emp => emp.designation_id).filter(Boolean))];
         
-        // Get organisation_id from localStorage
-        const organisationId = localStorage.getItem('organisation_id') || '1823a724-3843-4aef-884-7505e4aa88f7';
-        
         // Fetch departments
         if (deptIds.length > 0) {
           const deptResponse = await departmentService.getDepartments({
-            organisation_id: organisationId,
             page: 1,
             page_size: 1000
           });
@@ -71,7 +67,6 @@ export function EmployeeTable({
         // Fetch designations
         if (desigIds.length > 0) {
           const desigResponse = await designationService.getDesignations({
-            organisation_id: organisationId,
             page: 1,
             page_size: 1000
           });

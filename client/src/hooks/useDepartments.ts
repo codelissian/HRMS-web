@@ -8,13 +8,9 @@ export function useDepartments(enabled: boolean = true) {
   const organisationId = user?.organisation_id;
 
   const { data: departmentsResponse, isLoading, error } = useQuery({
-    queryKey: ['departments', organisationId],
+    queryKey: ['departments'],
     queryFn: async () => {
-      const filters = organisationId ? {
-        organisation_id: organisationId,
-        page: 1,
-        page_size: 100
-      } : {
+      const filters = {
         page: 1,
         page_size: 100
       };

@@ -7,7 +7,6 @@ export interface CreateShiftData {
   start: string;
   end: string;
   grace_minutes: number;
-  organisation_id: string;
   active_flag?: boolean;
 }
 
@@ -56,10 +55,8 @@ export class ShiftService {
     }
   }
 
-  static async getShifts(organisationId: string): Promise<ShiftsResponse> {
-    const response = await httpClient.post(API_ENDPOINTS.SHIFTS_LIST, {
-      organisation_id: organisationId
-    });
+  static async getShifts(): Promise<ShiftsResponse> {
+    const response = await httpClient.post(API_ENDPOINTS.SHIFTS_LIST, {});
     return response.data;
   }
 

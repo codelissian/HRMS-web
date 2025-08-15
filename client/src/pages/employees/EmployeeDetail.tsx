@@ -8,7 +8,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
+import { EmployeeAttendanceCalendar } from '@/components/employees/EmployeeAttendanceCalendar';
 import { employeeService } from '@/services/employeeService';
+import { attendanceService } from '@/services/attendanceService';
 import { Employee } from '@shared/schema';
 import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -36,7 +38,7 @@ export default function EmployeeDetail() {
   // Fetch employee attendance
   const { data: attendanceResponse } = useQuery({
     queryKey: ['employee', 'attendance', id],
-    queryFn: () => employeeService.getAttendance(id!, { page: 1, page_size: 10 }),
+    queryFn: () => attendanceService.getEmployeeAttendance(id!, { page: 1, page_size: 100 }),
     enabled: !!id,
   });
 
@@ -230,32 +232,93 @@ export default function EmployeeDetail() {
         </TabsContent>
 
         <TabsContent value="attendance" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Attendance History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {attendanceResponse?.data && attendanceResponse.data.length > 0 ? (
-                <div className="space-y-2">
-                  {attendanceResponse.data.map((attendance: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center p-2 border rounded">
-                      <span>{attendance.date}</span>
-                      <Badge variant={attendance.status === 'present' ? 'default' : 'secondary'}>
-                        {attendance.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No attendance records found
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Convert API attendance data to calendar events */}
+          {(() => {
+            const attendanceEvents = attendanceResponse?.data?.map(attendance => ({
+              id: attendance.id,
+              date: attendance.date,
+              type: attendance.status === 'on-leave' ? 'leave' : 'attendance',
+              title: attendance.status === 'on-leave' ? 'On Leave' : 
+                     attendance.status === 'half-day' ? 'Half Day' : 
+                     attendance.status === 'present' ? 'Present' : 'Absent',
+              status: attendance.status,
+              leaveType: attendance.status === 'on-leave' ? 'personal' : undefined,
+              description: attendance.status === 'on-leave' ? 'Employee on leave' : undefined,
+              checkInTime: attendance.check_in_time,
+              checkOutTime: attendance.check_out_time,
+              totalHours: attendance.total_hours,
+              lateMinutes: attendance.late_minutes,
+              earlyDeparture: attendance.early_departure
+            })) || [];
+
+            return (
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Attendance Calendar
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <EmployeeAttendanceCalendar
+                      employeeId={employee.id}
+                      employeeName={employee.name}
+                      events={attendanceEvents}
+                      onDateClick={(date) => console.log('Date clicked:', date)}
+                      onEventClick={(event) => console.log('Event clicked:', event)}
+                    />
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Recent Attendance Records
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {attendanceResponse?.data && attendanceResponse.data.length > 0 ? (
+                      <div className="space-y-2">
+                        {attendanceResponse.data.map((attendance: any, index: number) => (
+                          <div key={index} className="flex justify-between items-center p-2 border rounded">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{attendance.date}</span>
+                                {attendance.check_in_time && (
+                                  <span className="text-sm text-gray-500">
+                                    In: {attendance.check_in_time}
+                                  </span>
+                                )}
+                                {attendance.check_out_time && (
+                                  <span className="text-sm text-gray-500">
+                                    Out: {attendance.check_out_time}
+                                  </span>
+                                )}
+                              </div>
+                              {attendance.total_hours && (
+                                <p className="text-sm text-gray-500">
+                                  Total: {attendance.total_hours}h
+                                </p>
+                              )}
+                            </div>
+                            <Badge variant={attendance.status === 'present' ? 'default' : 'secondary'}>
+                              {attendance.status}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 dark:text-gray-400 text-center py-4">
+                        No attendance records found
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          })()}
         </TabsContent>
 
         <TabsContent value="leaves" className="space-y-4">

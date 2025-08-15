@@ -6,7 +6,6 @@ import { FilterRequest, ApiResponse } from '@/types/api';
 interface CreateDepartmentRequest {
   name: string;
   description?: string;
-  organisation_id: string;
 }
 
 class DepartmentService {
@@ -34,7 +33,7 @@ class DepartmentService {
     return response.data;
   }
 
-  async updateDepartment(data: { id: string; name: string; description?: string; organisation_id: string }): Promise<ApiResponse<Department>> {
+  async updateDepartment(data: { id: string; name: string; description?: string }): Promise<ApiResponse<Department>> {
     const response = await httpClient.put<ApiResponse<Department>>(
       API_ENDPOINTS.DEPARTMENTS_UPDATE,
       data

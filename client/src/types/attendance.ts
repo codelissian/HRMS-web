@@ -17,7 +17,6 @@ export interface AttendancePolicy {
 }
 
 export interface CreateAttendancePolicyRequest {
-  organisation_id: string;
   name: string;
   geo_tracking_enabled: boolean;
   geo_radius_meters: number;
@@ -36,7 +35,6 @@ export interface UpdateAttendancePolicyRequest extends CreateAttendancePolicyReq
 }
 
 export interface ListAttendancePoliciesRequest {
-  organisation_id: string;
   page: number;
   page_size: number;
   search?: string;
