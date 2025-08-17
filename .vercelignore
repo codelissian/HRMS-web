@@ -11,5 +11,4 @@ dist
 .idea
 *.md
 attached_assets
-shared
 drizzle.config.ts 
