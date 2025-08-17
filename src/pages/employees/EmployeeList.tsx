@@ -250,42 +250,47 @@ export default function EmployeeList() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Employees
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400">
-            Manage your organisation's employees ({totalCount} total)
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleExportEmployees}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <label htmlFor="bulk-import">
-            <Button variant="outline" asChild>
-              <span>
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </span>
-            </Button>
-          </label>
-          <input
-            id="bulk-import"
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={handleBulkImport}
-            className="hidden"
-          />
-          <Button onClick={() => setShowForm(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Employee
-          </Button>
-        </div>
-      </div>
+      {/* Search and Actions */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="max-w-md"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleExportEmployees}>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </Button>
+              <label htmlFor="bulk-import">
+                <Button variant="outline" asChild>
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import
+                  </span>
+                </Button>
+              </label>
+              <input
+                id="bulk-import"
+                type="file"
+                accept=".xlsx,.xls,.csv"
+                onChange={handleBulkImport}
+                className="hidden"
+              />
+              <Button onClick={() => setShowForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Employee
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <Card>

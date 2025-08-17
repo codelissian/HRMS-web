@@ -109,5 +109,12 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
-  }
+  },
+  "main": "postcss.config.js",
+  "repository": {
+    "type": "git",
+    "url": "github.com-personal:codelissian/HRMS-web.git"
+  },
+  "author": "",
+  "description": ""
 }

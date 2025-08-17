@@ -58,6 +58,8 @@ export function DataTable<T extends Record<string, any>>({
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState('');
 
+
+
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     onSearch?.(query);

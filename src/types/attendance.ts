@@ -12,8 +12,11 @@ export interface AttendancePolicy {
   break_management_enabled: boolean;
   regularization_enabled: boolean;
   active_flag: boolean;
+  delete_flag: boolean;
   created_at?: string;
-  updated_at?: string;
+  modified_at?: string;
+  created_by?: string | null;
+  modified_by?: string | null;
 }
 
 export interface CreateAttendancePolicyRequest {

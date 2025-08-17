@@ -62,22 +62,29 @@ const ShiftsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Shifts</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Manage employee work shifts and schedules
-          </p>
-        </div>
-        
-        <Button
-          onClick={() => setIsCreateDialogOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <Clock className="h-4 w-4" />
-          Create Shift
-        </Button>
-      </div>
+      {/* Search and Actions */}
+      <Card className="mb-8">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1">
+              <Input
+                placeholder="Search shifts..."
+                className="max-w-md"
+              />
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="flex items-center gap-2"
+              >
+                <Clock className="h-4 w-4" />
+                Create Shift
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       {isLoading ? (
         <div className="text-center py-8">

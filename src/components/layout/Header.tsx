@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useLocation } from 'react-router-dom';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -17,6 +18,59 @@ interface HeaderProps {
 export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
+
+  const getPageTitle = () => {
+    const path = location.pathname;
+    
+    // Admin routes
+    if (path.startsWith('/admin')) {
+      if (path === '/admin/dashboard') return 'Dashboard';
+      if (path === '/admin/employees') return 'Employee Management';
+      if (path.startsWith('/admin/employees/')) return 'Employee Details';
+      if (path === '/admin/departments') return 'Department Management';
+      if (path === '/admin/shifts') return 'Shift Management';
+      if (path === '/admin/attendance-policies') return 'Attendance Policies';
+      if (path === '/admin/attendance') return 'Attendance Management';
+      if (path === '/admin/leave-types') return 'Leave Management';
+      if (path === '/admin/leaves') return 'Leave Requests';
+    }
+    
+    // Employee routes
+    if (path.startsWith('/employee')) {
+      if (path === '/employee/dashboard') return 'Dashboard';
+      if (path === '/employee/attendance-policies') return 'Attendance Policies';
+      if (path === '/employee/leave-requests') return 'Leave Requests';
+    }
+    
+    return 'Dashboard';
+  };
+
+  const getPageDescription = () => {
+    const path = location.pathname;
+    
+    // Admin routes
+    if (path.startsWith('/admin')) {
+      if (path === '/admin/dashboard') return `Welcome back, ${user?.name}`;
+      if (path === '/admin/employees') return 'Manage employee information and details';
+      if (path.startsWith('/admin/employees/')) return 'View and edit employee details';
+      if (path === '/admin/departments') return 'Manage departments and designations';
+      if (path === '/admin/shifts') return 'Configure work shifts and schedules';
+      if (path === '/admin/attendance-policies') return 'Set attendance rules and policies';
+      if (path === '/admin/attendance') return 'Monitor employee attendance and statistics';
+      if (path === '/admin/leave-types') return 'Configure leave types and policies';
+      if (path === '/admin/leaves') return 'Review and manage leave requests';
+    }
+    
+    // Employee routes
+    if (path.startsWith('/employee')) {
+      if (path === '/employee/dashboard') return `Welcome back, ${user?.name}`;
+      if (path === '/employee/attendance-policies') return 'View attendance policies and rules';
+      if (path === '/employee/leave-requests') return 'Manage your leave requests';
+    }
+    
+    return `Welcome back, ${user?.name}`;
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -39,10 +93,10 @@ export function Header({ onMenuClick }: HeaderProps) {
         </Button>
         <div>
           <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Dashboard
+            {getPageTitle()}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Welcome back, {user?.name}
+            {getPageDescription()}
           </p>
         </div>
       </div>

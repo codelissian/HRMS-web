@@ -95,14 +95,7 @@ export default function EmployeeDetail() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Employee Details
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400">
-              View and manage employee information
-            </p>
-          </div>
+
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setShowEditForm(true)}>

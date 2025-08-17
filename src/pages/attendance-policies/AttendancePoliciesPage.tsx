@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,30 +9,116 @@ import { AttendancePolicyDetails } from '@/components/attendance-policies/Attend
 import { AttendancePolicy } from '@/types/attendance';
 import { Plus, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAttendancePolicies } from '@/hooks/useAttendancePolicies';
+import { AttendancePolicyService } from '@/services/attendancePolicyService';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 export default function AttendancePoliciesPage() {
-  const {
-    policies,
-    loading,
-    total,
-    page,
-    pageSize,
-    searchQuery,
-    setPage,
-    setPageSize,
-    setSearchQuery,
-    refreshPolicies,
-  } = useAttendancePolicies();
-  
-  const { toast } = useToast();
+  const [showForm, setShowForm] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
   
   // Modal states
-  const [showForm, setShowForm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState<AttendancePolicy | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch attendance policies with React Query
+  const { 
+    data: policiesResponse, 
+    isLoading, 
+    error 
+  } = useQuery({
+    queryKey: ['attendance-policies', 'list', { 
+      page: currentPage, 
+      page_size: pageSize, 
+      search: searchQuery 
+    }],
+    queryFn: () => AttendancePolicyService.list({
+      page: currentPage,
+      page_size: pageSize,
+      search: searchQuery || undefined
+    }),
+  });
+
+  const policies = policiesResponse?.data || [];
+  const totalCount = policiesResponse?.total_count || 0;
+  const pageCount = policiesResponse?.page_count || 0;
+
+  // Log the data for debugging
+  console.log('📄 AttendancePoliciesPage - React Query Data:', {
+    policiesResponse,
+    policies,
+    totalCount,
+    pageCount,
+    isLoading,
+    error
+  });
+
+  // Create policy mutation
+  const createPolicyMutation = useMutation({
+    mutationFn: (data: any) => AttendancePolicyService.create(data),
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Attendance policy created successfully',
+      });
+      setShowForm(false);
+      queryClient.invalidateQueries({ queryKey: ['attendance-policies', 'list'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create policy',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Update policy mutation
+  const updatePolicyMutation = useMutation({
+    mutationFn: (data: any) => AttendancePolicyService.update(data),
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Attendance policy updated successfully',
+      });
+      setShowForm(false);
+      setFormMode('create');
+      setSelectedPolicy(null);
+      queryClient.invalidateQueries({ queryKey: ['attendance-policies', 'list'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to update policy',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Delete policy mutation
+  const deletePolicyMutation = useMutation({
+    mutationFn: (id: string) => AttendancePolicyService.delete(id),
+    onSuccess: () => {
+      toast({
+        title: 'Success',
+        description: 'Attendance policy deleted successfully',
+      });
+      queryClient.invalidateQueries({ queryKey: ['attendance-policies', 'list'] });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to delete policy',
+        variant: 'destructive',
+      });
+    },
+  });
+
   // Handle create new policy
   const handleCreate = () => {
     setFormMode('create');
@@ -55,7 +141,7 @@ export default function AttendancePoliciesPage() {
 
   // Handle form success
   const handleFormSuccess = () => {
-    refreshPolicies();
+    // refreshPolicies(); // This function is no longer available
     setShowForm(false);
   };
 
@@ -83,14 +169,7 @@ export default function AttendancePoliciesPage() {
   const handleDeletePolicy = async (policy: AttendancePolicy) => {
     if (window.confirm(`Are you sure you want to delete the policy "${policy.name}"?`)) {
       try {
-        await import('@/services/attendancePolicyService').then(
-          ({ AttendancePolicyService }) => AttendancePolicyService.delete(policy.id)
-        );
-        toast({
-          title: "Success",
-          description: "Policy deleted successfully",
-        });
-        refreshPolicies();
+        await deletePolicyMutation.mutateAsync(policy.id);
       } catch (error) {
         toast({
           title: "Error",
@@ -121,82 +200,34 @@ export default function AttendancePoliciesPage() {
 
   // Handle page change
   const handlePageChange = (newPage: number) => {
-    setPage(newPage);
+    setCurrentPage(newPage);
+  };
+
+
+
+  // Handle search
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
   };
 
   // Handle page size change
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
+    setCurrentPage(1); // Reset to first page when changing page size
   };
-
-  // Handle search
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setPage(1); // Reset to first page when searching
-  };
-
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery !== undefined) {
-        setPage(1); // Reset to first page when searching
-      }
-    }, 500); // 500ms delay
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
 
   // Calculate filtered policies
   const filteredPolicies = policies; // API handles filtering
 
-  const pageCount = Math.ceil(total / pageSize);
+  // const pageCount = Math.ceil(total / pageSize); // This line is now handled by policiesResponse
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Attendance Policies
-          </h2>
-          <p className="text-gray-500 dark:text-gray-400">
-            Manage attendance tracking rules and policies ({total} total)
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={refreshPolicies} disabled={loading}>
-            {loading ? 'Refreshing...' : 'Refresh'}
-          </Button>
-          <Button variant="outline" onClick={handleExportPolicies}>
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <label htmlFor="bulk-import">
-            <Button variant="outline" asChild>
-              <span>
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </span>
-            </Button>
-          </label>
-          <input
-            id="bulk-import"
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={handleBulkImport}
-            className="hidden"
-          />
-          <Button onClick={handleCreate}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Policy
-          </Button>
-        </div>
-      </div>
-
-      {/* Search */}
+      {/* Search and Actions */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex gap-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
               <Input
                 placeholder="Search policies by name..."
@@ -205,15 +236,38 @@ export default function AttendancePoliciesPage() {
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    setPage(1);
+                    setCurrentPage(1);
                   }
                 }}
                 className="max-w-md"
               />
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center">
-              Press Enter to search
-            </div>
+            
+                         <div className="flex gap-2">
+               <Button variant="outline" onClick={handleExportPolicies}>
+                 <Download className="h-4 w-4 mr-2" />
+                 Export
+               </Button>
+               <label htmlFor="bulk-import">
+                 <Button variant="outline" asChild>
+                   <span>
+                     <Upload className="h-4 w-4 mr-2" />
+                     Import
+                   </span>
+                 </Button>
+               </label>
+               <input
+                 id="bulk-import"
+                 type="file"
+                 accept=".xlsx,.xls,.csv"
+                 onChange={handleBulkImport}
+                 className="hidden"
+               />
+               <Button onClick={handleCreate}>
+                 <Plus className="h-4 w-4 mr-2" />
+                 Add Policy
+               </Button>
+             </div>
           </div>
         </CardContent>
       </Card>
@@ -221,14 +275,14 @@ export default function AttendancePoliciesPage() {
       {/* Attendance Policies Table */}
       <AttendancePolicyTable
         policies={filteredPolicies}
-        loading={loading}
+        loading={isLoading}
         onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDeletePolicy}
       />
 
       {/* Empty State */}
-      {!loading && filteredPolicies.length === 0 && (
+      {!isLoading && filteredPolicies.length === 0 && (
         <Card>
           <CardContent className="p-8 text-center">
             <div className="space-y-4">
@@ -263,7 +317,7 @@ export default function AttendancePoliciesPage() {
           <CardContent className="p-4">
             <div className="flex justify-between items-center">
               <div className="text-sm text-gray-500 dark:text-gray-400">
-                Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, total)} of {total} policies
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} policies
               </div>
               <div className="flex items-center gap-2">
                 <Select value={pageSize.toString()} onValueChange={(value) => handlePageSizeChange(parseInt(value))}>
@@ -282,7 +336,7 @@ export default function AttendancePoliciesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={page === 1}
+                    disabled={currentPage === 1}
                     onClick={() => handlePageChange(1)}
                   >
                     First
@@ -290,23 +344,23 @@ export default function AttendancePoliciesPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={page === 1}
-                    onClick={() => handlePageChange(Math.max(1, page - 1))}
+                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                   >
                     Previous
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={page === pageCount}
-                    onClick={() => handlePageChange(Math.min(pageCount, page + 1))}
+                    disabled={currentPage === pageCount}
+                    onClick={() => handlePageChange(Math.min(pageCount, currentPage + 1))}
                   >
                     Next
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={page === pageCount}
+                    disabled={currentPage === pageCount}
                     onClick={() => handlePageChange(pageCount)}
                   >
                     Last
