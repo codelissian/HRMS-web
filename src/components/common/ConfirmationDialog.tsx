@@ -10,9 +10,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Trash2, Info, AlertCircle } from 'lucide-react';
+import { AlertTriangle, Trash2, Info, AlertCircle, CheckCircle } from 'lucide-react';
 
-export type ConfirmationType = 'delete' | 'warning' | 'info' | 'danger';
+export type ConfirmationType = 'delete' | 'warning' | 'info' | 'danger' | 'approve';
 
 interface ConfirmationDialogProps {
   open: boolean;
@@ -49,6 +49,8 @@ export function ConfirmationDialog({
         return <AlertCircle className="h-5 w-5" />;
       case 'info':
         return <Info className="h-5 w-5" />;
+      case 'approve':
+        return <CheckCircle className="h-5 w-5" />;
       default:
         return <AlertTriangle className="h-5 w-5" />;
     }
@@ -63,6 +65,8 @@ export function ConfirmationDialog({
         return 'default';
       case 'info':
         return 'default';
+      case 'approve':
+        return 'default';
       default:
         return 'destructive';
     }
@@ -75,9 +79,11 @@ export function ConfirmationDialog({
       case 'warning':
         return 'Continue';
       case 'danger':
-        return 'Proceed';
+        return 'Reject';
       case 'info':
         return 'Confirm';
+      case 'approve':
+        return 'Approve';
       default:
         return 'Confirm';
     }
@@ -92,6 +98,8 @@ export function ConfirmationDialog({
         return 'text-yellow-600';
       case 'info':
         return 'text-blue-600';
+      case 'approve':
+        return 'text-green-600';
       default:
         return 'text-red-600';
     }
@@ -136,7 +144,13 @@ export function ConfirmationDialog({
               variant={getConfirmButtonVariant()}
               onClick={handleConfirm}
               disabled={loading}
-              className="min-w-[80px]"
+              className={`min-w-[80px] ${
+                type === 'approve' 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : type === 'danger'
+                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  : ''
+              }`}
             >
               {loading ? (
                 <div className="flex items-center space-x-2">

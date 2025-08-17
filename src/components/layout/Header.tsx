@@ -32,8 +32,8 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path === '/admin/shifts') return 'Shift Management';
       if (path === '/admin/attendance-policies') return 'Attendance Policies';
       if (path === '/admin/attendance') return 'Attendance Management';
-      if (path === '/admin/leave-types') return 'Leave Management';
-      if (path === '/admin/leaves') return 'Leave Requests';
+      if (path === '/admin/leave-requests') return 'Leave Requests';
+      if (path === '/admin/leave-management') return 'Leave Management';
     }
     
     // Employee routes
@@ -58,8 +58,8 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path === '/admin/shifts') return 'Configure work shifts and schedules';
       if (path === '/admin/attendance-policies') return 'Set attendance rules and policies';
       if (path === '/admin/attendance') return 'Monitor employee attendance and statistics';
-      if (path === '/admin/leave-types') return 'Configure leave types and policies';
-      if (path === '/admin/leaves') return 'Review and manage leave requests';
+      if (path === '/admin/leave-requests') return 'Review and manage leave requests';
+      if (path === '/admin/leave-management') return 'Configure leave types and policies';
     }
     
     // Employee routes
