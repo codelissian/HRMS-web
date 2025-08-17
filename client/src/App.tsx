@@ -15,12 +15,11 @@ import Dashboard from "@/pages/Dashboard";
 import EmployeeList from "@/pages/employees/EmployeeList";
 import EmployeeDetail from "@/pages/employees/EmployeeDetail";
 import DepartmentList from "@/pages/departments/DepartmentList";
-
-import CalendarPage from "@/pages/calendar/CalendarPage";
 import { ShiftsPage } from "@/pages/shifts";
 import { AttendancePoliciesPage } from "@/pages/attendance-policies";
 import { AttendanceManagementPage } from "@/pages/attendance";
-
+import { LeaveManagementPage } from "@/pages/leave-management";
+import { LeaveRequestsPage } from "@/pages/leave-requests";
 import NotFound from "@/pages/not-found";
 import VerifyEmail from "@/pages/VerifyEmail";
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
@@ -90,10 +89,10 @@ function AppRoutes() {
         <Route path="employees/:id" element={<EmployeeDetail />} />
         <Route path="departments" element={<DepartmentList />} />
         <Route path="shifts" element={<ShiftsPage />} />
-                                   <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
-                  <Route path="attendance" element={<AttendanceManagementPage />} />
-                  
-                  
+        <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
+        <Route path="attendance" element={<AttendanceManagementPage />} />
+        <Route path="leave-requests" element={<LeaveRequestsPage />} />
+        <Route path="leave-management" element={<LeaveManagementPage />} />
         <Route path="" element={<Navigate to="/admin/dashboard" replace />} />
       </Route>
 
@@ -108,7 +107,7 @@ function AppRoutes() {
       >
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
-        
+        <Route path="leave-requests" element={<LeaveRequestsPage />} />
         <Route path="" element={<Navigate to="/employee/dashboard" replace />} />
       </Route>
 
