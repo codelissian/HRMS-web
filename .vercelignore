@@ -1,0 +1,15 @@
+node_modules
+.git
+.gitignore
+README.md
+*.log
+.env
+.env.local
+.env.production
+dist
+.vscode
+.idea
+*.md
+attached_assets
+shared
+drizzle.config.ts 
