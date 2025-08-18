@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api';
+import { API_ENDPOINTS } from '@/services/api/endpoints';
 import { LeaveRequest, InsertLeaveRequest, Leave, InsertLeave } from '@shared/schema';
 import { FilterRequest, ApiResponse } from '@/types/api';
 
@@ -45,71 +46,70 @@ export interface LeaveStatistics {
 class LeaveService {
   // Leave Types
   async getLeaveTypes(filters: FilterRequest = { page: 1, page_size: 100 }): Promise<ApiResponse<Leave[]>> {
-    return apiClient.post<Leave[]>('/leaves/list', filters);
+    return apiClient.post<Leave[]>(API_ENDPOINTS.LEAVES_LIST, filters);
   }
 
   async createLeaveType(data: InsertLeave): Promise<ApiResponse<Leave>> {
-    return apiClient.post<Leave>('/leaves/create', data);
+    return apiClient.post<Leave>(API_ENDPOINTS.LEAVES_CREATE, data);
   }
 
   async updateLeaveType(data: Partial<Leave> & { id: string }): Promise<ApiResponse<Leave>> {
-    return apiClient.put<Leave>('/leaves/update', data);
+    return apiClient.put<Leave>(API_ENDPOINTS.LEAVES_UPDATE, data);
   }
 
   async deleteLeaveType(id: string): Promise<ApiResponse<void>> {
-    return apiClient.patch<void>('/leaves/delete', { id });
+    return apiClient.patch<void>(API_ENDPOINTS.LEAVES_DELETE, { id });
   }
 
   // Leave Requests
-  async getLeaveRequests(filters: LeaveRequestFilters = {}): Promise<ApiResponse<LeaveRequestWithDetails[]>> {
-    return apiClient.post<LeaveRequestWithDetails[]>('/leave-requests/list', filters);
+  async getLeaveRequests(filters: LeaveRequestFilters = { page: 1, page_size: 50 }): Promise<ApiResponse<LeaveRequestWithDetails[]>> {
+    return apiClient.post<LeaveRequestWithDetails[]>(API_ENDPOINTS.LEAVE_REQUESTS_LIST, filters);
   }
 
   async getLeaveRequest(id: string): Promise<ApiResponse<LeaveRequestWithDetails>> {
-    return apiClient.post<LeaveRequestWithDetails>('/leave-requests/one', { id });
+    return apiClient.post<LeaveRequestWithDetails>(API_ENDPOINTS.LEAVE_REQUESTS_ONE, { id });
   }
 
   async createLeaveRequest(data: InsertLeaveRequest): Promise<ApiResponse<LeaveRequest>> {
-    return apiClient.post<LeaveRequest>('/leave-requests/create', data);
+    return apiClient.post<LeaveRequest>(API_ENDPOINTS.LEAVE_REQUESTS_CREATE, data);
   }
 
   async updateLeaveRequest(data: Partial<LeaveRequest> & { id: string }): Promise<ApiResponse<LeaveRequest>> {
-    return apiClient.put<LeaveRequest>('/leave-requests/update', data);
+    return apiClient.put<LeaveRequest>(API_ENDPOINTS.LEAVE_REQUESTS_UPDATE, data);
   }
 
   async deleteLeaveRequest(id: string): Promise<ApiResponse<void>> {
-    return apiClient.patch<void>('/leave-requests/delete', { id });
+    return apiClient.patch<void>(API_ENDPOINTS.LEAVE_REQUESTS_DELETE, { id });
   }
 
   // Leave Statistics
   async getLeaveStatistics(filters: Partial<LeaveRequestFilters> = {}): Promise<ApiResponse<LeaveStatistics>> {
-    return apiClient.post<LeaveStatistics>('/leave-requests/statistics', filters);
+    return apiClient.post<LeaveStatistics>(API_ENDPOINTS.LEAVE_REQUESTS_STATISTICS, filters);
   }
 
-  // Employee Leave Balance
-  async getEmployeeLeaveBalance(employeeId: string): Promise<ApiResponse<any>> {
-    return apiClient.post('/leave-requests/employee-balance', { employee_id: employeeId });
-  }
-
-  // Bulk Operations
-  async bulkApproveRequests(requestIds: string[], approverComments?: string): Promise<ApiResponse<boolean>> {
-    return apiClient.put('/leave-requests/bulk-approve', {
-      request_ids: requestIds,
-      approver_comments: approverComments
+  // Approve Leave Request
+  async approveLeaveRequest(id: string, approverComments?: string): Promise<ApiResponse<LeaveRequest>> {
+    return apiClient.put<LeaveRequest>(API_ENDPOINTS.LEAVE_REQUESTS_UPDATE, {
+      id,
+      status: 'APPROVED',
+      approver_comments: approverComments,
+      approved_at: new Date().toISOString()
     });
   }
 
-  async bulkRejectRequests(requestIds: string[], rejectReason: string): Promise<ApiResponse<boolean>> {
-    return apiClient.put('/leave-requests/bulk-reject', {
-      request_ids: requestIds,
-      reject_reason: rejectReason
+  // Reject Leave Request
+  async rejectLeaveRequest(id: string, approverComments?: string): Promise<ApiResponse<LeaveRequest>> {
+    return apiClient.put<LeaveRequest>(API_ENDPOINTS.LEAVE_REQUESTS_UPDATE, {
+      id,
+      status: 'REJECTED',
+      approver_comments: approverComments,
+      rejected_at: new Date().toISOString()
     });
   }
 
-  // Export
-  async exportLeaveRequests(filters: LeaveRequestFilters = {}): Promise<ApiResponse<string>> {
-    return apiClient.post('/leave-requests/export', filters);
-  }
+  // Note: Employee Leave Balance, Bulk Operations, and Export endpoints 
+  // are not currently implemented in the backend
+  // These methods can be added when the backend endpoints are available
 }
 
 export const leaveService = new LeaveService();
