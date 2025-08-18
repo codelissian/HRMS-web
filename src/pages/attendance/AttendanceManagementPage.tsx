@@ -303,13 +303,13 @@ export default function AttendanceManagementPage() {
                         <img src={record.avatar} alt={record.employee_name} className="w-10 h-10 rounded-full" />
                       ) : (
                         <span className="text-sm font-medium text-gray-600">
-                          {record.employee_name.charAt(0).toUpperCase()}
+                          {record?.employee_name?.charAt(0).toUpperCase()}
                         </span>
                       )}
                     </div>
                     <div>
-                      <p className="font-medium">{record.employee_name}</p>
-                      <p className="text-sm text-muted-foreground">{record.department} • {record.designation}</p>
+                      <p className="font-medium">{record?.employee_name}</p>
+                      <p className="text-sm text-muted-foreground">{record?.department} • {record?.designation}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
@@ -323,7 +323,7 @@ export default function AttendanceManagementPage() {
                     </div>
                     <Badge className={getStatusColor(record.status)}>
                       {getStatusIcon(record.status)}
-                      <span className="ml-1 capitalize">{record.status.replace('-', ' ')}</span>
+                      <span className="ml-1 capitalize">{record?.status?.replace('-', ' ')}</span>
                     </Badge>
                   </div>
                 </div>
