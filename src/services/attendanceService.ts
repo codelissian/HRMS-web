@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api';
+import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS } from './api/endpoints';
 import { ApiResponse } from '@/types/api';
 
@@ -48,39 +48,33 @@ export interface AttendanceStats {
 
 class AttendanceService {
   async getAttendanceList(params: AttendanceListRequest = {}): Promise<ApiResponse<AttendanceRecord[]>> {
-    return apiClient.post(API_ENDPOINTS.ATTENDANCE_LIST, params);
+    const response = await httpClient.post<ApiResponse<AttendanceRecord[]>>(API_ENDPOINTS.ATTENDANCE_LIST, {});
+    return response.data;
   }
 
   async getAttendanceStats(month?: number, year?: number): Promise<ApiResponse<AttendanceStats>> {
-    const params: any = {};
-    if (month !== undefined) params.month = month;
-    if (year !== undefined) params.year = year;
-    
-    return apiClient.post('/dashboard/attendance-stats', params);
+    const response = await httpClient.post<ApiResponse<AttendanceStats>>('/dashboard/attendance-stats', {});
+    return response.data;
   }
 
   async getEmployeeAttendance(employeeId: string, params: AttendanceListRequest = {}): Promise<ApiResponse<AttendanceRecord[]>> {
-    return apiClient.post(`${API_ENDPOINTS.ATTENDANCE_LIST}`, {
-      ...params,
-      employee_id: employeeId
-    });
+    const response = await httpClient.post<ApiResponse<AttendanceRecord[]>>(API_ENDPOINTS.ATTENDANCE_LIST, {});
+    return response.data;
   }
 
   async createAttendance(data: Partial<AttendanceRecord>): Promise<ApiResponse<AttendanceRecord>> {
-    return apiClient.post(API_ENDPOINTS.ATTENDANCE_CREATE, data);
+    const response = await httpClient.post<ApiResponse<AttendanceRecord>>(API_ENDPOINTS.ATTENDANCE_CREATE, {});
+    return response.data;
   }
 
   async updateAttendance(id: string, data: Partial<AttendanceRecord>): Promise<ApiResponse<AttendanceRecord>> {
-    return apiClient.put(API_ENDPOINTS.ATTENDANCE_UPDATE, {
-      id,
-      ...data
-    });
+    const response = await httpClient.put<ApiResponse<AttendanceRecord>>(API_ENDPOINTS.ATTENDANCE_UPDATE, {});
+    return response.data;
   }
 
   async deleteAttendance(id: string): Promise<ApiResponse<boolean>> {
-    return apiClient.delete(API_ENDPOINTS.ATTENDANCE_DELETE, {
-      id
-    });
+    const response = await httpClient.patch<ApiResponse<boolean>>(API_ENDPOINTS.ATTENDANCE_DELETE, {});
+    return response.data;
   }
 }
 

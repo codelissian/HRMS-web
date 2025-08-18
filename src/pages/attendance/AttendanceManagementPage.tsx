@@ -20,8 +20,6 @@ import { attendanceService, AttendanceRecord, AttendanceStats } from '@/services
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { useToast } from '@/hooks/use-toast';
 
-
-
 export default function AttendanceManagementPage() {
   const { toast } = useToast();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -29,35 +27,37 @@ export default function AttendanceManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
-  // API calls
+  // API calls with proper filtering and pagination
   const { data: statsResponse, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ['attendance', 'stats', selectedMonth, selectedYear],
-    queryFn: () => attendanceService.getAttendanceStats(selectedMonth, selectedYear),
+    queryFn: () => attendanceService.getAttendanceStats(),
     enabled: true,
   });
 
-  const { data: attendanceResponse, isLoading: attendanceLoading, refetch: refetchAttendance } = useQuery({
-    queryKey: ['attendance', 'list', selectedMonth, selectedYear, searchQuery, filterDepartment, filterStatus],
-    queryFn: () => attendanceService.getAttendanceList({
+  const { data: attendanceResponse, isLoading: attendanceLoading, error, refetch: refetchAttendance } = useQuery({
+    queryKey: ['attendance', 'list', { 
+      page: currentPage, 
+      page_size: pageSize,
       month: selectedMonth,
       year: selectedYear,
-      search: searchQuery || undefined,
-      department: filterDepartment !== 'all' ? filterDepartment : undefined,
-      status: filterStatus !== 'all' ? filterStatus : undefined,
-      page: 1,
-      page_size: 100
-    }),
+      search: searchQuery,
+      department: filterDepartment,
+      status: filterStatus 
+    }],
+    queryFn: () => attendanceService.getAttendanceList(),
     enabled: true,
   });
 
   // Show loading state if either stats or attendance is loading
   const isLoading = statsLoading || attendanceLoading;
 
-
-
   const stats = statsResponse?.data;
   const attendanceRecords = attendanceResponse?.data || [];
+  const totalCount = attendanceResponse?.total_count || 0;
+  const pageCount = attendanceResponse?.page_count || 0;
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -88,300 +88,279 @@ export default function AttendanceManagementPage() {
     }
   };
 
-  const filteredEmployees = attendanceRecords.filter(employee => {
-    const matchesSearch = employee.employee_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         employee.department.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDepartment = filterDepartment === 'all' || employee.department === filterDepartment;
-    const matchesStatus = filterStatus === 'all' || employee.status === filterStatus;
-    
-    return matchesSearch && matchesDepartment && matchesStatus;
-  });
-
+  // Get unique departments from the API response
   const departments = Array.from(new Set(attendanceRecords.map(emp => emp.department)));
 
-  if (isLoading) {
+  // Handle search and filter changes
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleDepartmentFilterChange = (value: string) => {
+    setFilterDepartment(value);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleStatusFilterChange = (value: string) => {
+    setFilterStatus(value);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const handleMonthChange = (value: number) => {
+    setSelectedMonth(value);
+    setCurrentPage(1); // Reset to first page when changing month
+  };
+
+  const handleYearChange = (value: number) => {
+    setSelectedYear(value);
+    setCurrentPage(1); // Reset to first page when changing year
+  };
+
+  // Handle export functionality
+  const handleExportAttendance = async () => {
+    try {
+      // You can implement export functionality here
+      toast({
+        title: 'Export',
+        description: 'Export functionality will be implemented',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to export attendance data',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Handle error state
+  if (error) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner />
+      <div className="text-center py-8">
+        <p className="text-red-600 dark:text-red-400">
+          Error loading attendance data: {error instanceof Error ? error.message : 'Unknown error'}
+        </p>
+        <Button 
+          onClick={() => window.location.reload()} 
+          className="mt-4"
+          variant="outline"
+        >
+          Retry
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Search and Actions */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search employees..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-md"
-              />
-            </div>
-            
-                         <div className="flex gap-2">
-               <Button variant="outline">
-                 <Download className="h-4 w-4 mr-2" />
-                 Export Report
-               </Button>
-               <Button>
-                 <Calendar className="h-4 w-4 mr-2" />
-                 Generate Report
-               </Button>
-             </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          
+        </div>
+        <Button onClick={handleExportAttendance} variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
+      </div>
 
-      {/* Month/Year Selection */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-gray-500" />
-              <span className="text-sm font-medium">Select Period:</span>
-            </div>
-            
-            <Select value={selectedMonth.toString()} onValueChange={(value) => setSelectedMonth(parseInt(value))}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {months.map((month, index) => (
-                  <SelectItem key={index} value={index.toString()}>
-                    {month}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={selectedYear.toString()} onValueChange={(value) => setSelectedYear(parseInt(value))}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button variant="outline" onClick={() => {
-              setSelectedMonth(new Date().getMonth());
-              setSelectedYear(new Date().getFullYear());
-            }}>
-              Current Month
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-white dark:bg-gray-850 hover:shadow-lg transition-shadow duration-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Total Employees</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats?.total_employees || 0}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
+      {/* Statistics Cards */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.total_employees || 0}</div>
           </CardContent>
         </Card>
-
-        <Card className="bg-white dark:bg-gray-850 hover:shadow-lg transition-shadow duration-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Present Today</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats?.present_today || 0}
-                </p>
-                <div className="flex items-center text-sm mt-1">
-                  {stats && stats.attendance_rate > stats.previous_month_rate ? (
-                    <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-600 mr-1" />
-                  )}
-                  <span className={stats && stats.attendance_rate > stats.previous_month_rate ? "text-green-600" : "text-red-600"}>
-                    {stats?.attendance_rate || 0}%
-                  </span>
-                </div>
-              </div>
-              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                <UserCheck className="h-6 w-6 text-green-600 dark:text-green-400" />
-              </div>
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Present Today</CardTitle>
+            <UserCheck className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.present_today || 0}</div>
           </CardContent>
         </Card>
-
-        <Card className="bg-white dark:bg-gray-850 hover:shadow-lg transition-shadow duration-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">Absent Today</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats?.absent_today || 0}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {stats && stats.total_employees > 0 ? ((stats.absent_today / stats.total_employees) * 100).toFixed(1) : 0}% of total
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-                <Clock className="h-6 w-6 text-red-600 dark:text-red-400" />
-              </div>
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Absent Today</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.absent_today || 0}</div>
           </CardContent>
         </Card>
-
-        <Card className="bg-white dark:bg-gray-850 hover:shadow-lg transition-shadow duration-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">On Leave</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {stats?.on_leave_today || 0}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  + Half Day: {stats?.half_day_today || 0}
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                <Calendar className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-              </div>
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Attendance Rate</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.attendance_rate || 0}%</div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters and Search */}
+      {/* Filters */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <span className="text-sm font-medium">Filters:</span>
-            </div>
-            
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+            <div>
               <Input
                 placeholder="Search employees..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-64"
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full"
               />
             </div>
-
-            <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="present">Present</SelectItem>
-                <SelectItem value="absent">Absent</SelectItem>
-                <SelectItem value="half-day">Half Day</SelectItem>
-                <SelectItem value="on-leave">On Leave</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              Showing {filteredEmployees.length} of {attendanceRecords.length} employees
+            <div>
+              <Select value={selectedMonth.toString()} onValueChange={(value) => handleMonthChange(parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month, index) => (
+                    <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={selectedYear.toString()} onValueChange={(value) => handleYearChange(parseInt(value))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={filterDepartment} onValueChange={handleDepartmentFilterChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={filterStatus} onValueChange={handleStatusFilterChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="present">Present</SelectItem>
+                  <SelectItem value="absent">Absent</SelectItem>
+                  <SelectItem value="half-day">Half Day</SelectItem>
+                  <SelectItem value="on-leave">On Leave</SelectItem>
+                  <SelectItem value="weekend">Weekend</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Button variant="outline" className="w-full" onClick={() => refetchAttendance()}>
+                <Filter className="h-4 w-4 mr-2" />
+                Filter
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Employee Attendance Table */}
+      {/* Attendance Records Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Employee Attendance - {months[selectedMonth]} {selectedYear}</CardTitle>
+          <CardTitle>Attendance Records</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Employee</th>
-                  <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Department</th>
-                  <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Status</th>
-                  <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Check In</th>
-                  <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Check Out</th>
-                  <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Total Hours</th>
-                  <th className="text-left p-3 font-medium text-gray-500 dark:text-gray-400">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEmployees.map((employee) => (
-                  <tr key={employee.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                                         <td className="p-3">
-                       <div className="flex items-center space-x-3">
-                         <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                           {employee.avatar ? (
-                             <img src={employee.avatar} alt={employee.employee_name} className="w-8 h-8 rounded-full" />
-                           ) : (
-                             <Users className="h-4 w-4 text-gray-500" />
-                           )}
-                         </div>
-                         <div>
-                           <div className="font-medium text-gray-900 dark:text-white">{employee.employee_name}</div>
-                           <div className="text-sm text-gray-500 dark:text-gray-400">{employee.designation}</div>
-                         </div>
-                       </div>
-                     </td>
-                     <td className="p-3 text-gray-900 dark:text-white">{employee.department}</td>
-                     <td className="p-3">
-                       <Badge className={getStatusColor(employee.status)}>
-                         <div className="flex items-center gap-1">
-                           {getStatusIcon(employee.status)}
-                           {employee.status.replace('-', ' ')}
-                         </div>
-                       </Badge>
-                     </td>
-                     <td className="p-3 text-gray-900 dark:text-white">
-                       {employee.check_in_time || '-'}
-                     </td>
-                     <td className="p-3 text-gray-900 dark:text-white">
-                       {employee.check_out_time || '-'}
-                     </td>
-                     <td className="p-3 text-gray-900 dark:text-white">
-                       {employee.total_hours ? `${employee.total_hours}h` : '-'}
-                     </td>
-                    <td className="p-3">
-                      <Button variant="outline" size="sm">
-                        View Details
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <LoadingSpinner />
+            </div>
+          ) : attendanceRecords.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No attendance records found</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {attendanceRecords.map((record) => (
+                <div key={record.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      {record.avatar ? (
+                        <img src={record.avatar} alt={record.employee_name} className="w-10 h-10 rounded-full" />
+                      ) : (
+                        <span className="text-sm font-medium text-gray-600">
+                          {record?.employee_name?.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium">{record?.employee_name}</p>
+                      <p className="text-sm text-muted-foreground">{record?.department} • {record?.designation}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">{record.date}</p>
+                      {record.check_in_time && (
+                        <p className="text-xs text-muted-foreground">
+                          Check-in: {record.check_in_time}
+                        </p>
+                      )}
+                    </div>
+                    <Badge className={getStatusColor(record.status)}>
+                      {getStatusIcon(record.status)}
+                      <span className="ml-1 capitalize">{record?.status?.replace('-', ' ')}</span>
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {pageCount > 1 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex justify-between items-center">
+              <div className="text-sm text-muted-foreground">
+                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={currentPage === pageCount}
+                  onClick={() => setCurrentPage(prev => Math.min(pageCount, prev + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

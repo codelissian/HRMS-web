@@ -89,6 +89,8 @@ function AppRoutes() {
         <Route path="employees/:id" element={<EmployeeDetail />} />
         <Route path="departments" element={<DepartmentList />} />
         <Route path="shifts" element={<ShiftsPage />} />
+        <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
+        <Route path="attendance" element={<AttendanceManagementPage />} />
         <Route path="leave-requests" element={<LeaveRequestsPage />} />
         <Route path="leave-management" element={<LeaveManagementPage />} />
         <Route path="" element={<Navigate to="/admin/dashboard" replace />} />
