@@ -114,7 +114,7 @@ export default function LeaveRequestsPage() {
         search: searchTerm || undefined,
         department_id: selectedDepartment === 'all' ? undefined : selectedDepartment,
         status: (statusFilter === 'all' ? undefined : statusFilter) as 'pending' | 'approved' | 'rejected' | 'cancelled' | undefined,
-        include: ['employee']
+        include: ['employee', 'leave']
       };
 
       console.log('Fetching leave requests with filters:', filters);
@@ -478,10 +478,10 @@ export default function LeaveRequestsPage() {
                 <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Employee</th>
                   <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Leave Type</th>
-                                      <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Duration</th>
-                    <th className="text-center py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Status</th>
-                    <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider whitespace-nowrap">Applied Date</th>
-                    <th className="text-center py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Actions</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Duration</th>
+                  <th className="text-center py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Status</th>
+                  <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider whitespace-nowrap">Applied Date</th>
+                  <th className="text-center py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody>                {isLoadingRequests ? (
@@ -506,9 +506,9 @@ export default function LeaveRequestsPage() {
                           </div>
                         </div>
                       </td>
-                                              <td className="py-4 px-6">
+                        <td className="py-4 px-6">
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Leave ID:
+                            Leave Type: {request.leave.name}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                           Reason: {request.reason}
@@ -520,16 +520,16 @@ export default function LeaveRequestsPage() {
                             {new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}
                           </div>
                           <div className="text-gray-500 dark:text-gray-400">
-                            {request.total_days} day{request.total_days > 1 ? 's' : ''}
+                            {request.total_days} day{request.total_days > 1 ? "'s" : ''}
                           </div>
                         </div>
                       </td>
 
-                                              <td className="py-4 px-6 text-center">
-                          <div className="flex justify-center">
-                            {getStatusBadge(request.status)}
-                          </div>
-                        </td>
+                      <td className="py-4 px-6 text-center">
+                        <div className="flex justify-center">
+                          {getStatusBadge(request.status)}
+                        </div>
+                      </td>
                       <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">
                         {new Date(request.created_at).toLocaleDateString()}
                       </td>
