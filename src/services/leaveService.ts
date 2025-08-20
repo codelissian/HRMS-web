@@ -67,7 +67,10 @@ class LeaveService {
   }
 
   async getLeaveRequest(id: string): Promise<ApiResponse<LeaveRequestWithDetails>> {
-    return apiClient.post<LeaveRequestWithDetails>(API_ENDPOINTS.LEAVE_REQUESTS_ONE, { id });
+    return apiClient.post<LeaveRequestWithDetails>(API_ENDPOINTS.LEAVE_REQUESTS_ONE, { 
+      id,
+      include: ["leave", "employee"]
+    });
   }
 
   async createLeaveRequest(data: InsertLeaveRequest): Promise<ApiResponse<LeaveRequest>> {

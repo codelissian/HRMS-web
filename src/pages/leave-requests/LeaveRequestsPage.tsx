@@ -653,7 +653,7 @@ export default function LeaveRequestsPage() {
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Leave Information</h3>
                     <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Leave ID:</span> {selectedLeaveRequest.leave_id || 'N/A'}</div>
+                      <div><span className="font-medium">Leave Type:</span> {selectedLeaveRequest.leave.name || 'N/A'}</div>
                       <div><span className="font-medium">Reason:</span> {selectedLeaveRequest.reason || 'N/A'}</div>
                       <div><span className="font-medium">Comments:</span> {selectedLeaveRequest.comments || 'N/A'}</div>
                       <div className="flex items-center gap-2">
