@@ -81,11 +81,32 @@ export const authToken = {
   // Method to extract and store organisation_id from login response
   processLoginResponse(response: any): void {
     // Extract organisation_id from various possible locations in the response
-    console.log(response.data.admin.organisations[0].id);
-    let organisationId = response?.data?.admin?.organisations[0].id;
+    let organisationId = null;
+    
+    // Try to get organisation_id from different possible locations
+    if (response?.data?.admin?.organisations?.[0]?.id) {
+      organisationId = response.data.admin.organisations[0].id;
+    } else if (response?.data?.admin?.organisation?.id) {
+      organisationId = response.data.admin.organisation.id;
+    } else if (response?.data?.employee?.organisation?.id) {
+      organisationId = response.data.employee.organisation.id;
+    } else if (response?.data?.organisation?.id) {
+      organisationId = response.data.organisation.id;
+    } else if (response?.admin?.organisations?.[0]?.id) {
+      organisationId = response.admin.organisations[0].id;
+    } else if (response?.admin?.organisation?.id) {
+      organisationId = response.admin.organisation.id;
+    } else if (response?.employee?.organisation?.id) {
+      organisationId = response.employee.organisation.id;
+    } else if (response?.organisation?.id) {
+      organisationId = response.organisation.id;
+    }
     
     if (organisationId) {
       this.setorganisationId(organisationId);
+      console.log('✅ Organisation ID set:', organisationId);
+    } else {
+      console.warn('⚠️ No organisation ID found in login response');
     }
   }
 }; 
