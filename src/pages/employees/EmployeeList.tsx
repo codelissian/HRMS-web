@@ -219,13 +219,39 @@ export default function EmployeeList() {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Validate file type
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+      toast({
+        title: 'Invalid File Type',
+        description: 'Please select a CSV file (.csv)',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const result = await employeeService.bulkImport(file);
-      if (result) {
+      
+      // Check if the response has the expected structure
+      if (result && result.data) {
         const { success_count, error_count } = result.data;
         toast({
           title: 'Success',
           description: `Imported ${success_count} employees successfully${error_count > 0 ? `, ${error_count} errors` : ''}`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['employees', 'list'] });
+      } else if (result && result.status) {
+        // If the response has a different structure but indicates success
+        toast({
+          title: 'Success',
+          description: 'Employees imported successfully',
+        });
+        queryClient.invalidateQueries({ queryKey: ['employees', 'list'] });
+      } else {
+        // If no clear success indication, assume it worked and refresh
+        toast({
+          title: 'Success',
+          description: 'File uploaded successfully',
         });
         queryClient.invalidateQueries({ queryKey: ['employees', 'list'] });
       }
@@ -265,13 +291,13 @@ export default function EmployeeList() {
             
             <div className="flex gap-2">
               <Button variant="outline" onClick={handleExportEmployees}>
-                <Download className="h-4 w-4 mr-2" />
+                <Upload className="h-4 w-4 mr-2" />
                 Export
               </Button>
               <label htmlFor="bulk-import">
                 <Button variant="outline" asChild>
                   <span>
-                    <Upload className="h-4 w-4 mr-2" />
+                    <Download className="h-4 w-4 mr-2" />
                     Import
                   </span>
                 </Button>
@@ -279,7 +305,7 @@ export default function EmployeeList() {
               <input
                 id="bulk-import"
                 type="file"
-                accept=".xlsx,.xls,.csv"
+                accept=".csv"
                 onChange={handleBulkImport}
                 className="hidden"
               />

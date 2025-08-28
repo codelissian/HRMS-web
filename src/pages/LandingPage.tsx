@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +9,25 @@ import { Users, Calendar, BarChart3, Shield, Clock, FileText, Star, ArrowRight }
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { user, loading, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    // If user is already authenticated, redirect to appropriate dashboard
+    if (isAuthenticated && user && !loading) {
+      const dashboardPath = user.role === 'admin' ? '/admin/dashboard' : '/employee/dashboard';
+      navigate(dashboardPath, { replace: true });
+    }
+  }, [isAuthenticated, user, loading, navigate]);
+
+  // Show loading while checking authentication
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  // If already authenticated, don't render landing page (will redirect)
+  if (isAuthenticated && user) {
+    return null;
+  }
   
   const features = [
     {
