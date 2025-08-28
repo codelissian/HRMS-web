@@ -20,6 +20,7 @@ import { AttendancePoliciesPage } from "@/pages/attendance-policies";
 import { AttendanceManagementPage } from "@/pages/attendance";
 import { LeaveManagementPage } from "@/pages/leave-management";
 import { LeaveRequestsPage } from "@/pages/leave-requests";
+import { OrganizationPage } from "@/pages/organization";
 import NotFound from "@/pages/not-found";
 import VerifyEmail from "@/pages/VerifyEmail";
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
@@ -85,6 +86,7 @@ function AppRoutes() {
         }
       >
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="organization" element={<OrganizationPage />} />
         <Route path="employees" element={<EmployeeList />} />
         <Route path="employees/:id" element={<EmployeeDetail />} />
         <Route path="departments" element={<DepartmentList />} />
