@@ -144,14 +144,21 @@ class EmployeeService {
    * Bulk import employees
    */
   async bulkImport(file: File): Promise<ApiResponse<{ success_count: number; error_count: number; errors: any[] }>> {
+    // Get organisation ID from auth token
+    const organisationId = localStorage.getItem('user_data') ? 
+      JSON.parse(localStorage.getItem('user_data')!).organisation_id : null;
+
+    // Use FormData approach with explicit organisation_id
     const formData = new FormData();
     formData.append('file', file);
-    
+    formData.append('organisation_id', organisationId);
+
     const response = await httpClient.post<ApiResponse<{ success_count: number; error_count: number; errors: any[] }>>(
-      '/employees/bulk-import',
+      '/aggregation/organisation_data/upload',
       formData,
       {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        includeOrganisationId: false  // Bypass interceptor to avoid conflicts
       }
     );
     return response.data;

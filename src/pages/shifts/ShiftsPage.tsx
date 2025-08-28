@@ -5,6 +5,8 @@ import { Clock, Edit, Power, PowerOff, Trash2 } from 'lucide-react';
 import { useShifts } from '../../contexts/ShiftsContext';
 import { formatTimeForDisplay } from '../../lib/shift-utils';
 import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Input } from '../../components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
