@@ -1,19 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { EmployeeForm } from '@/components/employees/EmployeeForm';
+import { ConfirmationDialog } from '@/components/common';
+import { employeeService } from '@/services/employeeService';
+import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Employee } from '../../../shared/schema';
+import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
-import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { EmployeeAttendanceCalendar } from '@/components/employees/EmployeeAttendanceCalendar';
-import { employeeService } from '@/services/employeeService';
 import { attendanceService } from '@/services/attendanceService';
-import { Employee } from '@shared/schema';
-import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 export default function EmployeeDetail() {
