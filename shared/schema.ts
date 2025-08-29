@@ -293,3 +293,17 @@ export type InsertRole = z.infer<typeof insertRoleSchema>;
 
 export type Permission = typeof permissions.$inferSelect;
 export type InsertPermission = z.infer<typeof insertPermissionSchema>;
+
+// Extended types for employees with included relations
+export interface EmployeeWithDepartment extends Employee {
+  department?: Department;
+}
+
+export interface EmployeeWithDesignation extends Employee {
+  designation?: Designation;
+}
+
+export interface EmployeeWithRelations extends Employee {
+  department?: Department;
+  designation?: Designation;
+}

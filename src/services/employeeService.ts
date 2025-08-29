@@ -1,14 +1,15 @@
 import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS } from '@/services/api/endpoints';
-import { Employee, InsertEmployee } from '../../shared/schema';
+import { Employee, InsertEmployee, EmployeeWithRelations } from '../../shared/schema';
 import { FilterRequest, ApiResponse } from '@/types/api';
 
 class EmployeeService {
   /**
    * Get all employees with filters and pagination
+   * Supports include parameter for department and designation data
    */
-  async getEmployees(filters: FilterRequest): Promise<ApiResponse<Employee[]>> {
-    const response = await httpClient.post<ApiResponse<Employee[]>>(API_ENDPOINTS.EMPLOYEES_LIST, filters);
+  async getEmployees(filters: FilterRequest & { include?: string[] }): Promise<ApiResponse<EmployeeWithRelations[]>> {
+    const response = await httpClient.post<ApiResponse<EmployeeWithRelations[]>>(API_ENDPOINTS.EMPLOYEES_LIST, filters);
     return response.data;
   }
 
