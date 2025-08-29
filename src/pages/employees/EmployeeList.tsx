@@ -7,7 +7,7 @@ import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
-import { Employee, InsertEmployee } from '@shared/schema';
+import { Employee, InsertEmployee } from '../../../shared/schema';
 import { Plus, Filter, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';

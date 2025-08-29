@@ -1,6 +1,6 @@
 import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS } from '@/services/api/endpoints';
-import { Employee, InsertEmployee } from '@shared/schema';
+import { Employee, InsertEmployee } from '../../shared/schema';
 import { FilterRequest, ApiResponse } from '@/types/api';
 
 class EmployeeService {

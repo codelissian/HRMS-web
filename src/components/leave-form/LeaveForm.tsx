@@ -16,7 +16,7 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Leave } from '@shared/schema';
+import { Leave } from '../../../shared/schema';
 import { ColorPicker } from '@/components/common';
 
 // Leave form schema

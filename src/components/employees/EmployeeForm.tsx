@@ -1,6 +1,6 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { insertEmployeeSchema, InsertEmployee } from '@shared/schema';
+import { insertEmployeeSchema, InsertEmployee } from '../../../shared/schema';
 import { z } from 'zod';
 
 // Extended schema that includes the code field and handles date strings from API
