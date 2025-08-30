@@ -306,4 +306,22 @@ export interface EmployeeWithDesignation extends Employee {
 export interface EmployeeWithRelations extends Employee {
   department?: Department;
   designation?: Designation;
+  shift?: Shift;
+  employee_leaves?: Array<{
+    id: string;
+    employee_id: string;
+    leave_id: string;
+    balance: number;
+    last_accrual_date: string | null;
+    next_accrual_date: string | null;
+    total_accrued: number;
+    total_consumed: number;
+    active_flag: boolean | null;
+    delete_flag: boolean | null;
+    modified_at: string | null;
+    created_at: string | null;
+    created_by: string | null;
+    modified_by: string | null;
+    leave: Leave;
+  }>;
 }
