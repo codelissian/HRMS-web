@@ -72,26 +72,71 @@ export default function LeaveRequestsPage() {
         requestBody.department_id = departmentId;
       }
       
+      console.log('🔍 Fetching statistics for department:', departmentId);
       const response = await leaveService.getLeaveStatistics(requestBody);
+      console.log('📊 Statistics API response:', response);
       
       if (response.status && response.data) {
         // Transform the API response to match expected format
         const apiData = response.data as any;
-        const transformedStats = {
-          total_requests: (apiData.PENDING || 0) + (apiData.APPROVED || 0) + (apiData.REJECTED || 0) + (apiData.CANCELLED || 0) + (apiData.PARTIALLY_APPROVED || 0),
-          pending_requests: apiData.PENDING || 0,
-          approved_requests: apiData.APPROVED || 0,
-          rejected_requests: apiData.REJECTED || 0,
-          cancelled_requests: apiData.CANCELLED || 0,
-          total_days_requested: 0,
-          average_processing_time: 0,
-          leave_type_distribution: {},
-          department_distribution: {}
-        };
+        console.log('📊 Raw API data:', apiData);
         
+        // Handle different possible response structures
+        let transformedStats;
+        
+        if (typeof apiData === 'object' && apiData !== null) {
+          // Check if it's the expected structure with status counts
+          if (apiData.PENDING !== undefined || apiData.APPROVED !== undefined) {
+            transformedStats = {
+              total_requests: (apiData.PENDING || 0) + (apiData.APPROVED || 0) + (apiData.REJECTED || 0) + (apiData.CANCELLED || 0) + (apiData.PARTIALLY_APPROVED || 0),
+              pending_requests: apiData.PENDING || 0,
+              approved_requests: apiData.APPROVED || 0,
+              rejected_requests: apiData.REJECTED || 0,
+              cancelled_requests: apiData.CANCELLED || 0,
+              total_days_requested: apiData.total_days_requested || 0,
+              average_processing_time: apiData.average_processing_time || 0,
+              leave_type_distribution: apiData.leave_type_distribution || {},
+              department_distribution: apiData.department_distribution || {}
+            };
+          } else if (apiData.total_requests !== undefined) {
+            // If it's already in the expected format
+            transformedStats = apiData;
+          } else {
+            // Fallback: try to extract counts from any available data
+            transformedStats = {
+              total_requests: apiData.total || apiData.count || 0,
+              pending_requests: apiData.pending || 0,
+              approved_requests: apiData.approved || 0,
+              rejected_requests: apiData.rejected || 0,
+              cancelled_requests: apiData.cancelled || 0,
+              total_days_requested: apiData.total_days || 0,
+              average_processing_time: apiData.avg_processing_time || 0,
+              leave_type_distribution: apiData.leave_types || {},
+              department_distribution: apiData.departments || {}
+            };
+          }
+        } else {
+          // Fallback for unexpected data types
+          transformedStats = {
+            total_requests: 0,
+            pending_requests: 0,
+            approved_requests: 0,
+            rejected_requests: 0,
+            cancelled_requests: 0,
+            total_days_requested: 0,
+            average_processing_time: 0,
+            leave_type_distribution: {},
+            department_distribution: {}
+          };
+        }
+        
+        console.log('📊 Transformed statistics:', transformedStats);
         setStatistics(transformedStats);
+      } else {
+        console.log('❌ Statistics response not successful:', response);
       }
     } catch (error) {
+      console.error('❌ Error fetching statistics:', error);
       // Keep existing statistics on error
     } finally {
       setIsLoadingStats(false);
@@ -328,6 +373,68 @@ export default function LeaveRequestsPage() {
 
 
 
+      {/* Status Tabs */}
+      <div className="bg-white dark:bg-gray-850 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="px-6 py-4">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setStatusFilter('all')}
+              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                statusFilter === 'all'
+                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              All ({statistics.total_requests})
+            </button>
+            
+            <button
+              onClick={() => setStatusFilter('pending')}
+              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                statusFilter === 'pending'
+                  ? 'bg-yellow-500 text-white shadow-md shadow-yellow-500/25'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              Pending ({statistics.pending_requests})
+            </button>
+            
+            <button
+              onClick={() => setStatusFilter('approved')}
+              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                statusFilter === 'approved'
+                  ? 'bg-green-500 text-white shadow-md shadow-green-500/25'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              Approved ({statistics.approved_requests})
+            </button>
+            
+            <button
+              onClick={() => setStatusFilter('rejected')}
+              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                statusFilter === 'rejected'
+                  ? 'bg-red-500 text-white shadow-md shadow-red-500/25'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              Rejected ({statistics.rejected_requests})
+            </button>
+            
+            <button
+              onClick={() => setStatusFilter('cancelled')}
+              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                statusFilter === 'cancelled'
+                  ? 'bg-gray-500 text-white shadow-md shadow-gray-500/25'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              Cancelled ({statistics.cancelled_requests})
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
@@ -462,9 +569,22 @@ export default function LeaveRequestsPage() {
         </CardContent>
       </Card>
 
-      {/* Leave Requests Title */}
+      {/* Leave Requests Title and Summary */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leave Requests</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leave Requests</h2>
+          {statusFilter !== 'all' && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Showing {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} requests 
+              ({leaveRequests.length} of {totalCount})
+            </p>
+          )}
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Total: {totalCount} requests
+          </p>
+        </div>
       </div>
 
       {/* Leave Requests Table */}
