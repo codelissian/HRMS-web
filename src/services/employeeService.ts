@@ -170,8 +170,10 @@ class EmployeeService {
    */
   async bulkImport(file: File): Promise<ApiResponse<{ success_count: number; error_count: number; errors: any[] }>> {
     // Get organisation ID from auth token
-    const organisationId = localStorage.getItem('user_data') ? 
-      JSON.parse(localStorage.getItem('user_data')!).organisation_id : null;
+    const organisationId: any = localStorage.getItem('hrms_organisation_id');
+    if (!organisationId) {
+      throw new Error('Organisation ID not found');
+    }
 
     // Use FormData approach with explicit organisation_id
     const formData = new FormData();
