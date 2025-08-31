@@ -1,19 +1,16 @@
 import { DataTable, Column, TableAction } from '@/components/common/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Employee } from '../../../shared/schema';
+import { Employee, EmployeeWithRelations } from '../../../shared/schema';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { useState, useEffect } from 'react';
-import { departmentService } from '@/services/departmentService';
-import { designationService } from '@/services/designationService';
 
 interface EmployeeTableProps {
-  employees: Employee[];
+  employees: EmployeeWithRelations[];
   loading?: boolean;
-  onView: (employee: Employee) => void;
-  onEdit: (employee: Employee) => void;
-  onDelete: (employee: Employee) => void;
+  onView: (employee: EmployeeWithRelations) => void;
+  onEdit: (employee: EmployeeWithRelations) => void;
+  onDelete: (employee: EmployeeWithRelations) => void;
 }
 
 export function EmployeeTable({ 
@@ -24,11 +21,6 @@ export function EmployeeTable({
   onDelete 
 }: EmployeeTableProps) {
   
-  // State for department and designation names
-  const [departmentNames, setDepartmentNames] = useState<Record<string, string>>({});
-  const [designationNames, setDesignationNames] = useState<Record<string, string>>({});
-  const [isLoadingNames, setIsLoadingNames] = useState(false);
-  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -37,59 +29,7 @@ export function EmployeeTable({
       .toUpperCase();
   };
 
-  // Fetch department and designation names
-  useEffect(() => {
-    const fetchNames = async () => {
-      if (employees.length === 0) return;
-      
-      setIsLoadingNames(true);
-      try {
-        // Get unique department and designation IDs
-        const deptIds = [...new Set(employees.map(emp => emp.department_id).filter(Boolean))];
-        const desigIds = [...new Set(employees.map(emp => emp.designation_id).filter(Boolean))];
-        
-        // Fetch departments
-        if (deptIds.length > 0) {
-          const deptResponse = await departmentService.getDepartments({
-            page: 1,
-            page_size: 1000
-          });
-          
-          if (deptResponse.data) {
-            const deptMap: Record<string, string> = {};
-            deptResponse.data.forEach(dept => {
-              deptMap[dept.id] = dept.name;
-            });
-            setDepartmentNames(deptMap);
-          }
-        }
-        
-        // Fetch designations
-        if (desigIds.length > 0) {
-          const desigResponse = await designationService.getDesignations({
-            page: 1,
-            page_size: 1000
-          });
-          
-          if (desigResponse.data) {
-            const desigMap: Record<string, string> = {};
-            desigResponse.data.forEach(desig => {
-              desigMap[desig.id] = desig.name;
-            });
-            setDesignationNames(desigMap);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching names:', error);
-      } finally {
-        setIsLoadingNames(false);
-      }
-    };
-    
-    fetchNames();
-  }, [employees]);
-
-  const columns: Column<Employee>[] = [
+  const columns: Column<EmployeeWithRelations>[] = [
     {
       key: 'name',
       header: 'Employee',
@@ -116,8 +56,7 @@ export function EmployeeTable({
       header: 'Department',
       render: (value, employee) => {
         if (!value) return '-';
-        if (isLoadingNames) return 'Loading...';
-        return departmentNames[value] || value;
+        return employee.department?.name || value;
       },
     },
     {
@@ -125,8 +64,7 @@ export function EmployeeTable({
       header: 'Designation',
       render: (value, employee) => {
         if (!value) return '-';
-        if (isLoadingNames) return 'Loading...';
-        return designationNames[value] || value;
+        return employee.designation?.name || value;
       },
     },
     {
@@ -148,7 +86,7 @@ export function EmployeeTable({
     },
   ];
 
-  const actions: TableAction<Employee>[] = [
+  const actions: TableAction<EmployeeWithRelations>[] = [
     {
       label: 'View',
       icon: Eye,

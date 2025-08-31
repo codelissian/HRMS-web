@@ -46,7 +46,25 @@ export interface LeaveStatistics {
 class LeaveService {
   // Leave Types
   async getLeaveTypes(filters: FilterRequest = { page: 1, page_size: 100 }): Promise<ApiResponse<Leave[]>> {
-    return httpClient.post<Leave[]>(API_ENDPOINTS.LEAVES_LIST, filters);
+    try {
+      const response = await httpClient.post<any>(API_ENDPOINTS.LEAVES_LIST, filters);
+      
+      // Extract the actual data from the nested response structure
+      const apiResponse: ApiResponse<Leave[]> = {
+        status: response.data.status,
+        data: response.data.data || [],
+        message: response.data.message || 'Success',
+        total_count: response.data.total_count,
+        page: response.data.page,
+        page_count: response.data.page_count,
+        page_size: response.data.page_size
+      };
+      
+      return apiResponse;
+    } catch (error) {
+      console.error('Error fetching leave types:', error);
+      throw error;
+    }
   }
 
   async createLeaveType(data: InsertLeave): Promise<ApiResponse<Leave>> {
@@ -63,14 +81,50 @@ class LeaveService {
 
   // Leave Requests
   async getLeaveRequests(filters: LeaveRequestFilters = { page: 1, page_size: 50 }): Promise<ApiResponse<LeaveRequestWithDetails[]>> {
-    return httpClient.post<LeaveRequestWithDetails[]>(API_ENDPOINTS.LEAVE_REQUESTS_LIST, filters);
+    try {
+      const response = await httpClient.post<any>(API_ENDPOINTS.LEAVE_REQUESTS_LIST, filters);
+      
+      // Extract the actual data from the nested response structure
+      const apiResponse: ApiResponse<LeaveRequestWithDetails[]> = {
+        status: response.data.status,
+        data: response.data.data || [],
+        message: response.data.message || 'Success',
+        total_count: response.data.total_count,
+        page: response.data.page,
+        page_count: response.data.page_count,
+        page_size: response.data.page_size
+      };
+      
+      return apiResponse;
+    } catch (error) {
+      console.error('Error fetching leave requests:', error);
+      throw error;
+    }
   }
 
   async getLeaveRequest(id: string): Promise<ApiResponse<LeaveRequestWithDetails>> {
-    return httpClient.post<LeaveRequestWithDetails>(API_ENDPOINTS.LEAVE_REQUESTS_ONE, { 
-      id,
-      include: ["leave", "employee"]
-    });
+    try {
+      const response = await httpClient.post<any>(API_ENDPOINTS.LEAVE_REQUESTS_ONE, { 
+        id,
+        include: ["leave", "employee"]
+      });
+      
+      // Extract the actual data from the nested response structure
+      const apiResponse: ApiResponse<LeaveRequestWithDetails> = {
+        status: response.data.status,
+        data: response.data.data,
+        message: response.data.message || 'Success',
+        total_count: response.data.total_count,
+        page: response.data.page,
+        page_count: response.data.page_count,
+        page_size: response.data.page_size
+      };
+      
+      return apiResponse;
+    } catch (error) {
+      console.error('Error fetching leave request:', error);
+      throw error;
+    }
   }
 
   async createLeaveRequest(data: InsertLeaveRequest): Promise<ApiResponse<LeaveRequest>> {
@@ -87,27 +141,77 @@ class LeaveService {
 
   // Leave Statistics
   async getLeaveStatistics(filters: Partial<LeaveRequestFilters> = {}): Promise<ApiResponse<LeaveStatistics>> {
-    return httpClient.post<LeaveStatistics>(API_ENDPOINTS.LEAVE_REQUESTS_STATISTICS, filters);
+    try {
+      const response = await httpClient.post<any>(API_ENDPOINTS.LEAVE_REQUESTS_STATISTICS, filters);
+      
+      // Extract the actual data from the nested response structure
+      const apiResponse: ApiResponse<LeaveStatistics> = {
+        status: response.data.status,
+        data: response.data.data,
+        message: response.data.message || 'Success',
+        total_count: response.data.total_count,
+        page: response.data.page,
+        page_count: response.data.page_count,
+        page_size: response.data.page_size
+      };
+      
+      return apiResponse;
+    } catch (error) {
+      console.error('Error fetching leave statistics:', error);
+      throw error;
+    }
   }
 
   // Approve Leave Request
   async approveLeaveRequest(id: string, approverComments?: string): Promise<ApiResponse<LeaveRequest>> {
-    return httpClient.put<LeaveRequest>(API_ENDPOINTS.LEAVE_REQUESTS_UPDATE, {
-      id,
-      status: 'APPROVED',
-      approver_comments: approverComments,
-      approved_at: new Date().toISOString()
-    });
+    try {
+      const response = await httpClient.put<any>(`${API_ENDPOINTS.LEAVE_REQUESTS_UPDATE}_status`, {
+        id,
+        status: 'APPROVED'
+      });
+      
+      // Extract the actual data from the nested response structure
+      const apiResponse: ApiResponse<LeaveRequest> = {
+        status: response.data.status,
+        data: response.data.data,
+        message: response.data.message || 'Leave request approved successfully',
+        total_count: response.data.total_count,
+        page: response.data.page,
+        page_count: response.data.page_count,
+        page_size: response.data.page_size
+      };
+      
+      return apiResponse;
+    } catch (error) {
+      console.error('Error approving leave request:', error);
+      throw error;
+    }
   }
 
   // Reject Leave Request
   async rejectLeaveRequest(id: string, approverComments?: string): Promise<ApiResponse<LeaveRequest>> {
-    return httpClient.put<LeaveRequest>(API_ENDPOINTS.LEAVE_REQUESTS_UPDATE, {
-      id,
-      status: 'REJECTED',
-      approver_comments: approverComments,
-      rejected_at: new Date().toISOString()
-    });
+    try {
+      const response = await httpClient.put<any>(`${API_ENDPOINTS.LEAVE_REQUESTS_UPDATE}_status`, {
+        id,
+        status: 'REJECTED'
+      });
+      
+      // Extract the actual data from the nested response structure
+      const apiResponse: ApiResponse<LeaveRequest> = {
+        status: response.data.status,
+        data: response.data.data,
+        message: response.data.message || 'Leave request rejected successfully',
+        total_count: response.data.total_count,
+        page: response.data.page,
+        page_count: response.data.page_count,
+        page_size: response.data.page_size
+      };
+      
+      return apiResponse;
+    } catch (error) {
+      console.error('Error rejecting leave request:', error);
+      throw error;
+    }
   }
 
   // Note: Employee Leave Balance, Bulk Operations, and Export endpoints 

@@ -7,7 +7,7 @@ import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
-import { Employee, InsertEmployee } from '../../../shared/schema';
+import { Employee, InsertEmployee, EmployeeWithRelations } from '../../../shared/schema';
 import { Plus, Filter, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -23,18 +23,18 @@ export default function EmployeeList() {
   
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+  const [employeeToDelete, setEmployeeToDelete] = useState<EmployeeWithRelations | null>(null);
   
   // Edit employee state
   const [isEditMode, setIsEditMode] = useState(false);
-  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [employeeToEdit, setEmployeeToEdit] = useState<EmployeeWithRelations | null>(null);
   const [isLoadingEditData, setIsLoadingEditData] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  // Fetch employees with proper filtering
+  // Fetch employees with proper filtering and include department/designation data
   const { 
     data: employeesResponse, 
     isLoading, 
@@ -53,6 +53,7 @@ export default function EmployeeList() {
       search: searchTerm || undefined,
       department_id: departmentFilter === 'all' ? undefined : departmentFilter,
       status: statusFilter === 'all' ? undefined : statusFilter,
+      include: ['department', 'designation']
     }),
   });
 
@@ -399,35 +400,54 @@ export default function EmployeeList() {
       )}
 
       {/* Employee Form Modal */}
-              <EmployeeForm
-          open={showForm}
-          onOpenChange={(open) => {
-            setShowForm(open);
-            if (!open) {
-              setIsEditMode(false);
-              setEmployeeToEdit(null);
-            }
-          }}
-          onSubmit={isEditMode ? handleUpdateEmployee : handleCreateEmployee}
-          loading={createEmployeeMutation.isPending || updateEmployeeMutation.isPending}
-          initialData={isEditMode ? employeeToEdit : undefined}
-          title={isEditMode ? 'Edit Employee' : 'Add New Employee'}
-          description={isEditMode ? 'Update the employee details below.' : 'Fill in the employee details below.'}
-          isEditMode={isEditMode}
-        />
-        
-        {/* Confirmation Dialog */}
-        <ConfirmationDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          title="Delete Employee"
-          description="Are you sure you want to delete this employee? This action cannot be undone."
-          type="delete"
-          confirmText="Delete Employee"
-          onConfirm={confirmDeleteEmployee}
-          loading={deleteEmployeeMutation.isPending}
-          itemName={employeeToDelete?.name}
-        />
-      </div>
-    );
-  }
+      <EmployeeForm
+        open={showForm}
+        onOpenChange={(open) => {
+          setShowForm(open);
+          if (!open) {
+            setIsEditMode(false);
+            setEmployeeToEdit(null);
+          }
+        }}
+        onSubmit={isEditMode ? handleUpdateEmployee : handleCreateEmployee}
+        loading={createEmployeeMutation.isPending || updateEmployeeMutation.isPending}
+                  initialData={isEditMode && employeeToEdit ? {
+            name: employeeToEdit.name,
+            mobile: employeeToEdit.mobile,
+            email: employeeToEdit.email,
+            password: employeeToEdit.password,
+            included_in_payroll: employeeToEdit.included_in_payroll,
+            date_of_birth: employeeToEdit.date_of_birth,
+            address: employeeToEdit.address,
+            emergency_contact: employeeToEdit.emergency_contact,
+            pan_number: employeeToEdit.pan_number,
+            status: employeeToEdit.status,
+            joining_date: employeeToEdit.joining_date,
+            organisation_id: employeeToEdit.organisation_id,
+            department_id: employeeToEdit.department_id,
+            designation_id: employeeToEdit.designation_id,
+            shift_id: employeeToEdit.shift_id,
+            bank_details: employeeToEdit.bank_details,
+            role_id: employeeToEdit.role_id,
+            code: employeeToEdit.id?.slice(0, 8).toUpperCase() || 'EMP001'
+          } as any : undefined}
+        title={isEditMode ? 'Edit Employee' : 'Add New Employee'}
+        description={isEditMode ? 'Update the employee details below.' : 'Fill in the employee details below.'}
+        isEditMode={isEditMode}
+      />
+      
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Employee"
+        description="Are you sure you want to delete this employee? This action cannot be undone."
+        type="delete"
+        confirmText="Delete Employee"
+        onConfirm={confirmDeleteEmployee}
+        loading={deleteEmployeeMutation.isPending}
+        itemName={employeeToDelete?.name}
+      />
+    </div>
+  );
+}

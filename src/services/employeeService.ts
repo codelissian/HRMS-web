@@ -1,23 +1,48 @@
 import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS } from '@/services/api/endpoints';
-import { Employee, InsertEmployee } from '../../shared/schema';
+import { Employee, InsertEmployee, EmployeeWithRelations } from '../../shared/schema';
 import { FilterRequest, ApiResponse } from '@/types/api';
 
 class EmployeeService {
   /**
    * Get all employees with filters and pagination
+   * Supports include parameter for department and designation data
    */
-  async getEmployees(filters: FilterRequest): Promise<ApiResponse<Employee[]>> {
-    const response = await httpClient.post<ApiResponse<Employee[]>>(API_ENDPOINTS.EMPLOYEES_LIST, filters);
+  async getEmployees(filters: FilterRequest & { include?: string[] }): Promise<ApiResponse<EmployeeWithRelations[]>> {
+    const response = await httpClient.post<ApiResponse<EmployeeWithRelations[]>>(API_ENDPOINTS.EMPLOYEES_LIST, filters);
     return response.data;
   }
 
   /**
    * Get a single employee by ID
+   * Supports include parameter for department and designation data
    */
-  async getEmployee(id: string): Promise<ApiResponse<Employee>> {
-    const response = await httpClient.post<ApiResponse<Employee>>(API_ENDPOINTS.EMPLOYEES_ONE, { id });
-    return response.data;
+  async getEmployee(id: string, include?: string[]): Promise<ApiResponse<EmployeeWithRelations>> {
+    try {
+      const requestBody: { id: string; include?: string[] } = { id };
+      
+      if (include && include.length > 0) {
+        requestBody.include = include;
+      }
+      
+      const response = await httpClient.post<any>(API_ENDPOINTS.EMPLOYEES_ONE, requestBody);
+      
+      // Extract the actual data from the nested response structure
+      const apiResponse: ApiResponse<EmployeeWithRelations> = {
+        status: response.data.status,
+        data: response.data.data,
+        message: response.data.message || 'Success',
+        total_count: response.data.total_count,
+        page: response.data.page,
+        page_count: response.data.page_count,
+        page_size: response.data.page_size
+      };
+      
+      return apiResponse;
+    } catch (error) {
+      console.error('Error fetching employee:', error);
+      throw error;
+    }
   }
 
   /**

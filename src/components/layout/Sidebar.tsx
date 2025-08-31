@@ -13,7 +13,8 @@ import {
   FileText, 
   ShieldQuestion, 
   Settings,
-  X
+  X,
+  Globe
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -32,6 +33,7 @@ const baseNavigation = [
               { name: 'Attendance Management', href: 'attendance', icon: Clock, section: 'Attendance & Leave', roles: ['admin', 'hr_manager'] },
   { name: 'Roles & Permissions', href: 'roles', icon: ShieldQuestion, section: 'Administration', roles: ['admin'] },
   { name: 'Settings', href: 'settings', icon: Settings, section: 'Administration', roles: ['admin'] },
+  { name: 'Organization', href: 'organization', icon: Globe, section: 'Organization', roles: ['admin'] },
 ];
 
 export function Sidebar({ open, setOpen }: SidebarProps) {
