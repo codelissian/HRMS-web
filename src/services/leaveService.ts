@@ -1,6 +1,6 @@
 import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS } from '@/services/api/endpoints';
-import { LeaveRequest, InsertLeaveRequest, Leave, InsertLeave } from '../../shared/schema';
+import { LeaveRequest, Leave } from '../types/database';
 import { FilterRequest, ApiResponse } from '@/types/api';
 
 export interface LeaveRequestWithDetails extends LeaveRequest {
@@ -67,7 +67,7 @@ class LeaveService {
     }
   }
 
-  async createLeaveType(data: InsertLeave): Promise<ApiResponse<Leave>> {
+  async createLeaveType(data: Partial<Leave>): Promise<ApiResponse<Leave>> {
     return httpClient.post<Leave>(API_ENDPOINTS.LEAVES_CREATE, data);
   }
 

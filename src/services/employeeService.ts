@@ -1,6 +1,6 @@
 import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS } from '@/services/api/endpoints';
-import { Employee, InsertEmployee, EmployeeWithRelations } from '../../shared/schema';
+import { Employee, EmployeeWithRelations } from '../types/database';
 import { FilterRequest, ApiResponse } from '@/types/api';
 
 class EmployeeService {
@@ -48,7 +48,7 @@ class EmployeeService {
   /**
    * Create a new employee
    */
-  async createEmployee(data: InsertEmployee): Promise<ApiResponse<Employee>> {
+  async createEmployee(data: Partial<Employee>): Promise<ApiResponse<Employee>> {
     const response = await httpClient.post<ApiResponse<Employee>>(API_ENDPOINTS.EMPLOYEES_CREATE, data);
     return response.data;
   }
