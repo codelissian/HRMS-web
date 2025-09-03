@@ -7,7 +7,7 @@ import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
-import { Employee, InsertEmployee, EmployeeWithRelations } from '../../../shared/schema';
+import { Employee, EmployeeWithRelations } from '../../types/database';
 import { Plus, Filter, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -63,7 +63,7 @@ export default function EmployeeList() {
 
   // Create employee mutation
   const createEmployeeMutation = useMutation({
-    mutationFn: (data: InsertEmployee) => employeeService.createEmployee(data),
+            mutationFn: (data: Partial<Employee>) => employeeService.createEmployee(data),
     onSuccess: () => {
       toast({
         title: 'Success',
@@ -83,8 +83,12 @@ export default function EmployeeList() {
 
   // Update employee mutation
   const updateEmployeeMutation = useMutation({
-    mutationFn: (data: Partial<Employee> & { id: string }) => employeeService.updateEmployee(data),
-    onSuccess: () => {
+    mutationFn: (data: Partial<Employee> & { id: string }) => {
+      console.log('updateEmployeeMutation called with:', data);
+      return employeeService.updateEmployee(data);
+    },
+    onSuccess: (response) => {
+      console.log('Update successful:', response);
       toast({
         title: 'Success',
         description: 'Employee updated successfully',
@@ -95,6 +99,7 @@ export default function EmployeeList() {
       queryClient.invalidateQueries({ queryKey: ['employees', 'list'] });
     },
     onError: (error) => {
+      console.error('Update failed:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to update employee',
@@ -122,16 +127,23 @@ export default function EmployeeList() {
     },
   });
 
-  const handleCreateEmployee = async (data: InsertEmployee) => {
+  const handleCreateEmployee = async (data: Partial<Employee>) => {
     createEmployeeMutation.mutate(data);
   };
 
-  const handleUpdateEmployee = async (data: InsertEmployee) => {
+  const handleUpdateEmployee = async (data: Partial<Employee>) => {
+    console.log('handleUpdateEmployee called with data:', data);
+    console.log('employeeToEdit:', employeeToEdit);
+    
     if (employeeToEdit) {
-      updateEmployeeMutation.mutate({
+      const updateData = {
         id: employeeToEdit.id,
         ...data
-      });
+      };
+      console.log('Calling updateEmployeeMutation with:', updateData);
+      updateEmployeeMutation.mutate(updateData);
+    } else {
+      console.error('No employee to edit found');
     }
   };
 
@@ -419,7 +431,6 @@ export default function EmployeeList() {
             included_in_payroll: employeeToEdit.included_in_payroll,
             date_of_birth: employeeToEdit.date_of_birth,
             address: employeeToEdit.address,
-            emergency_contact: employeeToEdit.emergency_contact,
             pan_number: employeeToEdit.pan_number,
             status: employeeToEdit.status,
             joining_date: employeeToEdit.joining_date,

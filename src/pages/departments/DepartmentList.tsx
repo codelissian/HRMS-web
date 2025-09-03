@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { departmentService } from '@/services/departmentService';
 import { designationService, Designation as ServiceDesignation } from '@/services/designationService';
-import { Department as SchemaDepartment } from '../../../shared/schema';
+import { Department as SchemaDepartment } from '../../types/database';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { authToken } from '@/services/authToken';
 import AddDepartmentDialog from '@/components/departments/AddDepartmentDialog';
