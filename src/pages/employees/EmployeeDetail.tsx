@@ -389,7 +389,7 @@ export default function EmployeeDetail() {
                         <span className="font-medium">{leave.leave_type}</span>
                         <p className="text-sm text-gray-500">{leave.from_date} - {leave.to_date}</p>
                       </div>
-                      <Badge variant={leave.status === 'approved' ? 'default' : 'secondary'}>
+                      <Badge variant={leave.status === 'APPROVED' ? 'default' : 'secondary'}>
                         {leave.status}
                       </Badge>
                     </div>
