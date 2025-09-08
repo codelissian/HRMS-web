@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import {
   XCircle, 
   AlertCircle, 
   Search,
-  Filter,
   Download,
   Eye
 } from 'lucide-react';
@@ -36,6 +36,7 @@ const defaultStatistics = {
 };
 
 export default function LeaveRequestsPage() {
+  const { user } = useAuth();
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -151,15 +152,21 @@ export default function LeaveRequestsPage() {
 
   // Fetch leave requests
   const fetchLeaveRequests = async () => {
+    if (!user?.organisation_id) {
+      console.error('Organisation ID not found');
+      return;
+    }
+
     setIsLoadingRequests(true);
     try {
       const filters = {
+        organisation_id: user.organisation_id,
+        type: 'leave' as const,
         page: currentPage,
         page_size: pageSize,
         search: searchTerm || undefined,
         department_id: selectedDepartment === 'all' ? undefined : selectedDepartment,
-        status: (statusFilter === 'all' ? undefined : statusFilter) as 'pending' | 'approved' | 'rejected' | 'cancelled' | undefined,
-        include: ['employee', 'leave']
+        status: (statusFilter === 'all' ? undefined : statusFilter) as 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | undefined
       };
 
       console.log('Fetching leave requests with filters:', filters);
@@ -339,101 +346,6 @@ export default function LeaveRequestsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Department Tabs */}
-      <div className="bg-white dark:bg-gray-850 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleDepartmentChange('all')}
-              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                selectedDepartment === 'all'
-                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              All
-            </button>
-            
-            {departments.map((department) => (
-              <button
-                key={department.id}
-                onClick={() => handleDepartmentChange(department.id)}
-                className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  selectedDepartment === department.id
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                {department.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-
-
-      {/* Status Tabs */}
-      <div className="bg-white dark:bg-gray-850 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setStatusFilter('all')}
-              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                statusFilter === 'all'
-                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              All ({statistics.total_requests})
-            </button>
-            
-            <button
-              onClick={() => setStatusFilter('pending')}
-              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                statusFilter === 'pending'
-                  ? 'bg-yellow-500 text-white shadow-md shadow-yellow-500/25'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              Pending ({statistics.pending_requests})
-            </button>
-            
-            <button
-              onClick={() => setStatusFilter('approved')}
-              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                statusFilter === 'approved'
-                  ? 'bg-green-500 text-white shadow-md shadow-green-500/25'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              Approved ({statistics.approved_requests})
-            </button>
-            
-            <button
-              onClick={() => setStatusFilter('rejected')}
-              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                statusFilter === 'rejected'
-                  ? 'bg-red-500 text-white shadow-md shadow-red-500/25'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              Rejected ({statistics.rejected_requests})
-            </button>
-            
-            <button
-              onClick={() => setStatusFilter('cancelled')}
-              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                statusFilter === 'cancelled'
-                  ? 'bg-gray-500 text-white shadow-md shadow-gray-500/25'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              Cancelled ({statistics.cancelled_requests})
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -549,22 +461,31 @@ export default function LeaveRequestsPage() {
                 />
               </div>
             </div>
+            <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
-              More Filters
-            </Button>
           </div>
         </CardContent>
       </Card>
@@ -628,7 +549,7 @@ export default function LeaveRequestsPage() {
                       </td>
                         <td className="py-4 px-6">
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Leave Type: {request.leave.name}
+                            Leave Type: {request.leave_type_name || request.leave?.name || 'Unknown'}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                           Reason: {request.reason}
@@ -654,7 +575,7 @@ export default function LeaveRequestsPage() {
                         {new Date(request.created_at).toLocaleDateString()}
                       </td>
                       <td className="py-4 px-6">
-                                                  <div className={`flex ${(request.status === 'PENDING' || request.status === 'pending') ? 'gap-2' : 'justify-center'}`}>
+                                                  <div className={`flex ${request.status === 'PENDING' ? 'gap-2' : 'justify-center'}`}>
                             <Button 
                               variant="ghost" 
                               size="sm" 
@@ -664,7 +585,7 @@ export default function LeaveRequestsPage() {
                             >
                               <Eye className="w-5 h-5 text-blue-600 group-hover:text-blue-400 transition-colors duration-200" />
                             </Button>
-                          {(request.status === 'PENDING' || request.status === 'pending') && (
+                          {request.status === 'PENDING' && (
                             <>
                                                               <Button 
                                   variant="ghost"
@@ -773,7 +694,7 @@ export default function LeaveRequestsPage() {
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Leave Information</h3>
                     <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Leave Type:</span> {selectedLeaveRequest.leave.name || 'N/A'}</div>
+                      <div><span className="font-medium">Leave Type:</span> {selectedLeaveRequest.leave_type_name || selectedLeaveRequest.leave?.name || 'N/A'}</div>
                       <div><span className="font-medium">Reason:</span> {selectedLeaveRequest.reason || 'N/A'}</div>
                       <div><span className="font-medium">Comments:</span> {selectedLeaveRequest.comments || 'N/A'}</div>
                       <div className="flex items-center gap-2">
