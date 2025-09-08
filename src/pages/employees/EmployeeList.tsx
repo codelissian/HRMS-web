@@ -12,6 +12,8 @@ import { Plus, Filter, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useDepartments } from '@/hooks/useDepartments';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function EmployeeList() {
   const [showForm, setShowForm] = useState(false);
@@ -33,6 +35,8 @@ export default function EmployeeList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { departments, isLoading: departmentsLoading } = useDepartments();
+  const { user } = useAuth();
 
   // Fetch employees with proper filtering and include department/designation data
   const { 
@@ -47,14 +51,22 @@ export default function EmployeeList() {
       department_id: departmentFilter,
       status: statusFilter 
     }],
-    queryFn: () => employeeService.getEmployees({
-      page: currentPage,
-      page_size: pageSize,
-      search: searchTerm || undefined,
-      department_id: departmentFilter === 'all' ? undefined : departmentFilter,
-      status: statusFilter === 'all' ? undefined : statusFilter,
-      include: ['department', 'designation']
-    }),
+    queryFn: () => {
+      if (!user?.organisation_id) {
+        throw new Error('Organization ID not found');
+      }
+      
+      return employeeService.getEmployees({
+        organisation_id: user.organisation_id,
+        page: currentPage,
+        page_size: pageSize,
+        search: searchTerm || undefined,
+        department_id: departmentFilter === 'all' ? undefined : departmentFilter,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        include: ['department', 'designation']
+      });
+    },
+    enabled: !!user?.organisation_id,
   });
 
   const employees = employeesResponse?.data || [];
@@ -197,8 +209,18 @@ export default function EmployeeList() {
   };
 
   const handleExportEmployees = async () => {
+    if (!user?.organisation_id) {
+      toast({
+        title: 'Error',
+        description: 'Organization ID not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const blob = await employeeService.exportEmployees({
+        organisation_id: user.organisation_id,
         page: 1,
         page_size: totalCount,
         search: searchTerm || undefined,
@@ -345,13 +367,15 @@ export default function EmployeeList() {
             <div>
               <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Departments" />
+                  <SelectValue placeholder={departmentsLoading ? "Loading..." : "All Departments"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
-                  <SelectItem value="dept-1">Engineering</SelectItem>
-                  <SelectItem value="dept-2">HR</SelectItem>
-                  <SelectItem value="dept-3">Marketing</SelectItem>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
