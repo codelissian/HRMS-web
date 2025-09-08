@@ -12,13 +12,29 @@ export interface LeaveRequestWithDetails extends LeaveRequest {
   leave_type_code?: string;
   leave_type_color?: string;
   leave_type_icon?: string;
+  employee?: {
+    id: string;
+    name: string;
+    email: string;
+    code?: string;
+    mobile?: string;
+  };
+  leave?: {
+    id: string;
+    name: string;
+    code: string;
+    color?: string;
+    icon?: string;
+  };
 }
 
 export interface LeaveRequestFilters extends FilterRequest {
-  status?: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'all';
+  organisation_id: string;
+  type: 'leave';
+  status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'all';
   leave_type?: string;
   employee_id?: string;
-  department?: string;
+  department_id?: string;
   date_from?: string;
   date_to?: string;
   month?: number;
@@ -82,7 +98,32 @@ class LeaveService {
   // Leave Requests
   async getLeaveRequests(filters: LeaveRequestFilters = { page: 1, page_size: 50 }): Promise<ApiResponse<LeaveRequestWithDetails[]>> {
     try {
-      const response = await httpClient.post<any>(API_ENDPOINTS.LEAVE_REQUESTS_LIST, filters);
+      // Prepare the request payload
+      const requestPayload: any = {
+        organisation_id: filters.organisation_id,
+        type: filters.type,
+        page: filters.page || 1,
+        page_size: filters.page_size || 50,
+        include: ["employee", "leave"]
+      };
+
+      // Only include status if it's not 'all'
+      if (filters.status && filters.status !== 'all') {
+        requestPayload.status = filters.status;
+      }
+
+      // Add other optional filters
+      if (filters.leave_type) requestPayload.leave_type = filters.leave_type;
+      if (filters.employee_id) requestPayload.employee_id = filters.employee_id;
+      if (filters.department_id) requestPayload.department_id = filters.department_id;
+      if (filters.date_from) requestPayload.date_from = filters.date_from;
+      if (filters.date_to) requestPayload.date_to = filters.date_to;
+      if (filters.month) requestPayload.month = filters.month;
+      if (filters.year) requestPayload.year = filters.year;
+      if (filters.is_half_day !== undefined) requestPayload.is_half_day = filters.is_half_day;
+      if (filters.search) requestPayload.search = filters.search;
+
+      const response = await httpClient.post<any>(API_ENDPOINTS.LEAVE_REQUESTS_LIST, requestPayload);
       
       // Extract the actual data from the nested response structure
       const apiResponse: ApiResponse<LeaveRequestWithDetails[]> = {
@@ -165,7 +206,7 @@ class LeaveService {
   // Approve Leave Request
   async approveLeaveRequest(id: string, approverComments?: string): Promise<ApiResponse<LeaveRequest>> {
     try {
-      const response = await httpClient.put<any>(`${API_ENDPOINTS.LEAVE_REQUESTS_UPDATE}_status`, {
+      const response = await httpClient.put<any>(API_ENDPOINTS.LEAVE_REQUESTS_UPDATE, {
         id,
         status: 'APPROVED'
       });
@@ -191,7 +232,7 @@ class LeaveService {
   // Reject Leave Request
   async rejectLeaveRequest(id: string, approverComments?: string): Promise<ApiResponse<LeaveRequest>> {
     try {
-      const response = await httpClient.put<any>(`${API_ENDPOINTS.LEAVE_REQUESTS_UPDATE}_status`, {
+      const response = await httpClient.put<any>(API_ENDPOINTS.LEAVE_REQUESTS_UPDATE, {
         id,
         status: 'REJECTED'
       });

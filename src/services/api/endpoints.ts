@@ -102,11 +102,11 @@ const API = {
 
   // Leave Requests
   LEAVE_REQUESTS_CREATE: `/leave_requests/create`,
-  LEAVE_REQUESTS_UPDATE: `/leave_requests/update`,
-  LEAVE_REQUESTS_LIST: `/leave_requests/list`,
-  LEAVE_REQUESTS_ONE: `/leave_requests/one`,
+  LEAVE_REQUESTS_UPDATE: `/requests/update_status`,
+  LEAVE_REQUESTS_LIST: `/requests/list`,
+  LEAVE_REQUESTS_ONE: `/requests/one`,
   LEAVE_REQUESTS_DELETE: `/leave_requests/delete`,
-  LEAVE_REQUESTS_STATISTICS: `/leave_requests/statistics`,
+  LEAVE_REQUESTS_STATISTICS: `/requests/statistics`,
 
   // Leave Encashments
   LEAVE_ENCASHMENTS_CREATE: `/leave-encashments/create`,
