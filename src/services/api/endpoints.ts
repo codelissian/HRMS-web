@@ -80,11 +80,11 @@ const API = {
   PERMISSIONS_DELETE: `/permissions/delete`,
 
   // Attendance Policies
-  ATTENDANCE_POLICIES_CREATE: `/attendance_policies/create`,
-  ATTENDANCE_POLICIES_UPDATE: `/attendance_policies/update`,
-  ATTENDANCE_POLICIES_LIST: `/attendance_policies/list`,
+  ATTENDANCE_POLICIES_CREATE: `/attendance_rules/create`,
+  ATTENDANCE_POLICIES_UPDATE: `/attendance_rules/update`,
+  ATTENDANCE_POLICIES_LIST: `/attendance_rules/list`,
   ATTENDANCE_POLICIES_ONE: `/attendance_policies/one`,
-  ATTENDANCE_POLICIES_DELETE: `/attendance_policies/delete`,
+  ATTENDANCE_POLICIES_DELETE: `/attendance_rules/delete`,
 
   // Attendance
   ATTENDANCE_CREATE: `/attendance/create`,
