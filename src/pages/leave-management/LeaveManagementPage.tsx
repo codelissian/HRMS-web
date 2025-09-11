@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { LeaveForm } from '@/components/leave-form';
 import { ConfirmationDialog } from '@/components/common';
-import { Leave } from '../../../shared/schema';
+import { Leave } from '../../types/database';
 import { leaveService } from '@/services/leaveService';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/common';

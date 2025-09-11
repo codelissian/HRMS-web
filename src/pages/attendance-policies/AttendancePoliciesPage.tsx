@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { AttendancePolicyTable } from '@/components/attendance-policies/AttendancePolicyTable';
 import { AttendancePolicyForm } from '@/components/attendance-policies/AttendancePolicyForm';
 import { AttendancePolicyDetails } from '@/components/attendance-policies/AttendancePolicyDetails';
+import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { AttendancePolicy } from '@/types/attendance';
-import { Plus, Download, Upload } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AttendancePolicyService } from '@/services/attendancePolicyService';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 export default function AttendancePoliciesPage() {
   const [showForm, setShowForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
   
@@ -22,6 +21,10 @@ export default function AttendancePoliciesPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState<AttendancePolicy | null>(null);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  
+  // Delete confirmation states
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [policyToDelete, setPolicyToDelete] = useState<AttendancePolicy | null>(null);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -34,13 +37,11 @@ export default function AttendancePoliciesPage() {
   } = useQuery({
     queryKey: ['attendance-policies', 'list', { 
       page: currentPage, 
-      page_size: pageSize, 
-      search: searchQuery 
+      page_size: pageSize
     }],
     queryFn: () => AttendancePolicyService.list({
       page: currentPage,
-      page_size: pageSize,
-      search: searchQuery || undefined
+      page_size: pageSize
     }),
   });
 
@@ -166,37 +167,30 @@ export default function AttendancePoliciesPage() {
   };
 
   // Handle delete policy
-  const handleDeletePolicy = async (policy: AttendancePolicy) => {
-    if (window.confirm(`Are you sure you want to delete the policy "${policy.name}"?`)) {
-      try {
-        await deletePolicyMutation.mutateAsync(policy.id);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to delete policy",
-          variant: "destructive",
-        });
-      }
+  const handleDeletePolicy = (policy: AttendancePolicy) => {
+    setPolicyToDelete(policy);
+    setShowDeleteDialog(true);
+  };
+
+  // Confirm delete policy
+  const confirmDeletePolicy = async () => {
+    if (!policyToDelete) return;
+    
+    try {
+      await deletePolicyMutation.mutateAsync(policyToDelete.id);
+      // Refresh the list after successful deletion
+      queryClient.invalidateQueries({ queryKey: ['attendance-policies', 'list'] });
+      setShowDeleteDialog(false);
+      setPolicyToDelete(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete policy",
+        variant: "destructive",
+      });
     }
   };
 
-  // Handle export policies
-  const handleExportPolicies = () => {
-    // TODO: Implement export functionality
-    toast({
-      title: "Info",
-      description: "Export functionality coming soon",
-    });
-  };
-
-  // Handle bulk import
-  const handleBulkImport = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // TODO: Implement bulk import functionality
-    toast({
-      title: "Info",
-      description: "Bulk import functionality coming soon",
-    });
-  };
 
   // Handle page change
   const handlePageChange = (newPage: number) => {
@@ -205,11 +199,6 @@ export default function AttendancePoliciesPage() {
 
 
 
-  // Handle search
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1); // Reset to first page when searching
-  };
 
   // Handle page size change
   const handlePageSizeChange = (newPageSize: number) => {
@@ -217,99 +206,29 @@ export default function AttendancePoliciesPage() {
     setCurrentPage(1); // Reset to first page when changing page size
   };
 
-  // Calculate filtered policies
-  const filteredPolicies = policies; // API handles filtering
+  // Use policies directly since we removed search functionality
+  const filteredPolicies = policies;
 
   // const pageCount = Math.ceil(total / pageSize); // This line is now handled by policiesResponse
 
   return (
     <div className="space-y-6">
-      {/* Search and Actions */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search policies by name..."
-                value={searchQuery}
-                onChange={(e) => handleSearch(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    setCurrentPage(1);
-                  }
-                }}
-                className="max-w-md"
-              />
-            </div>
-            
-                         <div className="flex gap-2">
-               <Button variant="outline" onClick={handleExportPolicies}>
-                 <Download className="h-4 w-4 mr-2" />
-                 Export
-               </Button>
-               <label htmlFor="bulk-import">
-                 <Button variant="outline" asChild>
-                   <span>
-                     <Upload className="h-4 w-4 mr-2" />
-                     Import
-                   </span>
-                 </Button>
-               </label>
-               <input
-                 id="bulk-import"
-                 type="file"
-                 accept=".xlsx,.xls,.csv"
-                 onChange={handleBulkImport}
-                 className="hidden"
-               />
-               <Button onClick={handleCreate}>
-                 <Plus className="h-4 w-4 mr-2" />
-                 Add Policy
-               </Button>
-             </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Actions */}
+      <div className="flex justify-end">
+        <Button onClick={handleCreate}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Policy
+        </Button>
+      </div>
 
       {/* Attendance Policies Table */}
       <AttendancePolicyTable
         policies={filteredPolicies}
         loading={isLoading}
-        onView={handleView}
         onEdit={handleEdit}
         onDelete={handleDeletePolicy}
       />
 
-      {/* Empty State */}
-      {!isLoading && filteredPolicies.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <div className="space-y-4">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto">
-                <Plus className="w-8 h-8 text-gray-400" />
-              </div>
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                  {searchQuery ? 'No policies found' : 'No attendance policies yet'}
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400">
-                  {searchQuery 
-                    ? 'Try adjusting your search terms or create a new policy.'
-                    : 'Get started by creating your first attendance policy.'
-                  }
-                </p>
-              </div>
-              {!searchQuery && (
-                <Button onClick={handleCreate}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create First Policy
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Pagination */}
       {pageCount > 1 && (
@@ -387,6 +306,20 @@ export default function AttendancePoliciesPage() {
         onClose={handleDetailsClose}
         policy={selectedPolicy}
         onEdit={handleEditFromDetails}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        title="Delete Attendance Policy"
+        description="Are you sure you want to delete this attendance policy?"
+        type="delete"
+        confirmText="Delete Policy"
+        cancelText="Cancel"
+        onConfirm={confirmDeletePolicy}
+        loading={deletePolicyMutation.isPending}
+        itemName={policyToDelete?.name}
       />
     </div>
   );

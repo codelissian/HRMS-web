@@ -1,7 +1,7 @@
 import { DataTable, Column, TableAction } from '@/components/common/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Employee, EmployeeWithRelations } from '../../../shared/schema';
+import { Employee, EmployeeWithRelations } from '../../types/database';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 

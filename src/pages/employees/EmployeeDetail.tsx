@@ -10,7 +10,7 @@ import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Employee } from '../../../shared/schema';
+import { Employee } from '../../types/database';
 import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -241,10 +241,7 @@ export default function EmployeeDetail() {
                     {employee.date_of_birth ? format(new Date(employee.date_of_birth), 'MMM dd, yyyy') : 'Not set'}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Emergency Contact:</span>
-                  <span className="text-gray-900 dark:text-white">{employee.emergency_contact || 'Not set'}</span>
-                </div>
+
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400">PAN Number:</span>
                   <span className="text-gray-900 dark:text-white">{employee.pan_number || 'Not set'}</span>
@@ -392,7 +389,7 @@ export default function EmployeeDetail() {
                         <span className="font-medium">{leave.leave_type}</span>
                         <p className="text-sm text-gray-500">{leave.from_date} - {leave.to_date}</p>
                       </div>
-                      <Badge variant={leave.status === 'approved' ? 'default' : 'secondary'}>
+                      <Badge variant={leave.status === 'APPROVED' ? 'default' : 'secondary'}>
                         {leave.status}
                       </Badge>
                     </div>

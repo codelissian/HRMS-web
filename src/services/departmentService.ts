@@ -1,6 +1,6 @@
 import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS } from '@/services/api/endpoints';
-import { Department } from '../../shared/schema';
+import { Department } from '../types/database';
 import { FilterRequest, ApiResponse } from '@/types/api';
 
 interface CreateDepartmentRequest {

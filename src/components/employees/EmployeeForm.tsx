@@ -1,17 +1,15 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { insertEmployeeSchema, InsertEmployee } from '../../../shared/schema';
+import { employeeFormSchema, EmployeeFormData } from '../../types/forms';
 import { z } from 'zod';
 
 // Extended schema that includes the code field and handles date strings from API
-const extendedEmployeeSchema = insertEmployeeSchema.extend({
+const extendedEmployeeSchema = employeeFormSchema.extend({
   code: z.string().min(1, "Employee code is required").regex(/^[A-Z0-9]+$/, "Employee code must contain only uppercase letters and numbers"),
-  date_of_birth: z.union([z.date(), z.string(), z.null(), z.undefined()]).optional(),
-  joining_date: z.union([z.date(), z.string(), z.null(), z.undefined()]).optional(),
 });
 
 // Extended type that includes the code field
-type ExtendedInsertEmployee = InsertEmployee & { code: string };
+type ExtendedInsertEmployee = EmployeeFormData & { code: string };
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -56,6 +54,13 @@ export function EmployeeForm({
   isEditMode = false,
   isFetchingData = false
 }: EmployeeFormProps) {
+  console.log('EmployeeForm rendered with props:', { 
+    open, 
+    isEditMode, 
+    initialData, 
+    loading, 
+    isFetchingData 
+  });
   
   // ✅ Hook to fetch departments data - only when form is open
   const { departments, isLoading: departmentsLoading } = useDepartments(open);
@@ -84,10 +89,25 @@ export function EmployeeForm({
 
   // Watch the department_id field to trigger designation fetch
   const watchedDepartmentId = watch('department_id');
+  
+  // Check form validity (moved after useForm initialization)
+  const formValues = watch();
+  const isFormValid = Object.keys(errors).length === 0;
+  console.log('Form validity check:', { 
+    formValues, 
+    errors, 
+    isFormValid,
+    hasRequiredFields: !!(formValues.name && formValues.mobile && formValues.code),
+    isFetchingData,
+    formDisabled: isFetchingData,
+    formReady: !!formValues
+  });
 
   // Set initial data when form opens in edit mode
   useEffect(() => {
+    console.log('Form useEffect triggered:', { open, initialData, isEditMode });
     if (open && initialData && isEditMode) {
+      console.log('Resetting form with initial data:', initialData);
       reset(initialData);
       // Trigger designation fetch if department is set
       if (initialData.department_id) {
@@ -193,6 +213,9 @@ export function EmployeeForm({
   
 
   const handleFormSubmit = (data: ExtendedInsertEmployee) => {
+    console.log('Form submitted with data:', data);
+    console.log('Is edit mode:', isEditMode);
+    
     // Convert date strings to Date objects before submitting
     const processedData = {
       ...data,
@@ -200,6 +223,7 @@ export function EmployeeForm({
       joining_date: convertDateStringToDate(data.joining_date),
     };
     
+    console.log('Processed data:', processedData);
     onSubmit(processedData);
     reset();
     setDesignations([]);
@@ -232,7 +256,29 @@ export function EmployeeForm({
           </div>
         )}
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-6 ${isFetchingData ? 'opacity-50 pointer-events-none' : ''}`}>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          console.log('Form submit event triggered');
+          console.log('Current form values:', watch());
+          console.log('Form errors:', errors);
+          console.log('Is edit mode:', isEditMode);
+          console.log('Loading state:', loading);
+          
+          const submitHandler = handleSubmit(handleFormSubmit, (errors) => {
+            console.log('Form validation errors:', errors);
+            console.log('Validation failed - form not submitted');
+          });
+          
+          console.log('About to call submit handler');
+          submitHandler();
+          
+          // Also try direct submission for testing
+          console.log('Trying direct submission for testing...');
+          setTimeout(() => {
+            console.log('Direct submission attempt');
+            handleFormSubmit(formValues as ExtendedInsertEmployee);
+          }, 100);
+        }} className={`space-y-6 ${isFetchingData ? 'opacity-50 pointer-events-none' : ''}`}>
           {/* Personal Information */}
           <div className="space-y-4">
             <h4 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -422,15 +468,6 @@ export function EmployeeForm({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="emergency_contact">Emergency Contact</Label>
-                <Input
-                  id="emergency_contact"
-                  {...register('emergency_contact')}
-                  error={errors.emergency_contact?.message}
-                  placeholder="Emergency contact number"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="pan_number">PAN Number</Label>
                 <Input
                   id="pan_number"
@@ -456,7 +493,15 @@ export function EmployeeForm({
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              onClick={(e) => {
+                console.log('Button clicked!', e);
+                console.log('Button type:', e.currentTarget.type);
+                console.log('Form disabled:', loading);
+              }}
+            >
               {loading ? 'Saving...' : (isEditMode ? 'Update Employee' : 'Save Employee')}
             </Button>
           </DialogFooter>

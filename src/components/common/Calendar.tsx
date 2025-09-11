@@ -20,7 +20,7 @@ export interface CalendarEvent {
   type: 'leave' | 'holiday' | 'attendance' | 'absence';
   title: string;
   description?: string;
-  status?: 'approved' | 'pending' | 'rejected' | 'present' | 'absent' | 'half-day';
+  status?: 'APPROVED' | 'PENDING' | 'REJECTED' | 'present' | 'absent' | 'half-day';
   leaveType?: 'annual' | 'sick' | 'personal' | 'maternity' | 'emergency';
   employeeName?: string;
 }
