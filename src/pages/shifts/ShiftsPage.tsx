@@ -3,7 +3,6 @@ import { EmptyState } from '../../components/common/EmptyState';
 import { ShiftForm } from '../../components/shifts';
 import { Clock, Edit, Power, PowerOff, Trash2 } from 'lucide-react';
 import { useShifts } from '../../contexts/ShiftsContext';
-import { formatTimeForDisplay } from '../../lib/shift-utils';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
@@ -109,7 +108,7 @@ const ShiftsPage: React.FC = () => {
                       {shift.name}
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400">
-                      {formatTimeForDisplay(shift.start)} - {formatTimeForDisplay(shift.end)} 
+                      {shift.start} - {shift.end} 
                       (Grace: {shift.grace_minutes} min)
                     </p>
                   </div>
