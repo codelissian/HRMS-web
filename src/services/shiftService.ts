@@ -71,12 +71,12 @@ export class ShiftService {
   }
 
   static async updateShift(id: string, shiftData: Partial<CreateShiftData> & { active_flag?: boolean }): Promise<Shift> {
-    // Create the update payload to match exactly what works in Postman
+    // Create the update payload with full time format (HH:MM)
     const updatePayload = {
       id,
       name: shiftData.name || '',
-      start: `2025-08-10T${shiftData.start}:00Z`, // Convert to ISO format like Postman
-      end: `2025-08-10T${shiftData.end}:00Z`,     // Convert to ISO format like Postman
+      start: shiftData.start || '00:00',
+      end: shiftData.end || '00:00',
       grace_minutes: shiftData.grace_minutes || 0,
       active_flag: shiftData.active_flag !== undefined ? shiftData.active_flag : true
     };
