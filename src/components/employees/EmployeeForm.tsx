@@ -28,6 +28,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { designationService } from '@/services/designationService';
 import { ShiftService } from '@/services/shiftService';
+import { httpClient } from '@/services/httpClient';
+import { API_ENDPOINTS } from '@/services/api/endpoints';
 import { getCurrentOrganizationId } from '@/lib/organization-utils';
 import { formatDateForInput, convertDateStringToDate } from '@/lib/date-utils';
 
@@ -74,6 +76,10 @@ export function EmployeeForm({
   const [shifts, setShifts] = useState<any[]>([]);
   const [shiftsLoading, setShiftsLoading] = useState(false);
   
+  // New state for attendance rules
+  const [attendanceRules, setAttendanceRules] = useState<any[]>([]);
+  const [attendanceRulesLoading, setAttendanceRulesLoading] = useState(false);
+  
   const {
     register,
     handleSubmit,
@@ -114,15 +120,17 @@ export function EmployeeForm({
         setSelectedDepartmentId(initialData.department_id);
         fetchDesignations(initialData.department_id);
       }
-      // Always fetch shifts for edit mode
+      // Always fetch shifts and attendance rules for edit mode
       fetchShifts();
+      fetchAttendanceRules();
     }
   }, [open, initialData, isEditMode, reset]);
 
-  // Fetch shifts when form opens
+  // Fetch shifts and attendance rules when form opens
   useEffect(() => {
     if (open) {
       fetchShifts();
+      fetchAttendanceRules();
     }
   }, [open]);
 
@@ -167,6 +175,70 @@ export function EmployeeForm({
       }, 1000);
     } finally {
       setShiftsLoading(false);
+    }
+  };
+
+  const fetchAttendanceRules = async () => {
+    try {
+      setAttendanceRulesLoading(true);
+      
+      const organisationId = getCurrentOrganizationId();
+      
+      console.log('Fetching attendance rules for organisation:', organisationId);
+      
+      // Try using httpClient first
+      try {
+        const response = await httpClient.post(API_ENDPOINTS.ATTENDANCE_POLICIES_LIST, {
+          organisation_id: organisationId,
+          page: 1,
+          page_size: 100
+        });
+
+        console.log('Attendance rules API response (httpClient):', response.data);
+
+        if (response.data.status && response.data.data) {
+          console.log('Successfully fetched attendance rules:', response.data.data);
+          setAttendanceRules(response.data.data);
+          return;
+        } else {
+          console.error('Failed to fetch attendance rules (httpClient):', response.data.message || 'Unknown error');
+        }
+      } catch (httpClientError) {
+        console.log('httpClient failed, trying direct fetch:', httpClientError);
+        
+        // Fallback to direct fetch
+        const response = await fetch(`${process.env.VITE_API_BASE_URL || 'https://hrms-backend-omega.vercel.app/api/v1'}/attendance_rules/list`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('hrms_auth_token')}`
+          },
+          body: JSON.stringify({
+            organisation_id: organisationId,
+            page: 1,
+            page_size: 100
+          })
+        });
+
+        console.log('Attendance rules API response status (fetch):', response.status);
+        
+        const data = await response.json();
+        console.log('Attendance rules API response data (fetch):', data);
+
+        if (data.status && data.data) {
+          console.log('Successfully fetched attendance rules (fetch):', data.data);
+          setAttendanceRules(data.data);
+        } else {
+          console.error('Failed to fetch attendance rules (fetch):', data.message || 'Unknown error');
+          console.error('Full response:', data);
+          setAttendanceRules([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching attendance rules:', error);
+      setAttendanceRules([]);
+    } finally {
+      setAttendanceRulesLoading(false);
     }
   };
 
@@ -229,6 +301,7 @@ export function EmployeeForm({
     setDesignations([]);
     setSelectedDepartmentId(undefined);
     setShifts([]);
+    setAttendanceRules([]);
   };
 
   const handleClose = () => {
@@ -236,6 +309,7 @@ export function EmployeeForm({
     setDesignations([]);
     setSelectedDepartmentId(undefined);
     setShifts([]);
+    setAttendanceRules([]);
     onOpenChange(false);
   };
 
@@ -432,6 +506,37 @@ export function EmployeeForm({
                         ) : (
                           <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
                             No shifts found
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="attendance_policy_id">Attendance Rule</Label>
+                <Controller
+                  name="attendance_policy_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <SelectTrigger disabled={attendanceRulesLoading}>
+                        <SelectValue placeholder={attendanceRulesLoading ? "Loading rules..." : "Select Attendance Rule"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {attendanceRulesLoading ? (
+                          <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                            Loading attendance rules...
+                          </div>
+                        ) : attendanceRules.length > 0 ? (
+                          attendanceRules.map((rule) => (
+                            <SelectItem key={rule.id} value={rule.id}>
+                              {rule.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                            No attendance rules found
                           </div>
                         )}
                       </SelectContent>
