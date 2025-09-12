@@ -514,9 +514,9 @@ export function EmployeeForm({
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="attendance_policy_id">Attendance Rule</Label>
+                <Label htmlFor="attendance_rule_id">Attendance Rule</Label>
                 <Controller
-                  name="attendance_policy_id"
+                  name="attendance_rule_id"
                   control={control}
                   render={({ field }) => (
                     <Select onValueChange={field.onChange} value={field.value || undefined}>
