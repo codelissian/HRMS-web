@@ -6,6 +6,7 @@ import { AttendancePolicy, AttendancePolicyFormData } from '@/types/attendance';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { LocationTracker } from './LocationTracker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -83,6 +84,7 @@ const attendancePolicySchema = z.object({
   geo_radius_meters: z.number().min(1, 'Radius must be at least 1 meter').optional(),
   latitude: z.string().optional(),
   longitude: z.string().optional(),
+  address: z.string().optional(),
   selfie_required: z.boolean(),
   web_attendance_enabled: z.boolean(),
   mobile_attendance_enabled: z.boolean(),
@@ -123,6 +125,7 @@ export function AttendancePolicyForm({
       geo_radius_meters: 100,
       latitude: '',
       longitude: '',
+      address: '',
       selfie_required: false,
       web_attendance_enabled: true,
       mobile_attendance_enabled: true,
@@ -132,6 +135,27 @@ export function AttendancePolicyForm({
 
   const geoTrackingEnabled = watch('geo_tracking_enabled');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
+  const [locationData, setLocationData] = useState<{
+    address: string;
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+
+  // Handle location selection from LocationTracker
+  const handleLocationSelect = (location: {
+    address: string;
+    latitude: number;
+    longitude: number;
+  }) => {
+    setLocationData(location);
+    // Update form values
+    reset({
+      ...watch(),
+      address: location.address,
+      latitude: location.latitude.toString(),
+      longitude: location.longitude.toString(),
+    });
+  };
 
   // Get current location using IP-based geolocation
   const getCurrentLocation = async () => {
@@ -182,6 +206,7 @@ export function AttendancePolicyForm({
         geo_radius_meters: policy.geo_radius_meters,
         latitude: policy.latitude || '',
         longitude: policy.longitude || '',
+        address: policy.address || '',
         selfie_required: policy.selfie_required,
         web_attendance_enabled: policy.web_attendance_enabled,
         mobile_attendance_enabled: policy.mobile_attendance_enabled,
@@ -220,6 +245,7 @@ export function AttendancePolicyForm({
             AttendancePolicyService.update({
               ...data,
               id: policy.id,
+              organisation_id: "bd3575a0-ff7e-4dcf-a6a7-c3dcbd1cdf44", // This should come from user context
             })
         );
         
@@ -355,61 +381,15 @@ export function AttendancePolicyForm({
                   </div>
                   
                   {/* Location Fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="geo_radius_meters" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Radius (meters)
-                      </Label>
-                      <Controller
-                        name="geo_radius_meters"
-                        control={control}
-                        render={({ field }) => (
-                        <Input
-                          {...field}
-                          type="number"
-                          min={1}
-                          step={1}
-                          placeholder=""
-                          className="h-10"
-                          error={errors.geo_radius_meters?.message}
-                        />
-                        )}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="latitude" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Latitude
-                      </Label>
-                      <Controller
-                        name="latitude"
-                        control={control}
-                        render={({ field }) => (
-                        <Input
-                          {...field}
-                          placeholder=""
-                          className="h-10"
-                          error={errors.latitude?.message}
-                        />
-                        )}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="longitude" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Longitude
-                      </Label>
-                      <Controller
-                        name="longitude"
-                        control={control}
-                        render={({ field }) => (
-                        <Input
-                          {...field}
-                          placeholder=""
-                          className="h-10"
-                          error={errors.longitude?.message}
-                        />
-                        )}
-                      />
-                    </div>
+
+
+                  {/* Google Maps Location Tracker */}
+                  <div className="mt-6">
+                    <LocationTracker
+                      onLocationSelect={handleLocationSelect}
+                      initialLocation={locationData || undefined}
+                      disabled={false}
+                    />
                   </div>
                 </div>
               )}

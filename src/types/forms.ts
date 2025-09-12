@@ -43,6 +43,7 @@ export const employeeFormSchema = z.object({
   department_id: z.string().optional(),
   designation_id: z.string().optional(),
   shift_id: z.string().optional(),
+  attendance_rule_id: z.string().optional(),
   bank_details: z.any().optional(),
   role_id: z.string().optional(),
 });
