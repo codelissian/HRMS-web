@@ -245,6 +245,7 @@ export function AttendancePolicyForm({
             AttendancePolicyService.update({
               ...data,
               id: policy.id,
+              organisation_id: "bd3575a0-ff7e-4dcf-a6a7-c3dcbd1cdf44", // This should come from user context
             })
         );
         

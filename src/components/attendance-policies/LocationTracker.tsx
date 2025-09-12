@@ -48,7 +48,11 @@ export function LocationTracker({
   const [hoverCoordinates, setHoverCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [locationMode, setLocationMode] = useState<'map' | 'manual'>('map');
-  const [displayCoordinates, setDisplayCoordinates] = useState<{ lat: number; lng: number } | null>(null);
+  const [displayCoordinates, setDisplayCoordinates] = useState<{ lat: number; lng: number } | null>(
+    initialLocation ? { lat: initialLocation.latitude, lng: initialLocation.longitude } : null
+  );
+  const [isUpdating, setIsUpdating] = useState(false);
+  const dragUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const mapRef = useRef<HTMLDivElement>(null);
   const autocompleteRef = useRef<HTMLInputElement>(null);
@@ -163,49 +167,47 @@ export function LocationTracker({
 
       // Map is ready for suggestions
 
-      // Cleanup function
-      return () => {
-        if (autocompleteInstanceRef.current) {
-          window.google.maps.event.clearInstanceListeners(autocompleteInstanceRef.current);
-        }
-      };
-
-      // Handle marker position changes - more reliable than drag events
-      marker.addListener('position_changed', () => {
-        const position = marker.getPosition();
-        if (position) {
-          const location = {
-            lat: position.lat(),
-            lng: position.lng()
-          };
-          setHoverCoordinates(location);
-          setCoordinates(location); // Also update main coordinates
-          setDisplayCoordinates(location); // Update display coordinates
-        }
-      });
-
       // Handle marker drag start
       marker.addListener('dragstart', () => {
         setIsDragging(true);
+        setIsUpdating(true);
       });
 
-      // Handle marker drag - real-time coordinates while dragging
+      // Handle marker drag - optimized for smooth performance with throttling
       marker.addListener('drag', () => {
-        const position = marker.getPosition();
-        if (position) {
-          const location = {
-            lat: position.lat(),
-            lng: position.lng()
-          };
-          setHoverCoordinates(location);
-          setCoordinates(location); // Update coordinates while dragging
-          setDisplayCoordinates(location); // Update display coordinates
+        if (!isUpdating) return; // Prevent multiple simultaneous updates
+        
+        // Clear existing timeout
+        if (dragUpdateTimeoutRef.current) {
+          clearTimeout(dragUpdateTimeoutRef.current);
         }
+        
+        // Throttle updates to 60fps for smooth performance
+        dragUpdateTimeoutRef.current = setTimeout(() => {
+          const position = marker.getPosition();
+          if (position) {
+            const location = {
+              lat: position.lat(),
+              lng: position.lng()
+            };
+            // Only update display coordinates during drag for smooth UI
+            setDisplayCoordinates(location);
+            setHoverCoordinates(location);
+          }
+        }, 16); // ~60fps
       });
 
       // Handle marker drag end - final coordinates when drag stops
       marker.addListener('dragend', () => {
         setIsDragging(false);
+        setIsUpdating(false);
+        
+        // Clear any pending drag updates
+        if (dragUpdateTimeoutRef.current) {
+          clearTimeout(dragUpdateTimeoutRef.current);
+          dragUpdateTimeoutRef.current = null;
+        }
+        
         const position = marker.getPosition();
         if (position) {
           const location = {
@@ -228,6 +230,21 @@ export function LocationTracker({
               });
             }
           });
+        }
+      });
+
+      // Handle marker position changes - for non-drag updates
+      marker.addListener('position_changed', () => {
+        if (!isDragging) { // Only update if not dragging
+          const position = marker.getPosition();
+          if (position) {
+            const location = {
+              lat: position.lat(),
+              lng: position.lng()
+            };
+            setCoordinates(location);
+            setDisplayCoordinates(location);
+          }
         }
       });
 
@@ -274,19 +291,16 @@ export function LocationTracker({
         setHoverCoordinates(null);
       });
 
-      // Additional marker position tracking using map click
-      map.addListener('click', (event: any) => {
-        if (event.latLng) {
-          const location = {
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng()
-          };
-          setCoordinates(location);
-          if (markerRef.current) {
-            markerRef.current.setPosition(location);
-          }
+      // Cleanup function
+      return () => {
+        if (autocompleteInstanceRef.current) {
+          window.google.maps.event.clearInstanceListeners(autocompleteInstanceRef.current);
         }
-      });
+        if (dragUpdateTimeoutRef.current) {
+          clearTimeout(dragUpdateTimeoutRef.current);
+          dragUpdateTimeoutRef.current = null;
+        }
+      };
 
     } catch (error) {
       console.error('Error initializing map:', error);
@@ -319,6 +333,7 @@ export function LocationTracker({
     if (coordinates && mapInstanceRef.current && markerRef.current) {
       mapInstanceRef.current.setCenter(coordinates);
       markerRef.current.setPosition(coordinates);
+      setDisplayCoordinates(coordinates); // Update display coordinates when coordinates change
     }
   }, [coordinates]);
 
@@ -326,6 +341,20 @@ export function LocationTracker({
   useEffect(() => {
     console.log('Coordinates updated:', coordinates);
   }, [coordinates]);
+
+  // Initialize display coordinates when map is loaded
+  useEffect(() => {
+    if (isLoaded && mapInstanceRef.current && markerRef.current && !displayCoordinates) {
+      const position = markerRef.current.getPosition();
+      if (position) {
+        const location = {
+          lat: position.lat(),
+          lng: position.lng()
+        };
+        setDisplayCoordinates(location);
+      }
+    }
+  }, [isLoaded, displayCoordinates]);
 
   // Update hover coordinates with current marker position
   useEffect(() => {
@@ -341,12 +370,12 @@ export function LocationTracker({
     }
   }, [isDragging]);
 
-  // Continuous marker position tracking
+  // Continuous marker position tracking - optimized for performance
   useEffect(() => {
     if (!markerRef.current) return;
 
     const interval = setInterval(() => {
-      if (markerRef.current) {
+      if (markerRef.current && !isDragging) { // Only update when not dragging
         const position = markerRef.current.getPosition();
         if (position) {
           const location = {
@@ -354,14 +383,20 @@ export function LocationTracker({
             lng: position.lng()
           };
           setHoverCoordinates(location);
-          setCoordinates(location); // Always update coordinates
-          setDisplayCoordinates(location); // Update display coordinates
+          // Only update if coordinates have actually changed
+          setCoordinates(prev => {
+            if (!prev || Math.abs(prev.lat - location.lat) > 0.000001 || Math.abs(prev.lng - location.lng) > 0.000001) {
+              return location;
+            }
+            return prev;
+          });
+          setDisplayCoordinates(location);
         }
       }
-    }, 200); // Check every 200ms for smoother updates
+    }, 500); // Reduced frequency to 500ms for better performance
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isDragging]);
 
   const handleAddressChange = (value: string) => {
     setAddress(value);
@@ -868,26 +903,27 @@ export function LocationTracker({
           />
           
           {/* Live Coordinates Display */}
-          <div className={`mt-2 p-2 rounded-lg border ${
+          <div className={`mt-2 p-3 rounded-lg border transition-colors duration-200 ${
             isDragging 
               ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' 
               : 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
           }`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span className={`text-xs font-medium ${
+                <span className={`text-xs font-medium transition-colors duration-200 ${
                   isDragging 
                     ? 'text-green-700 dark:text-green-300' 
                     : 'text-blue-700 dark:text-blue-300'
                 }`}>
-                  {isDragging ? '🔄 Dragging...' : '📍 Position:'}
+                  📍 Position:
                 </span>
-                <span className={`text-xs font-mono ${
+                <span className={`text-xs font-mono transition-colors duration-200 ${
                   isDragging 
                     ? 'text-green-600 dark:text-green-400' 
                     : 'text-blue-600 dark:text-blue-400'
                 }`}>
-                  {displayCoordinates ? `${displayCoordinates.lat.toFixed(6)}, ${displayCoordinates.lng.toFixed(6)}` : '0.000000, 0.000000'}
+                  {displayCoordinates ? `${displayCoordinates.lat.toFixed(6)}, ${displayCoordinates.lng.toFixed(6)}` : 
+                   coordinates ? `${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)}` : '0.000000, 0.000000'}
                 </span>
               </div>
               <div className="flex items-center space-x-2">
