@@ -14,7 +14,6 @@ declare global {
 }
 
 interface LocationData {
-  address: string;
   latitude: number;
   longitude: number;
 }
@@ -37,7 +36,7 @@ export function LocationTracker({
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [address, setAddress] = useState(initialLocation?.address || '');
+  const [address, setAddress] = useState('');
   const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(
     initialLocation ? { lat: initialLocation.latitude, lng: initialLocation.longitude } : null
   );
@@ -108,7 +107,6 @@ export function LocationTracker({
         const newAddress = results[0].formatted_address;
         setAddress(newAddress);
         onLocationSelect({
-          address: newAddress,
           latitude: location.lat,
           longitude: location.lng
         });
@@ -416,7 +414,6 @@ export function LocationTracker({
           }
           
           onLocationSelect({
-            address: place.formatted_address || suggestion.formatted_address,
             latitude: location.lat,
             longitude: location.lng
           });
@@ -442,7 +439,6 @@ export function LocationTracker({
     }
     
     onLocationSelect({
-      address: '',
       latitude: 0,
       longitude: 0
     });
@@ -459,7 +455,6 @@ export function LocationTracker({
     
     setCoordinates(newCoords);
     onLocationSelect({
-      address: address || 'Manual Location',
       latitude: newCoords.lat,
       longitude: newCoords.lng
     });

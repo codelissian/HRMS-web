@@ -6,7 +6,6 @@ export interface AttendancePolicy {
   geo_radius_meters: number;
   latitude?: string;
   longitude?: string;
-  address?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;
@@ -29,7 +28,6 @@ export interface CreateAttendancePolicyRequest {
   geo_radius_meters: number;
   latitude?: string;
   longitude?: string;
-  address?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;
@@ -60,7 +58,6 @@ export interface AttendancePolicyFormData {
   geo_radius_meters: number;
   latitude?: string;
   longitude?: string;
-  address?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;

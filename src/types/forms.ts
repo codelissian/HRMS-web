@@ -44,6 +44,7 @@ export const employeeFormSchema = z.object({
   designation_id: z.string().optional(),
   shift_id: z.string().optional(),
   attendance_rule_id: z.string().optional(),
+  geo_radius_meters: z.number().min(1, "Radius must be at least 1 meter").optional(),
   bank_details: z.any().optional(),
   role_id: z.string().optional(),
 });
