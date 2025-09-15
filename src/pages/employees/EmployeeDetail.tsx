@@ -10,7 +10,7 @@ import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Employee } from '../../../shared/schema';
+import { Employee } from '../../types/database';
 import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,7 +32,7 @@ export default function EmployeeDetail() {
     error 
   } = useQuery({
     queryKey: ['employee', 'detail', id],
-    queryFn: () => employeeService.getEmployee(id!),
+    queryFn: () => employeeService.getEmployee(id!, ['department', 'designation', 'shift', 'employee_leaves.leave']),
     enabled: !!id,
   });
 
@@ -91,27 +91,17 @@ export default function EmployeeDetail() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => navigate('/admin/employees')}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
 
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setShowEditForm(true)}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit
-          </Button>
-        </div>
-      </div>
 
       {/* Employee Overview */}
       <Card>
         <CardHeader>
-          <CardTitle>Employee Overview</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Employee Overview</CardTitle>
+            <Button variant="ghost" size="sm" onClick={() => setShowEditForm(true)}>
+              <Edit className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex items-start gap-6">
@@ -141,11 +131,15 @@ export default function EmployeeDetail() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Department:</span>
-                    <span className="text-gray-900 dark:text-white">{employee.department_id || 'Not assigned'}</span>
+                    <span className="text-gray-900 dark:text-white">
+                      {employee.department?.name || employee.department_id || 'Not assigned'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Designation:</span>
-                    <span className="text-gray-900 dark:text-white">{employee.designation_id || 'Not assigned'}</span>
+                    <span className="text-gray-900 dark:text-white">
+                      {employee.designation?.name || employee.designation_id || 'Not assigned'}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Joining Date:</span>
@@ -159,6 +153,68 @@ export default function EmployeeDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Leave Balance Cards */}
+      {employee.employee_leaves && employee.employee_leaves.length > 0 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {employee.employee_leaves.map((employeeLeave) => {
+            const leave = employeeLeave.leave;
+            const daysLeft = employeeLeave.balance;
+            
+            return (
+              <Card key={employeeLeave.id} className="relative overflow-hidden">
+                <div 
+                  className="absolute left-0 top-0 bottom-0 w-1"
+                  style={{ backgroundColor: leave.color || '#6B7280' }}
+                />
+                <CardContent className="p-3 pl-4">
+                  <div className="text-center">
+                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs mb-1 truncate">
+                      {leave.name}
+                    </h3>
+                    <div className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
+                      {daysLeft}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      days left
+                    </p>
+                  </div>
+                  
+                  {/* Additional leave info - more compact */}
+                  <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                      <div className="flex justify-between">
+                        <span>Accrued:</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">{employeeLeave.total_accrued}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Used:</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">{employeeLeave.total_consumed}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Next:</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">
+                          {employeeLeave.next_accrual_date ? 
+                            format(new Date(employeeLeave.next_accrual_date), 'MMM dd') : 'N/A'
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : (
+        <Card className="text-center py-8">
+          <div className="text-gray-500 dark:text-gray-400">
+            <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+            <p className="text-sm">No leave balances available</p>
+            <p className="text-xs text-gray-400 mt-1">Leave balances will appear here once configured</p>
+          </div>
+        </Card>
+      )}
 
       {/* Tabs for detailed information */}
       <Tabs defaultValue="overview" className="space-y-4">
@@ -185,10 +241,7 @@ export default function EmployeeDetail() {
                     {employee.date_of_birth ? format(new Date(employee.date_of_birth), 'MMM dd, yyyy') : 'Not set'}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Emergency Contact:</span>
-                  <span className="text-gray-900 dark:text-white">{employee.emergency_contact || 'Not set'}</span>
-                </div>
+
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400">PAN Number:</span>
                   <span className="text-gray-900 dark:text-white">{employee.pan_number || 'Not set'}</span>
@@ -210,7 +263,9 @@ export default function EmployeeDetail() {
               <CardContent className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Shift:</span>
-                  <span className="text-gray-900 dark:text-white">{employee.shift_id || 'Not assigned'}</span>
+                  <span className="text-gray-900 dark:text-white">
+                    {employee.shift?.name || employee.shift_id || 'Not assigned'}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500 dark:text-gray-400">Role:</span>
@@ -334,7 +389,7 @@ export default function EmployeeDetail() {
                         <span className="font-medium">{leave.leave_type}</span>
                         <p className="text-sm text-gray-500">{leave.from_date} - {leave.to_date}</p>
                       </div>
-                      <Badge variant={leave.status === 'approved' ? 'default' : 'secondary'}>
+                      <Badge variant={leave.status === 'APPROVED' ? 'default' : 'secondary'}>
                         {leave.status}
                       </Badge>
                     </div>

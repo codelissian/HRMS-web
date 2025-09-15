@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = (data: AuthResponse) => {
     const { access_token, refresh_token, admin, employee, organisation } = data;
+    console.log("login data", data);
 
     authToken.setToken(access_token);
     authToken.setRefreshToken(refresh_token);

@@ -67,7 +67,7 @@ export function LeaveRequestCard({
     }
   };
 
-  const canApprove = request.status === 'pending' && showActions;
+  const canApprove = request.status === 'PENDING' && showActions;
   const isHalfDay = request.is_half_day;
   const hasWorkHandover = request.work_handover_to;
   const hasEmergencyContact = request.emergency_contact_name;
@@ -117,8 +117,8 @@ export function LeaveRequestCard({
                 </span>
                 <span className="flex items-center">
                   <Tag className="h-4 w-4 mr-1" />
-                  <Badge className={getLeaveTypeColor(request.leave_type_name || request.leave_id)}>
-                    {request.leave_type_name || 'Leave'}
+                  <Badge className={getLeaveTypeColor(request.leave_type_name || request.leave?.name || request.leave_id)}>
+                    {request.leave_type_name || request.leave?.name || 'Leave'}
                   </Badge>
                 </span>
               </div>
@@ -166,8 +166,8 @@ export function LeaveRequestCard({
           </div>
           
           <div className="flex flex-col items-end space-y-3">
-            <Badge className={getStatusColor(request.status || 'pending')}>
-              {request.status || 'Pending'}
+            <Badge className={getStatusColor(request.status || 'PENDING')}>
+              {request.status || 'PENDING'}
             </Badge>
             
             {showActions && (

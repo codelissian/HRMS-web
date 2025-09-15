@@ -1,29 +1,54 @@
 import { httpClient } from '@/lib/httpClient';
 import { API_ENDPOINTS } from '@/services/api/endpoints';
-import { Employee, InsertEmployee } from '../../shared/schema';
+import { Employee, EmployeeWithRelations } from '../types/database';
 import { FilterRequest, ApiResponse } from '@/types/api';
 
 class EmployeeService {
   /**
    * Get all employees with filters and pagination
+   * Supports include parameter for department and designation data
    */
-  async getEmployees(filters: FilterRequest): Promise<ApiResponse<Employee[]>> {
-    const response = await httpClient.post<ApiResponse<Employee[]>>(API_ENDPOINTS.EMPLOYEES_LIST, filters);
+  async getEmployees(filters: FilterRequest & { include?: string[] }): Promise<ApiResponse<EmployeeWithRelations[]>> {
+    const response = await httpClient.post<ApiResponse<EmployeeWithRelations[]>>(API_ENDPOINTS.EMPLOYEES_LIST, filters);
     return response.data;
   }
 
   /**
    * Get a single employee by ID
+   * Supports include parameter for department and designation data
    */
-  async getEmployee(id: string): Promise<ApiResponse<Employee>> {
-    const response = await httpClient.post<ApiResponse<Employee>>(API_ENDPOINTS.EMPLOYEES_ONE, { id });
-    return response.data;
+  async getEmployee(id: string, include?: string[]): Promise<ApiResponse<EmployeeWithRelations>> {
+    try {
+      const requestBody: { id: string; include?: string[] } = { id };
+      
+      if (include && include.length > 0) {
+        requestBody.include = include;
+      }
+      
+      const response = await httpClient.post<any>(API_ENDPOINTS.EMPLOYEES_ONE, requestBody);
+      
+      // Extract the actual data from the nested response structure
+      const apiResponse: ApiResponse<EmployeeWithRelations> = {
+        status: response.data.status,
+        data: response.data.data,
+        message: response.data.message || 'Success',
+        total_count: response.data.total_count,
+        page: response.data.page,
+        page_count: response.data.page_count,
+        page_size: response.data.page_size
+      };
+      
+      return apiResponse;
+    } catch (error) {
+      console.error('Error fetching employee:', error);
+      throw error;
+    }
   }
 
   /**
    * Create a new employee
    */
-  async createEmployee(data: InsertEmployee): Promise<ApiResponse<Employee>> {
+  async createEmployee(data: Partial<Employee>): Promise<ApiResponse<Employee>> {
     const response = await httpClient.post<ApiResponse<Employee>>(API_ENDPOINTS.EMPLOYEES_CREATE, data);
     return response.data;
   }
@@ -145,8 +170,10 @@ class EmployeeService {
    */
   async bulkImport(file: File): Promise<ApiResponse<{ success_count: number; error_count: number; errors: any[] }>> {
     // Get organisation ID from auth token
-    const organisationId = localStorage.getItem('user_data') ? 
-      JSON.parse(localStorage.getItem('user_data')!).organisation_id : null;
+    const organisationId: any = localStorage.getItem('hrms_organisation_id');
+    if (!organisationId) {
+      throw new Error('Organisation ID not found');
+    }
 
     // Use FormData approach with explicit organisation_id
     const formData = new FormData();

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDepartments } from '@/hooks/useDepartments';
+import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,6 @@ import {
   XCircle, 
   AlertCircle, 
   Search,
-  Filter,
   Download,
   Eye
 } from 'lucide-react';
@@ -36,6 +36,7 @@ const defaultStatistics = {
 };
 
 export default function LeaveRequestsPage() {
+  const { user } = useAuth();
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -72,26 +73,71 @@ export default function LeaveRequestsPage() {
         requestBody.department_id = departmentId;
       }
       
+      console.log('🔍 Fetching statistics for department:', departmentId);
       const response = await leaveService.getLeaveStatistics(requestBody);
+      console.log('📊 Statistics API response:', response);
       
       if (response.status && response.data) {
         // Transform the API response to match expected format
         const apiData = response.data as any;
-        const transformedStats = {
-          total_requests: (apiData.PENDING || 0) + (apiData.APPROVED || 0) + (apiData.REJECTED || 0) + (apiData.CANCELLED || 0) + (apiData.PARTIALLY_APPROVED || 0),
-          pending_requests: apiData.PENDING || 0,
-          approved_requests: apiData.APPROVED || 0,
-          rejected_requests: apiData.REJECTED || 0,
-          cancelled_requests: apiData.CANCELLED || 0,
-          total_days_requested: 0,
-          average_processing_time: 0,
-          leave_type_distribution: {},
-          department_distribution: {}
-        };
+        console.log('📊 Raw API data:', apiData);
         
+        // Handle different possible response structures
+        let transformedStats;
+        
+        if (typeof apiData === 'object' && apiData !== null) {
+          // Check if it's the expected structure with status counts
+          if (apiData.PENDING !== undefined || apiData.APPROVED !== undefined) {
+            transformedStats = {
+              total_requests: (apiData.PENDING || 0) + (apiData.APPROVED || 0) + (apiData.REJECTED || 0) + (apiData.CANCELLED || 0) + (apiData.PARTIALLY_APPROVED || 0),
+              pending_requests: apiData.PENDING || 0,
+              approved_requests: apiData.APPROVED || 0,
+              rejected_requests: apiData.REJECTED || 0,
+              cancelled_requests: apiData.CANCELLED || 0,
+              total_days_requested: apiData.total_days_requested || 0,
+              average_processing_time: apiData.average_processing_time || 0,
+              leave_type_distribution: apiData.leave_type_distribution || {},
+              department_distribution: apiData.department_distribution || {}
+            };
+          } else if (apiData.total_requests !== undefined) {
+            // If it's already in the expected format
+            transformedStats = apiData;
+          } else {
+            // Fallback: try to extract counts from any available data
+            transformedStats = {
+              total_requests: apiData.total || apiData.count || 0,
+              pending_requests: apiData.pending || 0,
+              approved_requests: apiData.approved || 0,
+              rejected_requests: apiData.rejected || 0,
+              cancelled_requests: apiData.cancelled || 0,
+              total_days_requested: apiData.total_days || 0,
+              average_processing_time: apiData.avg_processing_time || 0,
+              leave_type_distribution: apiData.leave_types || {},
+              department_distribution: apiData.departments || {}
+            };
+          }
+        } else {
+          // Fallback for unexpected data types
+          transformedStats = {
+            total_requests: 0,
+            pending_requests: 0,
+            approved_requests: 0,
+            rejected_requests: 0,
+            cancelled_requests: 0,
+            total_days_requested: 0,
+            average_processing_time: 0,
+            leave_type_distribution: {},
+            department_distribution: {}
+          };
+        }
+        
+        console.log('📊 Transformed statistics:', transformedStats);
         setStatistics(transformedStats);
+      } else {
+        console.log('❌ Statistics response not successful:', response);
       }
     } catch (error) {
+      console.error('❌ Error fetching statistics:', error);
       // Keep existing statistics on error
     } finally {
       setIsLoadingStats(false);
@@ -106,15 +152,21 @@ export default function LeaveRequestsPage() {
 
   // Fetch leave requests
   const fetchLeaveRequests = async () => {
+    if (!user?.organisation_id) {
+      console.error('Organisation ID not found');
+      return;
+    }
+
     setIsLoadingRequests(true);
     try {
       const filters = {
+        organisation_id: user.organisation_id,
+        type: 'leave' as const,
         page: currentPage,
         page_size: pageSize,
         search: searchTerm || undefined,
         department_id: selectedDepartment === 'all' ? undefined : selectedDepartment,
-        status: (statusFilter === 'all' ? undefined : statusFilter) as 'pending' | 'approved' | 'rejected' | 'cancelled' | undefined,
-        include: ['employee', 'leave']
+        status: (statusFilter === 'all' ? undefined : statusFilter) as 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | undefined
       };
 
       console.log('Fetching leave requests with filters:', filters);
@@ -294,39 +346,6 @@ export default function LeaveRequestsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Department Tabs */}
-      <div className="bg-white dark:bg-gray-850 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="px-6 py-4">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleDepartmentChange('all')}
-              className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                selectedDepartment === 'all'
-                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-              }`}
-            >
-              All
-            </button>
-            
-            {departments.map((department) => (
-              <button
-                key={department.id}
-                onClick={() => handleDepartmentChange(department.id)}
-                className={`px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  selectedDepartment === department.id
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
-                }`}
-              >
-                {department.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -442,29 +461,51 @@ export default function LeaveRequestsPage() {
                 />
               </div>
             </div>
+            <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
-              More Filters
-            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Leave Requests Title */}
+      {/* Leave Requests Title and Summary */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leave Requests</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leave Requests</h2>
+          {statusFilter !== 'all' && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Showing {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} requests 
+              ({leaveRequests.length} of {totalCount})
+            </p>
+          )}
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Total: {totalCount} requests
+          </p>
+        </div>
       </div>
 
       {/* Leave Requests Table */}
@@ -508,7 +549,7 @@ export default function LeaveRequestsPage() {
                       </td>
                         <td className="py-4 px-6">
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Leave Type: {request.leave.name}
+                            Leave Type: {request.leave_type_name || request.leave?.name || 'Unknown'}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
                           Reason: {request.reason}
@@ -534,7 +575,7 @@ export default function LeaveRequestsPage() {
                         {new Date(request.created_at).toLocaleDateString()}
                       </td>
                       <td className="py-4 px-6">
-                                                  <div className={`flex ${(request.status === 'PENDING' || request.status === 'pending') ? 'gap-2' : 'justify-center'}`}>
+                                                  <div className={`flex ${request.status === 'PENDING' ? 'gap-2' : 'justify-center'}`}>
                             <Button 
                               variant="ghost" 
                               size="sm" 
@@ -544,7 +585,7 @@ export default function LeaveRequestsPage() {
                             >
                               <Eye className="w-5 h-5 text-blue-600 group-hover:text-blue-400 transition-colors duration-200" />
                             </Button>
-                          {(request.status === 'PENDING' || request.status === 'pending') && (
+                          {request.status === 'PENDING' && (
                             <>
                                                               <Button 
                                   variant="ghost"
@@ -653,7 +694,7 @@ export default function LeaveRequestsPage() {
                   <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Leave Information</h3>
                     <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Leave Type:</span> {selectedLeaveRequest.leave.name || 'N/A'}</div>
+                      <div><span className="font-medium">Leave Type:</span> {selectedLeaveRequest.leave_type_name || selectedLeaveRequest.leave?.name || 'N/A'}</div>
                       <div><span className="font-medium">Reason:</span> {selectedLeaveRequest.reason || 'N/A'}</div>
                       <div><span className="font-medium">Comments:</span> {selectedLeaveRequest.comments || 'N/A'}</div>
                       <div className="flex items-center gap-2">

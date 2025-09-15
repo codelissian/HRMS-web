@@ -4,15 +4,17 @@ export interface AttendancePolicy {
   name: string;
   geo_tracking_enabled: boolean;
   geo_radius_meters: number;
+  latitude?: string;
+  longitude?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;
-  grace_period_minutes: number;
-  overtime_threshold_hours: number;
-  break_management_enabled: boolean;
   regularization_enabled: boolean;
-  active_flag: boolean;
-  delete_flag: boolean;
+  grace_period_minutes?: number;
+  overtime_threshold_hours?: number;
+  break_management_enabled?: boolean;
+  active_flag?: boolean;
+  delete_flag?: boolean;
   created_at?: string;
   modified_at?: string;
   created_by?: string | null;
@@ -21,16 +23,15 @@ export interface AttendancePolicy {
 
 export interface CreateAttendancePolicyRequest {
   name: string;
+  organisation_id: string;
   geo_tracking_enabled: boolean;
   geo_radius_meters: number;
+  latitude?: string;
+  longitude?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;
-  grace_period_minutes: number;
-  overtime_threshold_hours: number;
-  break_management_enabled: boolean;
   regularization_enabled: boolean;
-  active_flag: boolean;
 }
 
 export interface UpdateAttendancePolicyRequest extends CreateAttendancePolicyRequest {
@@ -55,13 +56,11 @@ export interface AttendancePolicyFormData {
   name: string;
   geo_tracking_enabled: boolean;
   geo_radius_meters: number;
+  latitude?: string;
+  longitude?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;
-  grace_period_minutes: number;
-  overtime_threshold_hours: number;
-  break_management_enabled: boolean;
   regularization_enabled: boolean;
-  active_flag: boolean;
 }
 

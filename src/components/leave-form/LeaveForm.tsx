@@ -16,40 +16,11 @@ import {
   DialogHeader, 
   DialogTitle 
 } from '@/components/ui/dialog';
-import { Leave } from '../../../shared/schema';
+import { Leave } from '../../types/database';
+import { leaveFormSchema, LeaveFormData } from '../../types/forms';
 import { ColorPicker } from '@/components/common';
 
-// Leave form schema
-const leaveFormSchema = z.object({
-  name: z.string().min(1, "Leave name is required"),
-  code: z.string().min(1, "Leave code is required"),
-  description: z.string().optional(),
-  color: z.string().optional(),
-  icon: z.string().optional(),
-  category: z.enum(['PAID', 'UNPAID', 'HALF_DAY']),
-  accrual_method: z.enum(['MONTHLY', 'YEARLY', 'QUARTERLY', 'NONE']),
-  accrual_rate: z.number().min(0, "Accrual rate must be 0 or greater"),
-  initial_balance: z.number().min(0, "Initial balance must be 0 or greater"),
-  max_balance: z.number().min(0, "Max balance must be 0 or greater"),
-  min_balance: z.number().min(0, "Min balance must be 0 or greater"),
-  allow_carry_forward: z.boolean(),
-  carry_forward_limit: z.number().min(0, "Carry forward limit must be 0 or greater"),
-  carry_forward_expiry_months: z.number().min(0, "Expiry months must be 0 or greater"),
-  allow_encashment: z.boolean(),
-  encashment_rate: z.number().min(0, "Encashment rate must be 0 or greater"),
-  requires_approval: z.boolean(),
-  requires_documentation: z.boolean(),
-  required_documents: z.array(z.string()).optional(),
-  auto_approve_for_days: z.number().min(0, "Auto-approve days must be 0 or greater"),
-  approval_levels: z.number().min(1, "Approval levels must be at least 1"),
-  min_service_months: z.number().min(0, "Min service months must be 0 or greater"),
-  min_advance_notice_days: z.number().min(0, "Advance notice days must be 0 or greater"),
-  max_consecutive_days: z.number().min(0, "Max consecutive days must be 0 or greater"),
-  blackout_dates: z.array(z.string()).optional(),
-  active_flag: z.boolean(),
-});
 
-type LeaveFormData = z.infer<typeof leaveFormSchema>;
 
 interface LeaveFormProps {
   open: boolean;

@@ -7,11 +7,13 @@ import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
-import { Employee, InsertEmployee } from '../../../shared/schema';
+import { Employee, EmployeeWithRelations } from '../../types/database';
 import { Plus, Filter, Download, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import { useDepartments } from '@/hooks/useDepartments';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function EmployeeList() {
   const [showForm, setShowForm] = useState(false);
@@ -23,18 +25,20 @@ export default function EmployeeList() {
   
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null);
+  const [employeeToDelete, setEmployeeToDelete] = useState<EmployeeWithRelations | null>(null);
   
   // Edit employee state
   const [isEditMode, setIsEditMode] = useState(false);
-  const [employeeToEdit, setEmployeeToEdit] = useState<Employee | null>(null);
+  const [employeeToEdit, setEmployeeToEdit] = useState<EmployeeWithRelations | null>(null);
   const [isLoadingEditData, setIsLoadingEditData] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { departments, isLoading: departmentsLoading } = useDepartments();
+  const { user } = useAuth();
 
-  // Fetch employees with proper filtering
+  // Fetch employees with proper filtering and include department/designation data
   const { 
     data: employeesResponse, 
     isLoading, 
@@ -47,13 +51,22 @@ export default function EmployeeList() {
       department_id: departmentFilter,
       status: statusFilter 
     }],
-    queryFn: () => employeeService.getEmployees({
-      page: currentPage,
-      page_size: pageSize,
-      search: searchTerm || undefined,
-      department_id: departmentFilter === 'all' ? undefined : departmentFilter,
-      status: statusFilter === 'all' ? undefined : statusFilter,
-    }),
+    queryFn: () => {
+      if (!user?.organisation_id) {
+        throw new Error('Organization ID not found');
+      }
+      
+      return employeeService.getEmployees({
+        organisation_id: user.organisation_id,
+        page: currentPage,
+        page_size: pageSize,
+        search: searchTerm || undefined,
+        department_id: departmentFilter === 'all' ? undefined : departmentFilter,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+        include: ['department', 'designation']
+      });
+    },
+    enabled: !!user?.organisation_id,
   });
 
   const employees = employeesResponse?.data || [];
@@ -62,7 +75,7 @@ export default function EmployeeList() {
 
   // Create employee mutation
   const createEmployeeMutation = useMutation({
-    mutationFn: (data: InsertEmployee) => employeeService.createEmployee(data),
+            mutationFn: (data: Partial<Employee>) => employeeService.createEmployee(data),
     onSuccess: () => {
       toast({
         title: 'Success',
@@ -82,8 +95,12 @@ export default function EmployeeList() {
 
   // Update employee mutation
   const updateEmployeeMutation = useMutation({
-    mutationFn: (data: Partial<Employee> & { id: string }) => employeeService.updateEmployee(data),
-    onSuccess: () => {
+    mutationFn: (data: Partial<Employee> & { id: string }) => {
+      console.log('updateEmployeeMutation called with:', data);
+      return employeeService.updateEmployee(data);
+    },
+    onSuccess: (response) => {
+      console.log('Update successful:', response);
       toast({
         title: 'Success',
         description: 'Employee updated successfully',
@@ -94,6 +111,7 @@ export default function EmployeeList() {
       queryClient.invalidateQueries({ queryKey: ['employees', 'list'] });
     },
     onError: (error) => {
+      console.error('Update failed:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to update employee',
@@ -121,16 +139,23 @@ export default function EmployeeList() {
     },
   });
 
-  const handleCreateEmployee = async (data: InsertEmployee) => {
+  const handleCreateEmployee = async (data: Partial<Employee>) => {
     createEmployeeMutation.mutate(data);
   };
 
-  const handleUpdateEmployee = async (data: InsertEmployee) => {
+  const handleUpdateEmployee = async (data: Partial<Employee>) => {
+    console.log('handleUpdateEmployee called with data:', data);
+    console.log('employeeToEdit:', employeeToEdit);
+    
     if (employeeToEdit) {
-      updateEmployeeMutation.mutate({
+      const updateData = {
         id: employeeToEdit.id,
         ...data
-      });
+      };
+      console.log('Calling updateEmployeeMutation with:', updateData);
+      updateEmployeeMutation.mutate(updateData);
+    } else {
+      console.error('No employee to edit found');
     }
   };
 
@@ -184,8 +209,18 @@ export default function EmployeeList() {
   };
 
   const handleExportEmployees = async () => {
+    if (!user?.organisation_id) {
+      toast({
+        title: 'Error',
+        description: 'Organization ID not found',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const blob = await employeeService.exportEmployees({
+        organisation_id: user.organisation_id,
         page: 1,
         page_size: totalCount,
         search: searchTerm || undefined,
@@ -332,13 +367,15 @@ export default function EmployeeList() {
             <div>
               <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All Departments" />
+                  <SelectValue placeholder={departmentsLoading ? "Loading..." : "All Departments"} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
-                  <SelectItem value="dept-1">Engineering</SelectItem>
-                  <SelectItem value="dept-2">HR</SelectItem>
-                  <SelectItem value="dept-3">Marketing</SelectItem>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={department.id}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -399,35 +436,53 @@ export default function EmployeeList() {
       )}
 
       {/* Employee Form Modal */}
-              <EmployeeForm
-          open={showForm}
-          onOpenChange={(open) => {
-            setShowForm(open);
-            if (!open) {
-              setIsEditMode(false);
-              setEmployeeToEdit(null);
-            }
-          }}
-          onSubmit={isEditMode ? handleUpdateEmployee : handleCreateEmployee}
-          loading={createEmployeeMutation.isPending || updateEmployeeMutation.isPending}
-          initialData={isEditMode ? employeeToEdit : undefined}
-          title={isEditMode ? 'Edit Employee' : 'Add New Employee'}
-          description={isEditMode ? 'Update the employee details below.' : 'Fill in the employee details below.'}
-          isEditMode={isEditMode}
-        />
-        
-        {/* Confirmation Dialog */}
-        <ConfirmationDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          title="Delete Employee"
-          description="Are you sure you want to delete this employee? This action cannot be undone."
-          type="delete"
-          confirmText="Delete Employee"
-          onConfirm={confirmDeleteEmployee}
-          loading={deleteEmployeeMutation.isPending}
-          itemName={employeeToDelete?.name}
-        />
-      </div>
-    );
-  }
+      <EmployeeForm
+        open={showForm}
+        onOpenChange={(open) => {
+          setShowForm(open);
+          if (!open) {
+            setIsEditMode(false);
+            setEmployeeToEdit(null);
+          }
+        }}
+        onSubmit={isEditMode ? handleUpdateEmployee : handleCreateEmployee}
+        loading={createEmployeeMutation.isPending || updateEmployeeMutation.isPending}
+                  initialData={isEditMode && employeeToEdit ? {
+            name: employeeToEdit.name,
+            mobile: employeeToEdit.mobile,
+            email: employeeToEdit.email,
+            password: employeeToEdit.password,
+            included_in_payroll: employeeToEdit.included_in_payroll,
+            date_of_birth: employeeToEdit.date_of_birth,
+            address: employeeToEdit.address,
+            pan_number: employeeToEdit.pan_number,
+            status: employeeToEdit.status,
+            joining_date: employeeToEdit.joining_date,
+            organisation_id: employeeToEdit.organisation_id,
+            department_id: employeeToEdit.department_id,
+            designation_id: employeeToEdit.designation_id,
+            shift_id: employeeToEdit.shift_id,
+            bank_details: employeeToEdit.bank_details,
+            role_id: employeeToEdit.role_id,
+            code: employeeToEdit.id?.slice(0, 8).toUpperCase() || 'EMP001'
+          } as any : undefined}
+        title={isEditMode ? 'Edit Employee' : 'Add New Employee'}
+        description={isEditMode ? 'Update the employee details below.' : 'Fill in the employee details below.'}
+        isEditMode={isEditMode}
+      />
+      
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Employee"
+        description="Are you sure you want to delete this employee? This action cannot be undone."
+        type="delete"
+        confirmText="Delete Employee"
+        onConfirm={confirmDeleteEmployee}
+        loading={deleteEmployeeMutation.isPending}
+        itemName={employeeToDelete?.name}
+      />
+    </div>
+  );
+}

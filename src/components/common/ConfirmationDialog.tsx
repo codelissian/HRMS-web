@@ -112,30 +112,33 @@ export function ConfirmationDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="sm:max-w-[425px]">
-        <AlertDialogHeader>
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-full bg-gray-100 dark:bg-gray-800 ${getIconColor()}`}>
+      <AlertDialogContent className="sm:max-w-[480px] border-0 shadow-2xl">
+        <AlertDialogHeader className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <div className={`p-3 rounded-full ${getIconColor()} bg-opacity-10`}>
               {getIcon()}
             </div>
-            <AlertDialogTitle className="text-lg font-semibold">
+            <AlertDialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">
               {title}
             </AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-gray-600 dark:text-gray-400 mt-3">
+          <AlertDialogDescription className="text-base text-gray-600 dark:text-gray-300 leading-relaxed">
             {description}
             {itemName && (
-              <span className="font-medium text-gray-900 dark:text-white">
-                {' '}
-                "{itemName}"?
+              <span className="block mt-2 font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-800 px-3 py-2 rounded-lg">
+                "{itemName}"
               </span>
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         
-        <AlertDialogFooter>
+        <AlertDialogFooter className="flex gap-3 pt-6">
           <AlertDialogCancel asChild>
-            <Button variant="outline" disabled={loading}>
+            <Button 
+              variant="outline" 
+              disabled={loading}
+              className="flex-1 h-11 font-medium"
+            >
               {cancelText}
             </Button>
           </AlertDialogCancel>
@@ -144,16 +147,16 @@ export function ConfirmationDialog({
               variant={getConfirmButtonVariant()}
               onClick={handleConfirm}
               disabled={loading}
-              className={`min-w-[80px] ${
+              className={`flex-1 h-11 font-medium ${
                 type === 'approve' 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  ? 'bg-green-600 hover:bg-green-700 text-white border-green-600' 
                   : type === 'danger'
-                  ? 'bg-red-600 hover:bg-red-700 text-white'
+                  ? 'bg-red-600 hover:bg-red-700 text-white border-red-600'
                   : ''
               }`}
             >
               {loading ? (
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   <span>Loading...</span>
                 </div>

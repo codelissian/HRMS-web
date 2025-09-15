@@ -16,7 +16,7 @@ export class AttendancePolicyService {
   }
 
   static async update(data: UpdateAttendancePolicyRequest): Promise<ApiResponse<AttendancePolicy>> {
-    const response = await httpClient.post<ApiResponse<AttendancePolicy>>(API_ENDPOINTS.ATTENDANCE_POLICIES_UPDATE, data);
+    const response = await httpClient.put<ApiResponse<AttendancePolicy>>(API_ENDPOINTS.ATTENDANCE_POLICIES_UPDATE, data);
     return response.data;
   }
 
@@ -31,7 +31,7 @@ export class AttendancePolicyService {
   }
 
   static async delete(id: string): Promise<ApiResponse<void>> {
-    const response = await httpClient.post<ApiResponse<void>>(API_ENDPOINTS.ATTENDANCE_POLICIES_DELETE, { id });
+    const response = await httpClient.patch<ApiResponse<void>>(API_ENDPOINTS.ATTENDANCE_POLICIES_DELETE, { id });
     return response.data;
   }
 }

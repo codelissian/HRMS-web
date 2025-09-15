@@ -1,17 +1,15 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { insertEmployeeSchema, InsertEmployee } from '../../../shared/schema';
+import { employeeFormSchema, EmployeeFormData } from '../../types/forms';
 import { z } from 'zod';
 
 // Extended schema that includes the code field and handles date strings from API
-const extendedEmployeeSchema = insertEmployeeSchema.extend({
+const extendedEmployeeSchema = employeeFormSchema.extend({
   code: z.string().min(1, "Employee code is required").regex(/^[A-Z0-9]+$/, "Employee code must contain only uppercase letters and numbers"),
-  date_of_birth: z.union([z.date(), z.string(), z.null(), z.undefined()]).optional(),
-  joining_date: z.union([z.date(), z.string(), z.null(), z.undefined()]).optional(),
 });
 
 // Extended type that includes the code field
-type ExtendedInsertEmployee = InsertEmployee & { code: string };
+type ExtendedInsertEmployee = EmployeeFormData & { code: string };
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +28,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useState, useEffect } from 'react';
 import { designationService } from '@/services/designationService';
 import { ShiftService } from '@/services/shiftService';
+import { httpClient } from '@/services/httpClient';
+import { API_ENDPOINTS } from '@/services/api/endpoints';
 import { getCurrentOrganizationId } from '@/lib/organization-utils';
 import { formatDateForInput, convertDateStringToDate } from '@/lib/date-utils';
 
@@ -56,6 +56,13 @@ export function EmployeeForm({
   isEditMode = false,
   isFetchingData = false
 }: EmployeeFormProps) {
+  console.log('EmployeeForm rendered with props:', { 
+    open, 
+    isEditMode, 
+    initialData, 
+    loading, 
+    isFetchingData 
+  });
   
   // ✅ Hook to fetch departments data - only when form is open
   const { departments, isLoading: departmentsLoading } = useDepartments(open);
@@ -68,6 +75,10 @@ export function EmployeeForm({
   // New state for shifts
   const [shifts, setShifts] = useState<any[]>([]);
   const [shiftsLoading, setShiftsLoading] = useState(false);
+  
+  // New state for attendance rules
+  const [attendanceRules, setAttendanceRules] = useState<any[]>([]);
+  const [attendanceRulesLoading, setAttendanceRulesLoading] = useState(false);
   
   const {
     register,
@@ -84,25 +95,42 @@ export function EmployeeForm({
 
   // Watch the department_id field to trigger designation fetch
   const watchedDepartmentId = watch('department_id');
+  
+  // Check form validity (moved after useForm initialization)
+  const formValues = watch();
+  const isFormValid = Object.keys(errors).length === 0;
+  console.log('Form validity check:', { 
+    formValues, 
+    errors, 
+    isFormValid,
+    hasRequiredFields: !!(formValues.name && formValues.mobile && formValues.code),
+    isFetchingData,
+    formDisabled: isFetchingData,
+    formReady: !!formValues
+  });
 
   // Set initial data when form opens in edit mode
   useEffect(() => {
+    console.log('Form useEffect triggered:', { open, initialData, isEditMode });
     if (open && initialData && isEditMode) {
+      console.log('Resetting form with initial data:', initialData);
       reset(initialData);
       // Trigger designation fetch if department is set
       if (initialData.department_id) {
         setSelectedDepartmentId(initialData.department_id);
         fetchDesignations(initialData.department_id);
       }
-      // Always fetch shifts for edit mode
+      // Always fetch shifts and attendance rules for edit mode
       fetchShifts();
+      fetchAttendanceRules();
     }
   }, [open, initialData, isEditMode, reset]);
 
-  // Fetch shifts when form opens
+  // Fetch shifts and attendance rules when form opens
   useEffect(() => {
     if (open) {
       fetchShifts();
+      fetchAttendanceRules();
     }
   }, [open]);
 
@@ -150,6 +178,70 @@ export function EmployeeForm({
     }
   };
 
+  const fetchAttendanceRules = async () => {
+    try {
+      setAttendanceRulesLoading(true);
+      
+      const organisationId = getCurrentOrganizationId();
+      
+      console.log('Fetching attendance rules for organisation:', organisationId);
+      
+      // Try using httpClient first
+      try {
+        const response = await httpClient.post(API_ENDPOINTS.ATTENDANCE_POLICIES_LIST, {
+          organisation_id: organisationId,
+          page: 1,
+          page_size: 100
+        });
+
+        console.log('Attendance rules API response (httpClient):', response.data);
+
+        if (response.data.status && response.data.data) {
+          console.log('Successfully fetched attendance rules:', response.data.data);
+          setAttendanceRules(response.data.data);
+          return;
+        } else {
+          console.error('Failed to fetch attendance rules (httpClient):', response.data.message || 'Unknown error');
+        }
+      } catch (httpClientError) {
+        console.log('httpClient failed, trying direct fetch:', httpClientError);
+        
+        // Fallback to direct fetch
+        const response = await fetch(`${process.env.VITE_API_BASE_URL || 'https://hrms-backend-omega.vercel.app/api/v1'}/attendance_rules/list`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('hrms_auth_token')}`
+          },
+          body: JSON.stringify({
+            organisation_id: organisationId,
+            page: 1,
+            page_size: 100
+          })
+        });
+
+        console.log('Attendance rules API response status (fetch):', response.status);
+        
+        const data = await response.json();
+        console.log('Attendance rules API response data (fetch):', data);
+
+        if (data.status && data.data) {
+          console.log('Successfully fetched attendance rules (fetch):', data.data);
+          setAttendanceRules(data.data);
+        } else {
+          console.error('Failed to fetch attendance rules (fetch):', data.message || 'Unknown error');
+          console.error('Full response:', data);
+          setAttendanceRules([]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching attendance rules:', error);
+      setAttendanceRules([]);
+    } finally {
+      setAttendanceRulesLoading(false);
+    }
+  };
+
   const fetchDesignations = async (departmentId: string) => {
     if (!departmentId) return;
     
@@ -190,8 +282,12 @@ export function EmployeeForm({
   };
 
 
+  
 
   const handleFormSubmit = (data: ExtendedInsertEmployee) => {
+    console.log('Form submitted with data:', data);
+    console.log('Is edit mode:', isEditMode);
+    
     // Convert date strings to Date objects before submitting
     const processedData = {
       ...data,
@@ -199,11 +295,13 @@ export function EmployeeForm({
       joining_date: convertDateStringToDate(data.joining_date),
     };
     
+    console.log('Processed data:', processedData);
     onSubmit(processedData);
     reset();
     setDesignations([]);
     setSelectedDepartmentId(undefined);
     setShifts([]);
+    setAttendanceRules([]);
   };
 
   const handleClose = () => {
@@ -211,6 +309,7 @@ export function EmployeeForm({
     setDesignations([]);
     setSelectedDepartmentId(undefined);
     setShifts([]);
+    setAttendanceRules([]);
     onOpenChange(false);
   };
 
@@ -231,7 +330,29 @@ export function EmployeeForm({
           </div>
         )}
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className={`space-y-6 ${isFetchingData ? 'opacity-50 pointer-events-none' : ''}`}>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          console.log('Form submit event triggered');
+          console.log('Current form values:', watch());
+          console.log('Form errors:', errors);
+          console.log('Is edit mode:', isEditMode);
+          console.log('Loading state:', loading);
+          
+          const submitHandler = handleSubmit(handleFormSubmit, (errors) => {
+            console.log('Form validation errors:', errors);
+            console.log('Validation failed - form not submitted');
+          });
+          
+          console.log('About to call submit handler');
+          submitHandler();
+          
+          // Also try direct submission for testing
+          console.log('Trying direct submission for testing...');
+          setTimeout(() => {
+            console.log('Direct submission attempt');
+            handleFormSubmit(formValues as ExtendedInsertEmployee);
+          }, 100);
+        }} className={`space-y-6 ${isFetchingData ? 'opacity-50 pointer-events-none' : ''}`}>
           {/* Personal Information */}
           <div className="space-y-4">
             <h4 className="text-lg font-medium text-gray-900 dark:text-white">
@@ -393,6 +514,37 @@ export function EmployeeForm({
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="attendance_rule_id">Attendance Rule</Label>
+                <Controller
+                  name="attendance_rule_id"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value || undefined}>
+                      <SelectTrigger disabled={attendanceRulesLoading}>
+                        <SelectValue placeholder={attendanceRulesLoading ? "Loading rules..." : "Select Attendance Rule"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {attendanceRulesLoading ? (
+                          <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                            Loading attendance rules...
+                          </div>
+                        ) : attendanceRules.length > 0 ? (
+                          attendanceRules.map((rule) => (
+                            <SelectItem key={rule.id} value={rule.id}>
+                              {rule.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <div className="px-2 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                            No attendance rules found
+                          </div>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="joining_date">Joining Date</Label>
                 <Controller
                   name="joining_date"
@@ -421,15 +573,6 @@ export function EmployeeForm({
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="emergency_contact">Emergency Contact</Label>
-                <Input
-                  id="emergency_contact"
-                  {...register('emergency_contact')}
-                  error={errors.emergency_contact?.message}
-                  placeholder="Emergency contact number"
-                />
-              </div>
-              <div className="space-y-2">
                 <Label htmlFor="pan_number">PAN Number</Label>
                 <Input
                   id="pan_number"
@@ -455,7 +598,15 @@ export function EmployeeForm({
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading}
+              onClick={(e) => {
+                console.log('Button clicked!', e);
+                console.log('Button type:', e.currentTarget.type);
+                console.log('Form disabled:', loading);
+              }}
+            >
               {loading ? 'Saving...' : (isEditMode ? 'Update Employee' : 'Save Employee')}
             </Button>
           </DialogFooter>

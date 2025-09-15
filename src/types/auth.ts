@@ -1,4 +1,4 @@
-import type { Admin, Employee, Organisation } from '../shared/schema';
+import type { Admin, Employee, Organisation } from './database';
 
 export interface AuthTokens {
   access_token: string;

@@ -80,11 +80,11 @@ const API = {
   PERMISSIONS_DELETE: `/permissions/delete`,
 
   // Attendance Policies
-  ATTENDANCE_POLICIES_CREATE: `/attendance_policies/create`,
-  ATTENDANCE_POLICIES_UPDATE: `/attendance_policies/update`,
-  ATTENDANCE_POLICIES_LIST: `/attendance_policies/list`,
+  ATTENDANCE_POLICIES_CREATE: `/attendance_rules/create`,
+  ATTENDANCE_POLICIES_UPDATE: `/attendance_rules/update`,
+  ATTENDANCE_POLICIES_LIST: `/attendance_rules/list`,
   ATTENDANCE_POLICIES_ONE: `/attendance_policies/one`,
-  ATTENDANCE_POLICIES_DELETE: `/attendance_policies/delete`,
+  ATTENDANCE_POLICIES_DELETE: `/attendance_rules/delete`,
 
   // Attendance
   ATTENDANCE_CREATE: `/attendance/create`,
@@ -102,11 +102,11 @@ const API = {
 
   // Leave Requests
   LEAVE_REQUESTS_CREATE: `/leave_requests/create`,
-  LEAVE_REQUESTS_UPDATE: `/leave_requests/update`,
-  LEAVE_REQUESTS_LIST: `/leave_requests/list`,
-  LEAVE_REQUESTS_ONE: `/leave_requests/one`,
+  LEAVE_REQUESTS_UPDATE: `/requests/update_status`,
+  LEAVE_REQUESTS_LIST: `/requests/list`,
+  LEAVE_REQUESTS_ONE: `/requests/one`,
   LEAVE_REQUESTS_DELETE: `/leave_requests/delete`,
-  LEAVE_REQUESTS_STATISTICS: `/leave_requests/statistics`,
+  LEAVE_REQUESTS_STATISTICS: `/requests/statistics`,
 
   // Leave Encashments
   LEAVE_ENCASHMENTS_CREATE: `/leave-encashments/create`,

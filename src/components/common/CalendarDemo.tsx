@@ -15,7 +15,7 @@ const demoEvents: CalendarEvent[] = [
     type: 'leave',
     title: 'Annual Leave',
     description: 'Family vacation in Hawaii',
-    status: 'approved',
+    status: 'APPROVED',
     leaveType: 'annual',
     employeeName: 'John Doe'
   },
@@ -25,7 +25,7 @@ const demoEvents: CalendarEvent[] = [
     type: 'leave',
     title: 'Sick Leave',
     description: 'Medical appointment',
-    status: 'pending',
+    status: 'PENDING',
     leaveType: 'sick',
     employeeName: 'Jane Smith'
   },
@@ -35,7 +35,7 @@ const demoEvents: CalendarEvent[] = [
     type: 'leave',
     title: 'Personal Leave',
     description: 'Moving to new apartment',
-    status: 'rejected',
+    status: 'REJECTED',
     leaveType: 'personal',
     employeeName: 'Mike Johnson'
   },
@@ -96,7 +96,7 @@ const demoEvents: CalendarEvent[] = [
     type: 'leave',
     title: 'Maternity Leave',
     description: 'Maternity leave start',
-    status: 'approved',
+    status: 'APPROVED',
     leaveType: 'maternity',
     employeeName: 'Emily Brown'
   },

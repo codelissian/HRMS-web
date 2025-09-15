@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { LeaveForm } from '@/components/leave-form';
 import { ConfirmationDialog } from '@/components/common';
-import { Leave } from '../../../shared/schema';
+import { Leave } from '../../types/database';
 import { leaveService } from '@/services/leaveService';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/common';
@@ -143,14 +143,7 @@ export default function LeaveManagementPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Leave Management</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Create and manage different types of leaves for your organization
-          </p>
-        </div>
-        
+      <div className="flex justify-end items-center">      
         <div className="flex items-center space-x-3">
           <Button onClick={handleCreateLeave}>
             <Plus className="h-4 w-4 mr-2" />

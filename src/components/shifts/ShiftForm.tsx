@@ -39,8 +39,13 @@ export function ShiftForm({ isOpen, onOpenChange }: ShiftFormProps) {
   // Pre-fill form when editing
   useEffect(() => {
     if (selectedShift && isOpen) {
-      const startTime = formatTimeForDisplay(selectedShift.start);
-      const endTime = formatTimeForDisplay(selectedShift.end);
+      // Handle both ISO format and simple time format
+      const startTime = selectedShift.start.includes('T') ? 
+        formatTimeForDisplay(selectedShift.start) : 
+        selectedShift.start;
+      const endTime = selectedShift.end.includes('T') ? 
+        formatTimeForDisplay(selectedShift.end) : 
+        selectedShift.end;
       
       setFormData({
         name: selectedShift.name,
@@ -83,11 +88,11 @@ export function ShiftForm({ isOpen, onOpenChange }: ShiftFormProps) {
     }
 
     if (selectedShift) {
-      // Update existing shift
+      // Update existing shift with full time format (HH:MM)
       const convertedShiftData = {
         name: formData.name,
-        start: formData.start,
-        end: formData.end,
+        start: formData.start,  // Send full time like "09:00" or "18:15"
+        end: formData.end,      // Send full time like "09:00" or "18:15"
         grace_minutes: formData.grace_minutes,
         active_flag: formData.active_flag
       };
@@ -100,11 +105,11 @@ export function ShiftForm({ isOpen, onOpenChange }: ShiftFormProps) {
         console.error('Error updating shift:', error);
       }
     } else {
-      // For create, send the create data structure
+      // For create, send the create data structure with full time format (HH:MM)
       const shiftData: CreateShiftData = {
         name: formData.name,
-        start: convertTimeToISO(formData.start),
-        end: convertTimeToISO(formData.end),
+        start: formData.start,  // Send full time like "09:00" or "18:15"
+        end: formData.end,      // Send full time like "09:00" or "18:15"
         grace_minutes: formData.grace_minutes
       };
 

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { departmentService } from '@/services/departmentService';
 import { designationService, Designation as ServiceDesignation } from '@/services/designationService';
-import { Department as SchemaDepartment } from '../../../shared/schema';
+import { Department as SchemaDepartment } from '../../types/database';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { authToken } from '@/services/authToken';
 import AddDepartmentDialog from '@/components/departments/AddDepartmentDialog';
@@ -28,7 +28,7 @@ interface DepartmentWithDesignations {
 export default function DepartmentList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
-  const [activeTab, setActiveTab] = useState<'departments' | 'designations'>('departments');
+  // Removed activeTab state - only departments tab now
   const [departments, setDepartments] = useState<DepartmentWithDesignations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,11 +42,7 @@ export default function DepartmentList() {
   const [editingDepartment, setEditingDepartment] = useState<{ id: string; name: string; description?: string } | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   
-  // New state for designations tab
-  const [allDesignations, setAllDesignations] = useState<ServiceDesignation[]>([]);
-  const [designationsLoading, setDesignationsLoading] = useState(false);
-  const [designationsError, setDesignationsError] = useState<string | null>(null);
-  const [designationSearchTerm, setDesignationSearchTerm] = useState('');
+  // Removed designations tab state - designations are now only managed within departments
   
   // New state for deleting designations
   const [deletingDesignationId, setDeletingDesignationId] = useState<string | null>(null);
@@ -65,12 +61,8 @@ export default function DepartmentList() {
   const [selectedDepartmentForEdit, setSelectedDepartmentForEdit] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
-    if (activeTab === 'departments') {
-      fetchDepartments();
-    } else if (activeTab === 'designations') {
-      fetchAllDesignationsForOrg();
-    }
-  }, [activeTab]);
+    fetchDepartments();
+  }, []);
 
   const fetchDepartments = async () => {
     try {
@@ -128,43 +120,7 @@ export default function DepartmentList() {
     }
   };
 
-  const fetchAllDesignationsForOrg = async () => {
-    try {
-      setDesignationsLoading(true);
-      setDesignationsError(null);
-      
-      // Check if user is authenticated
-      if (!authToken.isAuthenticated()) {
-        setDesignationsError('Please log in to view designations');
-        setDesignationsLoading(false);
-        return;
-      }
-      
-      console.log('Fetching all designations...');
-      
-      const response = await designationService.getAllDesignations();
-      
-      console.log('Designations API Response:', response);
-
-      if (response.status && response.data) {
-        setAllDesignations(response.data);
-      } else {
-        setDesignationsError(response.message || 'Failed to fetch designations');
-      }
-    } catch (err) {
-      console.error('Error fetching designations:', err);
-      setDesignationsError('Failed to fetch designations. Please try again.');
-    } finally {
-      setDesignationsLoading(false);
-    }
-  };
-
-  const handleTabChange = (tab: 'departments' | 'designations') => {
-    setActiveTab(tab);
-    // Reset search terms when switching tabs
-    setSearchTerm('');
-    setDesignationSearchTerm('');
-  };
+  // Removed fetchAllDesignationsForOrg and handleTabChange functions - no longer needed
 
   const fetchAllDesignations = async (departmentsList: DepartmentWithDesignations[]) => {
     try {
@@ -405,10 +361,7 @@ export default function DepartmentList() {
       console.log('Delete designation API response:', response);
       
       if (response.status) {
-        // Remove the designation from the local state
-        setAllDesignations(prev => prev.filter(designation => designation.id !== deleteDesignationConfirmation.id));
-        
-        // Also remove from departments' designations if they exist
+        // Remove from departments' designations
         setDepartments(prev => prev.map(dept => ({
           ...dept,
           designations: dept.designations.filter(designation => designation.id !== deleteDesignationConfirmation.id)
@@ -535,9 +488,7 @@ export default function DepartmentList() {
     (dept.description && dept.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  const filteredDesignations = allDesignations.filter(designation =>
-    designation.name.toLowerCase().includes(designationSearchTerm.toLowerCase())
-  );
+  // Removed filteredDesignations - no longer needed
 
   if (loading) {
     return (
@@ -575,31 +526,21 @@ export default function DepartmentList() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex-1">
               <Input
-                placeholder={activeTab === 'departments' ? "Search departments..." : "Search designations..."}
-                value={activeTab === 'departments' ? searchTerm : designationSearchTerm}
-                onChange={(e) => activeTab === 'departments' ? setSearchTerm(e.target.value) : setDesignationSearchTerm(e.target.value)}
+                placeholder="Search departments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="max-w-md"
               />
             </div>
             
             <div className="flex gap-2">
-              {activeTab === 'departments' ? (
-                <Button 
-                  className="bg-blue-600 hover:bg-blue-700"
-                  onClick={() => setIsAddDialogOpen(true)}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Department
-                </Button>
-              ) : (
-                <Button 
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={handleOpenDepartmentSelector}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Designation
-                </Button>
-              )}
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setIsAddDialogOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Department
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -607,35 +548,12 @@ export default function DepartmentList() {
 
 
 
-      {/* Tabs */}
-      <div className="flex space-x-1 mb-6 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg w-fit">
-        <button
-          onClick={() => handleTabChange('departments')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'departments'
-              ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200 dark:border-blue-700'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-          }`}
-        >
-          Departments
-        </button>
-        <button
-          onClick={() => handleTabChange('designations')}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-            activeTab === 'designations'
-              ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm border border-blue-200 dark:border-blue-700'
-              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
-          }`}
-        >
-          Designations
-        </button>
-      </div>
+      {/* Removed tabs - only departments view now */}
 
 
 
-      {/* Departments Tab Content */}
-      {activeTab === 'departments' && (
-        <div className="space-y-4">
+      {/* Departments Content */}
+      <div className="space-y-4">
           {filteredDepartments.map((department) => (
             <Card key={department.id} className="overflow-hidden">
               <CardContent className="p-0">
@@ -827,106 +745,8 @@ export default function DepartmentList() {
             </Card>
           ))}
         </div>
-      )}
 
-      {/* Designations Tab Content */}
-      {activeTab === 'designations' && (
-        <div className="space-y-4">
-          {designationsLoading ? (
-            <div className="flex items-center justify-center min-h-[400px]">
-              <LoadingSpinner />
-            </div>
-          ) : designationsError ? (
-            <div className="text-center py-12">
-              <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Error loading designations
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                {designationsError}
-              </p>
-              <Button onClick={fetchAllDesignationsForOrg} variant="outline">
-                Try Again
-              </Button>
-            </div>
-          ) : filteredDesignations.length > 0 ? (
-            filteredDesignations.map((designation) => (
-              <Card key={designation.id} className="overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-                        <Users className="w-6 h-6 text-white" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                          {designation.name}
-                        </h3>
-                        <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
-                          <div className="flex items-center space-x-2">
-                            <Users className="w-4 h-4" />
-                            <span>{designation.positions} positions</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Building className="w-4 h-4" />
-                            <span>Department ID: {designation.department_id}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                        onClick={() => {
-                          const department = departments.find(d => d.id === designation.department_id);
-                          if (department) {
-                            handleOpenEditDesignationDialog(designation, department.id, department.name);
-                          }
-                        }}
-                        title="Edit Designation"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                        onClick={() => handleDeleteDesignation(designation.id, designation.name)}
-                        disabled={deletingDesignationId === designation.id}
-                        title="Delete Designation"
-                      >
-                        {deletingDesignationId === designation.id ? (
-                          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
-                        <MoreVertical className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : (
-            <div className="text-center py-12">
-              <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                {designationSearchTerm ? 'No designations found' : 'No designations yet'}
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                {designationSearchTerm ? 'Try adjusting your search terms.' : 'Get started by creating your first designation.'}
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'departments' && filteredDepartments.length === 0 && !loading && (
+      {filteredDepartments.length === 0 && !loading && (
         <div className="text-center py-12">
           <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -1071,10 +891,6 @@ export default function DepartmentList() {
         onSuccess={() => {
           // Refresh designations for the specific department
           fetchDesignations(selectedDepartmentForDesignation.id);
-          // Also refresh all designations if we're on the designations tab
-          if (activeTab === 'designations') {
-            fetchAllDesignationsForOrg();
-          }
         }}
       />
     )}
@@ -1091,10 +907,6 @@ export default function DepartmentList() {
         onSuccess={() => {
           // Refresh designations for the specific department
           fetchDesignations(selectedDepartmentForEdit.id);
-          // Also refresh all designations if we're on the designations tab
-          if (activeTab === 'designations') {
-            fetchAllDesignationsForOrg();
-          }
         }}
       />
     )}
