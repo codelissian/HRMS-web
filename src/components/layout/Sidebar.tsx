@@ -27,7 +27,7 @@ const baseNavigation = [
   { name: 'Employees', href: 'employees', icon: Users, section: 'Employee Management', roles: ['admin', 'hr_manager'] },
   { name: 'Departments', href: 'departments', icon: Building, section: 'Employee Management', roles: ['admin', 'hr_manager'] },
   { name: 'Shifts', href: 'shifts', icon: Clock, section: 'Employee Management', roles: ['admin', 'hr_manager'] },
-                { name: 'Attendance Policies', href: 'attendance-policies', icon: CalendarCheck, section: 'Attendance & Leave', roles: ['admin', 'hr_manager'] },
+                { name: 'Attendance and Work Day Rule', href: 'attendance-and-work-day-rule', icon: CalendarCheck, section: 'Attendance & Leave', roles: ['admin', 'hr_manager'] },
               { name: 'Leave Management', href: 'leave-management', icon: Settings, section: 'Attendance & Leave', roles: ['admin', 'hr_manager'] },
               { name: 'Leave Requests', href: 'leave-requests', icon: Calendar, section: 'Attendance & Leave' },
               { name: 'Attendance Management', href: 'attendance', icon: Clock, section: 'Attendance & Leave', roles: ['admin', 'hr_manager'] },
