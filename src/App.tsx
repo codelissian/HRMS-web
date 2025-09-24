@@ -16,12 +16,16 @@ import EmployeeList from "@/pages/employees/EmployeeList";
 import EmployeeDetail from "@/pages/employees/EmployeeDetail";
 import DepartmentList from "@/pages/departments/DepartmentList";
 import { ShiftsPage } from "@/pages/shifts";
-import { AttendancePoliciesPage } from "@/pages/attendance-policies";
+import { AttendanceAndWorkDayRulePage } from "@/pages/attendance-and-work-day-rule";
 import { AttendanceManagementPage } from "@/pages/attendance";
 import { LeaveManagementPage } from "@/pages/leave-management";
 import { LeaveRequestsPage } from "@/pages/leave-requests";
 import { OrganizationPage } from "@/pages/organization";
 import NotFound from "@/pages/not-found";
+import EmployeeLayout from "@/employee/layout/EmployeeLayout";
+import EmployeeDashboard from "@/employee/pages/Dashboard";
+import EmployeeLeaveRequests from "@/employee/pages/LeaveRequests";
+import EmployeeProfile from "@/employee/pages/Profile";
 import VerifyEmail from "@/pages/VerifyEmail";
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
@@ -91,7 +95,7 @@ function AppRoutes() {
         <Route path="employees/:id" element={<EmployeeDetail />} />
         <Route path="departments" element={<DepartmentList />} />
         <Route path="shifts" element={<ShiftsPage />} />
-        <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
+        <Route path="attendance-and-work-day-rule" element={<AttendanceAndWorkDayRulePage />} />
         <Route path="attendance" element={<AttendanceManagementPage />} />
         <Route path="leave-requests" element={<LeaveRequestsPage />} />
         <Route path="leave-management" element={<LeaveManagementPage />} />
@@ -103,13 +107,13 @@ function AppRoutes() {
         path="/employee"
         element={
           <ProtectedRoute allowedRoles={["employee"]}>
-            <AppLayout />
+            <EmployeeLayout />
           </ProtectedRoute>
         }
       >
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
-        <Route path="leave-requests" element={<LeaveRequestsPage />} />
+        <Route path="dashboard" element={<EmployeeDashboard />} />
+        <Route path="leave-requests" element={<EmployeeLeaveRequests />} />
+        <Route path="profile" element={<EmployeeProfile />} />
         <Route path="" element={<Navigate to="/employee/dashboard" replace />} />
       </Route>
 
