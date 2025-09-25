@@ -14,7 +14,8 @@ import {
   ShieldQuestion, 
   Settings,
   X,
-  Globe
+  Globe,
+  DollarSign
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -31,6 +32,7 @@ const baseNavigation = [
               { name: 'Leave Management', href: 'leave-management', icon: Settings, section: 'Attendance & Leave', roles: ['admin', 'hr_manager'] },
               { name: 'Leave Requests', href: 'leave-requests', icon: Calendar, section: 'Attendance & Leave' },
               { name: 'Attendance Management', href: 'attendance', icon: Clock, section: 'Attendance & Leave', roles: ['admin', 'hr_manager'] },
+  { name: 'Payroll', href: 'payroll', icon: DollarSign, section: 'Payroll', roles: ['admin', 'hr_manager'] },
   { name: 'Roles & Permissions', href: 'roles', icon: ShieldQuestion, section: 'Administration', roles: ['admin'] },
   { name: 'Settings', href: 'settings', icon: Settings, section: 'Administration', roles: ['admin'] },
   { name: 'Organization', href: 'organization', icon: Globe, section: 'Organization', roles: ['admin'] },

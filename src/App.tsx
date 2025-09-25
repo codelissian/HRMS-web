@@ -21,6 +21,7 @@ import { AttendanceManagementPage } from "@/pages/attendance";
 import { LeaveManagementPage } from "@/pages/leave-management";
 import { LeaveRequestsPage } from "@/pages/leave-requests";
 import { OrganizationPage } from "@/pages/organization";
+import { PayrollPage } from "@/pages/payroll";
 import NotFound from "@/pages/not-found";
 import EmployeeLayout from "@/employee/layout/EmployeeLayout";
 import EmployeeDashboard from "@/employee/pages/Dashboard";
@@ -99,6 +100,7 @@ function AppRoutes() {
         <Route path="attendance" element={<AttendanceManagementPage />} />
         <Route path="leave-requests" element={<LeaveRequestsPage />} />
         <Route path="leave-management" element={<LeaveManagementPage />} />
+        <Route path="payroll" element={<PayrollPage />} />
         <Route path="" element={<Navigate to="/admin/dashboard" replace />} />
       </Route>
 
