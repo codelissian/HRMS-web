@@ -128,6 +128,13 @@ const API = {
   CURRENCY_EXCHANGE_RATES_LIST: `/currency-exchange-rates/list`,
   CURRENCY_EXCHANGE_RATES_ONE: `/currency-exchange-rates/one`,
   CURRENCY_EXCHANGE_RATES_DELETE: `/currency-exchange-rates/delete`,
+
+  // Work Day Rules
+  WORK_DAY_RULES_CREATE: `/work-day-rules/create`,
+  WORK_DAY_RULES_UPDATE: `/work-day-rules/update`,
+  WORK_DAY_RULES_LIST: `/working_day_rules/list`,
+  WORK_DAY_RULES_ONE: `/work-day-rules/one`,
+  WORK_DAY_RULES_DELETE: `/work-day-rules/delete`,
 };
 
 export const API_ENDPOINTS = API;
