@@ -135,6 +135,20 @@ const API = {
   WORK_DAY_RULES_LIST: `/working_day_rules/list`,
   WORK_DAY_RULES_ONE: `/work-day-rules/one`,
   WORK_DAY_RULES_DELETE: `/work-day-rules/delete`,
+
+  // Salary Components
+  SALARY_COMPONENTS_CREATE: `/salary_components/create`,
+  SALARY_COMPONENTS_UPDATE: `/salary_components/update`,
+  SALARY_COMPONENTS_LIST: `/salary_components/list`,
+  SALARY_COMPONENTS_ONE: `/salary_components/one`,
+  SALARY_COMPONENTS_DELETE: `/salary_components/delete`,
+
+  // Salary Component Types
+  SALARY_COMPONENT_TYPES_CREATE: `/salary_component_types/create`,
+  SALARY_COMPONENT_TYPES_UPDATE: `/salary_component_types/update`,
+  SALARY_COMPONENT_TYPES_LIST: `/salary_component_types/list`,
+  SALARY_COMPONENT_TYPES_ONE: `/salary_component_types/one`,
+  SALARY_COMPONENT_TYPES_DELETE: `/salary_component_types/delete`,
 };
 
 export const API_ENDPOINTS = API;
