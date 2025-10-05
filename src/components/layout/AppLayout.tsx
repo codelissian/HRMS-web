@@ -14,7 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-gray-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-800 dark:to-indigo-900">
       {/* Fixed Sidebar */}
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
@@ -27,7 +27,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       )}
       
       {/* Main content area - positioned to account for fixed sidebar */}
-      <div className="flex-1 flex flex-col lg:ml-64 min-w-0">
+      <div className="flex-1 flex flex-col lg:ml-72 min-w-0">
         {/* Header within main content area */}
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         

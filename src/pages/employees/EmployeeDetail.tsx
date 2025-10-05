@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
@@ -23,7 +22,6 @@ export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [showEditForm, setShowEditForm] = useState(false);
 
   // Fetch employee details
   const { 
@@ -98,7 +96,7 @@ export default function EmployeeDetail() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Employee Overview</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => setShowEditForm(true)}>
+            <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/employees/${id}/edit`)}>
               <Edit className="h-4 w-4" />
             </Button>
           </div>
@@ -435,20 +433,6 @@ export default function EmployeeDetail() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Employee Form Modal */}
-      <EmployeeForm
-        open={showEditForm}
-        onOpenChange={setShowEditForm}
-        onSubmit={(data) => {
-          // TODO: Implement update functionality
-          console.log('Update employee:', data);
-          setShowEditForm(false);
-        }}
-        loading={false}
-        initialData={employee}
-        title="Edit Employee"
-        description="Update employee information"
-      />
     </div>
   );
 }

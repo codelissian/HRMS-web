@@ -14,6 +14,7 @@ import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import EmployeeList from "@/pages/employees/EmployeeList";
 import EmployeeDetail from "@/pages/employees/EmployeeDetail";
+import EmployeeFormPage from "@/pages/employees/EmployeeFormPage";
 import DepartmentList from "@/pages/departments/DepartmentList";
 import { ShiftsPage } from "@/pages/shifts";
 import { AttendanceAndWorkDayRulePage } from "@/pages/attendance-and-work-day-rule";
@@ -21,6 +22,7 @@ import { AttendanceManagementPage } from "@/pages/attendance";
 import { LeaveManagementPage } from "@/pages/leave-management";
 import { LeaveRequestsPage } from "@/pages/leave-requests";
 import { OrganizationPage } from "@/pages/organization";
+import CreateAttendancePolicyPage from "@/pages/attendance-policies/CreateAttendancePolicyPage";
 import NotFound from "@/pages/not-found";
 import EmployeeLayout from "@/employee/layout/EmployeeLayout";
 import EmployeeDashboard from "@/employee/pages/Dashboard";
@@ -92,10 +94,14 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="employees" element={<EmployeeList />} />
+        <Route path="employees/new" element={<EmployeeFormPage />} />
         <Route path="employees/:id" element={<EmployeeDetail />} />
+        <Route path="employees/:id/edit" element={<EmployeeFormPage />} />
         <Route path="departments" element={<DepartmentList />} />
         <Route path="shifts" element={<ShiftsPage />} />
         <Route path="attendance-and-work-day-rule" element={<AttendanceAndWorkDayRulePage />} />
+        <Route path="attendance-policies/create" element={<CreateAttendancePolicyPage />} />
+        <Route path="attendance-policies/:id/edit" element={<CreateAttendancePolicyPage />} />
         <Route path="attendance" element={<AttendanceManagementPage />} />
         <Route path="leave-requests" element={<LeaveRequestsPage />} />
         <Route path="leave-management" element={<LeaveManagementPage />} />

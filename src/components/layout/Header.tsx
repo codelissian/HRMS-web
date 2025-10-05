@@ -28,10 +28,15 @@ export function Header({ onMenuClick }: HeaderProps) {
     if (path.startsWith('/admin')) {
       if (path === '/admin/dashboard') return 'Dashboard';
       if (path === '/admin/employees') return 'Employee Management';
-      if (path.startsWith('/admin/employees/')) return 'Employee Details';
+      if (path === '/admin/employees/new') return 'Add New Employee';
+      if (path.includes('/admin/employees/') && path.includes('/edit')) return 'Edit Employee';
+      if (path.startsWith('/admin/employees/') && !path.includes('/edit')) return 'Employee Details';
       if (path === '/admin/departments') return 'Department Management';
       if (path === '/admin/shifts') return 'Shift Management';
       if (path === '/admin/attendance-policies') return 'Attendance Policies';
+      if (path === '/admin/attendance-policies/create') return 'Create Attendance Policy';
+      if (path.includes('/admin/attendance-policies/') && path.includes('/edit')) return 'Edit Attendance Policy';
+      if (path === '/admin/attendance-and-work-day-rule') return 'Attendance and Work Day Rule';
       if (path === '/admin/attendance') return 'Attendance Management';
       if (path === '/admin/leave-requests') return 'Leave Requests';
       if (path === '/admin/leave-management') return 'Leave Management';
@@ -54,10 +59,15 @@ export function Header({ onMenuClick }: HeaderProps) {
     if (path.startsWith('/admin')) {
       if (path === '/admin/dashboard') return `Welcome back, ${user?.name}`;
       if (path === '/admin/employees') return 'Manage employee information and details';
-      if (path.startsWith('/admin/employees/')) return 'View and edit employee details';
+      if (path === '/admin/employees/new') return 'Fill in the employee details below';
+      if (path.includes('/admin/employees/') && path.includes('/edit')) return 'Update the employee details below';
+      if (path.startsWith('/admin/employees/') && !path.includes('/edit')) return 'View and edit employee details';
       if (path === '/admin/departments') return 'Manage departments and designations';
       if (path === '/admin/shifts') return 'Configure work shifts and schedules';
       if (path === '/admin/attendance-policies') return 'Set attendance rules and policies';
+      if (path === '/admin/attendance-policies/create') return 'Configure attendance tracking rules and policies for your organization';
+      if (path.includes('/admin/attendance-policies/') && path.includes('/edit')) return 'Update attendance tracking rules and policies for your organization';
+      if (path === '/admin/attendance-and-work-day-rule') return 'Manage attendance policies and work day rules for your organization';
       if (path === '/admin/attendance') return 'Monitor employee attendance and statistics';
       if (path === '/admin/leave-requests') return 'Review and manage leave requests';
       if (path === '/admin/leave-management') return 'Configure leave types and policies';
@@ -82,7 +92,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="bg-white/80 dark:bg-gray-850/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 h-16 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40">
+    <header className="bg-white/20 dark:bg-gray-900/20 backdrop-blur-xl border-b border-white/20 dark:border-gray-700/30 h-16 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40 shadow-lg">
       <div className="flex items-center">
         <Button
           variant="ghost"
@@ -93,12 +103,36 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Menu className="h-5 w-5" />
         </Button>
         
-        {/* Back Button for Employee Details */}
+        {/* Back Button for Employee Details and Forms */}
         {location.pathname.startsWith('/admin/employees/') && location.pathname !== '/admin/employees' && (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate('/admin/employees')}
+            className="mr-3"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+
+        {/* Back Button for Attendance Policies Create */}
+        {location.pathname === '/admin/attendance-policies/create' && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/admin/attendance-and-work-day-rule')}
+            className="mr-3"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+        )}
+
+        {/* Back Button for Attendance Policies Edit */}
+        {location.pathname.includes('/admin/attendance-policies/') && location.pathname.includes('/edit') && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate('/admin/attendance-and-work-day-rule')}
             className="mr-3"
           >
             <ArrowLeft className="h-5 w-5" />

@@ -22,12 +22,16 @@ interface LocationTrackerProps {
   onLocationSelect: (location: LocationData) => void;
   initialLocation?: LocationData;
   disabled?: boolean;
+  radius?: number; // in meters
+  onRadiusChange?: (radius: number) => void;
 }
 
 export function LocationTracker({ 
   onLocationSelect, 
   initialLocation,
-  disabled = false 
+  disabled = false,
+  radius = 100,
+  onRadiusChange
 }: LocationTrackerProps) {
   const { toast } = useToast();
   
@@ -45,11 +49,13 @@ export function LocationTracker({
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const [isSatelliteView, setIsSatelliteView] = useState(false);
   const [locationMode, setLocationMode] = useState<'map' | 'manual'>('map');
+  const [currentRadius, setCurrentRadius] = useState(radius || 0);
   
   // Refs for Google Maps instances
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
+  const circleRef = useRef<any>(null);
   
   // Timeout refs for cleanup
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -95,6 +101,32 @@ export function LocationTracker({
         }
       }
     }, 100); // Reduced frequency for better performance
+  }, []);
+
+  // Create or update the radius circle
+  const updateCircle = useCallback((center: { lat: number; lng: number }, radiusMeters: number) => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    // Remove existing circle
+    if (circleRef.current) {
+      circleRef.current.setMap(null);
+    }
+
+    // Only create circle if radius is greater than 0
+    if (radiusMeters > 0) {
+      circleRef.current = new window.google.maps.Circle({
+        strokeColor: '#3B82F6',
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: '#3B82F6',
+        fillOpacity: 0.15,
+        map: mapInstanceRef.current,
+        center: center,
+        radius: radiusMeters,
+        draggable: false, // Circle itself is not draggable, but we'll add a control
+        clickable: false
+      });
+    }
   }, []);
 
   // Optimized reverse geocoding
@@ -175,7 +207,10 @@ export function LocationTracker({
 
   // Initialize map with optimized settings
   useEffect(() => {
-    if (!isLoaded || !mapRef.current || mapInstanceRef.current) return;
+    if (!isLoaded || !mapRef.current) return;
+    
+    // If map already exists, don't reinitialize
+    if (mapInstanceRef.current) return;
 
     setIsLoading(true);
     setHasError(false);
@@ -240,6 +275,11 @@ export function LocationTracker({
       });
       markerRef.current = marker;
 
+      // Create initial circle
+      if (coordinates) {
+        updateCircle(coordinates, currentRadius);
+      }
+
       // Optimized event listeners with proper cleanup
       const listeners = [];
       
@@ -253,6 +293,7 @@ export function LocationTracker({
             };
             setCoordinates(location);
             marker.setPosition(location);
+            updateCircle(location, currentRadius);
             reverseGeocode(location);
           }
         })
@@ -272,6 +313,7 @@ export function LocationTracker({
               lng: position.lng()
             };
             setCoordinates(location);
+            updateCircle(location, currentRadius);
             reverseGeocode(location);
           }
         })
@@ -323,13 +365,163 @@ export function LocationTracker({
     }
   }, [isSatelliteView]);
 
+  // Update coordinates when initialLocation prop changes
+  useEffect(() => {
+    if (initialLocation) {
+      const newCoords = { lat: initialLocation.latitude, lng: initialLocation.longitude };
+      setCoordinates(newCoords);
+    }
+  }, [initialLocation]);
+
+  // Initialize map when coordinates are available in manual mode
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || !coordinates || mapInstanceRef.current) return;
+    
+    // Only initialize map in manual mode when coordinates are available
+    if (locationMode === 'manual' && coordinates) {
+      setIsLoading(true);
+      setHasError(false);
+
+      try {
+        const mapOptions = {
+          center: coordinates,
+          zoom: 15,
+          mapTypeId: isSatelliteView ? window.google.maps.MapTypeId.SATELLITE : window.google.maps.MapTypeId.ROADMAP,
+          
+          // Optimized controls for better performance
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          zoomControl: true,
+          rotateControl: false,
+          scaleControl: false,
+          
+          // Gesture handling optimizations
+          gestureHandling: 'greedy',
+          disableDoubleClickZoom: false,
+          scrollwheel: true,
+          draggable: true,
+          keyboardShortcuts: false,
+          clickableIcons: false,
+          
+          // Performance optimizations
+          backgroundColor: '#f5f5f5',
+          maxZoom: 20,
+          minZoom: 3,
+          
+          // Zoom control positioning
+          zoomControlOptions: {
+            position: window.google.maps.ControlPosition.TOP_RIGHT,
+          },
+          
+          // Styling optimizations
+          styles: isSatelliteView ? [] : [
+            {
+              featureType: "poi.business",
+              stylers: [{ visibility: "off" }]
+            },
+            {
+              featureType: "transit",
+              elementType: "labels.icon",
+              stylers: [{ visibility: "off" }]
+            }
+          ]
+        };
+
+        const map = new window.google.maps.Map(mapRef.current, mapOptions);
+        mapInstanceRef.current = map;
+
+        // Create marker
+        const marker = new window.google.maps.Marker({
+          position: coordinates,
+          map: map,
+          draggable: true,
+          title: "Attendance Location",
+          animation: null,
+          optimized: true
+        });
+        markerRef.current = marker;
+
+        // Create initial circle
+        updateCircle(coordinates, currentRadius);
+
+        // Add event listeners
+        const listeners = [];
+        
+        // Map click handler
+        listeners.push(
+          window.google.maps.event.addListener(map, 'click', (event: any) => {
+            if (event.latLng) {
+              const location = {
+                lat: event.latLng.lat(),
+                lng: event.latLng.lng()
+              };
+              setCoordinates(location);
+              marker.setPosition(location);
+              updateCircle(location, currentRadius);
+              reverseGeocode(location);
+            }
+          })
+        );
+
+        // Marker drag handlers
+        listeners.push(
+          window.google.maps.event.addListener(marker, 'drag', handleMarkerDrag)
+        );
+        
+        listeners.push(
+          window.google.maps.event.addListener(marker, 'dragend', () => {
+            const position = marker.getPosition();
+            if (position) {
+              const location = {
+                lat: position.lat(),
+                lng: position.lng()
+              };
+              setCoordinates(location);
+              updateCircle(location, currentRadius);
+              reverseGeocode(location);
+            }
+          })
+        );
+
+        // Cleanup function
+        return () => {
+          listeners.forEach(listener => {
+            if (listener) {
+              window.google.maps.event.removeListener(listener);
+            }
+          });
+        };
+
+      } catch (error) {
+        console.error('Map initialization error in manual mode:', error);
+        setHasError(true);
+        setErrorMessage("Failed to initialize map. Please refresh the page.");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [isLoaded, coordinates, locationMode, isSatelliteView, currentRadius, updateCircle, handleMarkerDrag, reverseGeocode]);
+
   // Update map and marker when coordinates change externally
   useEffect(() => {
     if (coordinates && mapInstanceRef.current && markerRef.current) {
       mapInstanceRef.current.setCenter(coordinates);
       markerRef.current.setPosition(coordinates);
+      updateCircle(coordinates, currentRadius);
     }
-  }, [coordinates]);
+  }, [coordinates, currentRadius, updateCircle]);
+
+  // Sync radius with prop changes
+  useEffect(() => {
+    const newRadius = radius || 0;
+    if (newRadius !== currentRadius) {
+      setCurrentRadius(newRadius);
+      if (coordinates) {
+        updateCircle(coordinates, newRadius);
+      }
+    }
+  }, [radius, currentRadius, coordinates, updateCircle]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
@@ -339,6 +531,14 @@ export function LocationTracker({
       if (initTimeoutRef.current) clearTimeout(initTimeoutRef.current);
     };
   }, []);
+
+  // Clean up map when switching modes
+  useEffect(() => {
+    if (locationMode === 'map' && mapInstanceRef.current) {
+      // Clear the map instance when switching to map mode
+      // The main map initialization will handle this
+    }
+  }, [locationMode]);
 
   // Optimized suggestion fetching
   const getSuggestions = useCallback(async (query: string) => {
@@ -454,11 +654,23 @@ export function LocationTracker({
     };
     
     setCoordinates(newCoords);
+    
+    // Update map and marker if they exist
+    if (mapInstanceRef.current && markerRef.current) {
+      mapInstanceRef.current.setCenter(newCoords);
+      markerRef.current.setPosition(newCoords);
+      updateCircle(newCoords, currentRadius);
+    }
+    
+    // Trigger reverse geocoding to get address
+    reverseGeocode(newCoords);
+    
+    // Notify parent component
     onLocationSelect({
       latitude: newCoords.lat,
       longitude: newCoords.lng
     });
-  }, [coordinates, address, onLocationSelect]);
+  }, [coordinates, currentRadius, updateCircle, reverseGeocode, onLocationSelect]);
 
   if (hasError) {
     return (
@@ -646,9 +858,9 @@ export function LocationTracker({
               
               <div 
                 ref={mapRef} 
-                className="w-full h-64 rounded-lg border border-gray-200 dark:border-gray-700"
+                className="w-full h-[500px] rounded-lg border border-gray-200 dark:border-gray-700"
                 style={{ 
-                  minHeight: '256px',
+                  minHeight: '500px',
                   touchAction: 'pan-x pan-y'
                 }}
               />
@@ -675,6 +887,7 @@ export function LocationTracker({
                               lng: position.lng()
                             };
                             setCoordinates(currentCoords);
+                            updateCircle(currentCoords, currentRadius);
                             reverseGeocode(currentCoords);
                           }
                         }
@@ -683,6 +896,56 @@ export function LocationTracker({
                     >
                       Set Location
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Radius Control */}
+              {coordinates && (
+                <div className="mt-4 p-4 rounded-lg border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium text-green-700 dark:text-green-300">
+                        📏 Geo-fencing Radius
+                      </Label>
+                      <span className="text-sm font-mono text-green-600 dark:text-green-400">
+                        {currentRadius > 0 ? `${currentRadius}m` : 'Disabled'}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1000"
+                        step="10"
+                        value={currentRadius}
+                        onChange={(e) => {
+                          const newRadius = parseInt(e.target.value);
+                          setCurrentRadius(newRadius);
+                          if (coordinates) {
+                            updateCircle(coordinates, newRadius);
+                          }
+                          // Notify parent component of radius change
+                          if (onRadiusChange) {
+                            onRadiusChange(newRadius);
+                          }
+                        }}
+                        className="w-full h-2 bg-green-200 dark:bg-green-800 rounded-lg appearance-none cursor-pointer slider"
+                        style={{
+                          background: currentRadius > 0 
+                            ? `linear-gradient(to right, #10B981 0%, #10B981 ${(currentRadius / 1000) * 100}%, #E5E7EB ${(currentRadius / 1000) * 100}%, #E5E7EB 100%)`
+                            : '#E5E7EB'
+                        }}
+                      />
+                      <div className="flex justify-between text-xs text-green-600 dark:text-green-400">
+                        <span>0m</span>
+                        <span>500m</span>
+                        <span>1000m</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      Drag the slider to adjust the attendance zone radius. Set to 0 to disable geo-fencing. Employees must be within this area to mark attendance.
+                    </p>
                   </div>
                 </div>
               )}
@@ -700,6 +963,9 @@ export function LocationTracker({
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Manual Geo Location Input
             </Label>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Enter latitude and longitude coordinates. The map will appear below once both coordinates are entered.
+            </p>
             <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
               <div>
                 <Label className="text-xs font-medium text-gray-600 dark:text-gray-400">
@@ -728,6 +994,133 @@ export function LocationTracker({
                 />
               </div>
             </div>
+            
+            {/* Show map in manual mode when coordinates are available */}
+            {coordinates && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Location Preview
+                  </Label>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Road</span>
+                    <button
+                      type="button"
+                      onClick={() => setIsSatelliteView(!isSatelliteView)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        isSatelliteView ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isSatelliteView ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                    <span className="text-xs text-gray-600 dark:text-gray-400">Satellite</span>
+                  </div>
+                </div>
+                
+                {isLoading ? (
+                  <div className="w-full h-[400px] rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                    <div className="text-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Loading map...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    ref={mapRef} 
+                    className="w-full h-[400px] rounded-lg border border-gray-200 dark:border-gray-700"
+                    style={{ 
+                      minHeight: '400px',
+                      touchAction: 'pan-x pan-y'
+                    }}
+                  />
+                )}
+                
+                <div className="mt-2 p-3 rounded-lg border bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                        📍 Position:
+                      </span>
+                      <span className="text-xs font-mono text-blue-600 dark:text-blue-400">
+                        {coordinates.lat.toFixed(6)}, {coordinates.lng.toFixed(6)}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (markerRef.current) {
+                          const position = markerRef.current.getPosition();
+                          if (position) {
+                            const currentCoords = {
+                              lat: position.lat(),
+                              lng: position.lng()
+                            };
+                            setCoordinates(currentCoords);
+                            updateCircle(currentCoords, currentRadius);
+                            reverseGeocode(currentCoords);
+                          }
+                        }
+                      }}
+                      className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                    >
+                      Update Location
+                    </button>
+                  </div>
+                </div>
+
+                {/* Radius Control for Manual Mode */}
+                <div className="mt-4 p-4 rounded-lg border bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium text-green-700 dark:text-green-300">
+                        📏 Geo-fencing Radius
+                      </Label>
+                      <span className="text-sm font-mono text-green-600 dark:text-green-400">
+                        {currentRadius > 0 ? `${currentRadius}m` : 'Disabled'}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1000"
+                        step="10"
+                        value={currentRadius}
+                        onChange={(e) => {
+                          const newRadius = parseInt(e.target.value);
+                          setCurrentRadius(newRadius);
+                          if (coordinates) {
+                            updateCircle(coordinates, newRadius);
+                          }
+                          // Notify parent component of radius change
+                          if (onRadiusChange) {
+                            onRadiusChange(newRadius);
+                          }
+                        }}
+                        className="w-full h-2 bg-green-200 dark:bg-green-800 rounded-lg appearance-none cursor-pointer slider"
+                        style={{
+                          background: currentRadius > 0 
+                            ? `linear-gradient(to right, #10B981 0%, #10B981 ${(currentRadius / 1000) * 100}%, #E5E7EB ${(currentRadius / 1000) * 100}%, #E5E7EB 100%)`
+                            : '#E5E7EB'
+                        }}
+                      />
+                      <div className="flex justify-between text-xs text-green-600 dark:text-green-400">
+                        <span>0m</span>
+                        <span>500m</span>
+                        <span>1000m</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      Drag the slider to adjust the attendance zone radius. Set to 0 to disable geo-fencing. Employees must be within this area to mark attendance.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
-import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { Employee, EmployeeWithRelations } from '../../types/database';
@@ -16,7 +15,6 @@ import { useDepartments } from '@/hooks/useDepartments';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function EmployeeList() {
-  const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -26,11 +24,6 @@ export default function EmployeeList() {
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [employeeToDelete, setEmployeeToDelete] = useState<EmployeeWithRelations | null>(null);
-  
-  // Edit employee state
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [employeeToEdit, setEmployeeToEdit] = useState<EmployeeWithRelations | null>(null);
-  const [isLoadingEditData, setIsLoadingEditData] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -73,52 +66,6 @@ export default function EmployeeList() {
   const totalCount = employeesResponse?.total_count || 0;
   const pageCount = employeesResponse?.page_count || 0;
 
-  // Create employee mutation
-  const createEmployeeMutation = useMutation({
-            mutationFn: (data: Partial<Employee>) => employeeService.createEmployee(data),
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Employee created successfully',
-      });
-      setShowForm(false);
-      queryClient.invalidateQueries({ queryKey: ['employees', 'list'] });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create employee',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Update employee mutation
-  const updateEmployeeMutation = useMutation({
-    mutationFn: (data: Partial<Employee> & { id: string }) => {
-      console.log('updateEmployeeMutation called with:', data);
-      return employeeService.updateEmployee(data);
-    },
-    onSuccess: (response) => {
-      console.log('Update successful:', response);
-      toast({
-        title: 'Success',
-        description: 'Employee updated successfully',
-      });
-      setShowForm(false);
-      setIsEditMode(false);
-      setEmployeeToEdit(null);
-      queryClient.invalidateQueries({ queryKey: ['employees', 'list'] });
-    },
-    onError: (error) => {
-      console.error('Update failed:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to update employee',
-        variant: 'destructive',
-      });
-    },
-  });
 
   // Delete employee mutation
   const deleteEmployeeMutation = useMutation({
@@ -139,62 +86,16 @@ export default function EmployeeList() {
     },
   });
 
-  const handleCreateEmployee = async (data: Partial<Employee>) => {
-    createEmployeeMutation.mutate(data);
-  };
-
-  const handleUpdateEmployee = async (data: Partial<Employee>) => {
-    console.log('handleUpdateEmployee called with data:', data);
-    console.log('employeeToEdit:', employeeToEdit);
-    
-    if (employeeToEdit) {
-      const updateData = {
-        id: employeeToEdit.id,
-        ...data
-      };
-      console.log('Calling updateEmployeeMutation with:', updateData);
-      updateEmployeeMutation.mutate(updateData);
-    } else {
-      console.error('No employee to edit found');
-    }
-  };
-
   const handleViewEmployee = (employee: Employee) => {
     navigate(`/admin/employees/${employee.id}`);
   };
 
-  const handleEditEmployee = async (employee: Employee) => {
-    try {
-      setIsEditMode(true);
-      setShowForm(true);
-      setIsLoadingEditData(true);
-      
-      // Fetch complete employee data for editing
-      const response = await employeeService.getEmployee(employee.id);
-      if (response.status && response.data) {
-        setEmployeeToEdit(response.data);
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to fetch employee details for editing',
-          variant: 'destructive',
-        });
-        // Close form if data fetch failed
-        setShowForm(false);
-        setIsEditMode(false);
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Failed to fetch employee details for editing',
-        variant: 'destructive',
-      });
-      // Close form if data fetch failed
-      setShowForm(false);
-      setIsEditMode(false);
-    } finally {
-      setIsLoadingEditData(false);
-    }
+  const handleEditEmployee = (employee: Employee) => {
+    navigate(`/admin/employees/${employee.id}/edit`);
+  };
+
+  const handleAddEmployee = () => {
+    navigate('/admin/employees/new');
   };
 
   const handleDeleteEmployee = (employee: Employee) => {
@@ -344,7 +245,7 @@ export default function EmployeeList() {
                 onChange={handleBulkImport}
                 className="hidden"
               />
-              <Button onClick={() => setShowForm(true)}>
+              <Button onClick={handleAddEmployee}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Employee
               </Button>
@@ -435,41 +336,6 @@ export default function EmployeeList() {
         </div>
       )}
 
-      {/* Employee Form Modal */}
-      <EmployeeForm
-        open={showForm}
-        onOpenChange={(open) => {
-          setShowForm(open);
-          if (!open) {
-            setIsEditMode(false);
-            setEmployeeToEdit(null);
-          }
-        }}
-        onSubmit={isEditMode ? handleUpdateEmployee : handleCreateEmployee}
-        loading={createEmployeeMutation.isPending || updateEmployeeMutation.isPending}
-                  initialData={isEditMode && employeeToEdit ? {
-            name: employeeToEdit.name,
-            mobile: employeeToEdit.mobile,
-            email: employeeToEdit.email,
-            password: employeeToEdit.password,
-            included_in_payroll: employeeToEdit.included_in_payroll,
-            date_of_birth: employeeToEdit.date_of_birth,
-            address: employeeToEdit.address,
-            pan_number: employeeToEdit.pan_number,
-            status: employeeToEdit.status,
-            joining_date: employeeToEdit.joining_date,
-            organisation_id: employeeToEdit.organisation_id,
-            department_id: employeeToEdit.department_id,
-            designation_id: employeeToEdit.designation_id,
-            shift_id: employeeToEdit.shift_id,
-            bank_details: employeeToEdit.bank_details,
-            role_id: employeeToEdit.role_id,
-            code: employeeToEdit.id?.slice(0, 8).toUpperCase() || 'EMP001'
-          } as any : undefined}
-        title={isEditMode ? 'Edit Employee' : 'Add New Employee'}
-        description={isEditMode ? 'Update the employee details below.' : 'Fill in the employee details below.'}
-        isEditMode={isEditMode}
-      />
       
       {/* Confirmation Dialog */}
       <ConfirmationDialog
