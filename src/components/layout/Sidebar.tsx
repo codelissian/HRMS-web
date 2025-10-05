@@ -20,7 +20,8 @@ import {
   UserCheck,
   CalendarDays,
   Shield,
-  Cog
+  Cog,
+  DollarSign
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -60,6 +61,15 @@ const navigationModules = [
     roles: ['admin', 'hr_manager'],
     isMainModule: true
   },
+   {
+    id: 'employee-management',
+    name: 'Payroll',
+    href: 'payroll',
+    icon: DollarSign,
+    roles: ['admin', 'hr_manager'],
+    isMainModule: true
+  },
+  // { name: 'Payroll', href: 'payroll', icon: DollarSign, section: 'Payroll', roles: ['admin', 'hr_manager'] },
   {
     id: 'attendance-leave',
     name: 'Attendance & Leave',

@@ -40,6 +40,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path === '/admin/attendance') return 'Attendance Management';
       if (path === '/admin/leave-requests') return 'Leave Requests';
       if (path === '/admin/leave-management') return 'Leave Management';
+      if (path === '/admin/payroll') return 'Payroll Management';
     }
     
     // Employee routes
