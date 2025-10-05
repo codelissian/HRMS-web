@@ -83,7 +83,7 @@ const API = {
   ATTENDANCE_POLICIES_CREATE: `/attendance_rules/create`,
   ATTENDANCE_POLICIES_UPDATE: `/attendance_rules/update`,
   ATTENDANCE_POLICIES_LIST: `/attendance_rules/list`,
-  ATTENDANCE_POLICIES_ONE: `/attendance_policies/one`,
+  ATTENDANCE_POLICIES_ONE: `/attendance_rules/one`,
   ATTENDANCE_POLICIES_DELETE: `/attendance_rules/delete`,
 
   // Attendance
