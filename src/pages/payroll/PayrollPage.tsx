@@ -24,14 +24,24 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 interface ComponentType {
   id: string;
   name: string;
+  type?: string;
   created_at: string;
   updated_at: string;
 }
+
+// Component type options for the dropdown
+const COMPONENT_TYPE_OPTIONS = [
+  { value: 'BASIC', label: 'Basic' },
+  { value: 'ALLOWANCE', label: 'Allowance' },
+  { value: 'DEDUCTION', label: 'Deduction' },
+  { value: 'EMPLOYER_CONTRIBUTION', label: 'Employer Contribution' }
+] as const;
 
 export function PayrollPage() {
   const [activeTab, setActiveTab] = useState('component-types');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [componentTypeName, setComponentTypeName] = useState('');
+  const [componentType, setComponentType] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [componentTypes, setComponentTypes] = useState<ComponentType[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
@@ -39,6 +49,7 @@ export function PayrollPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingComponentType, setEditingComponentType] = useState<ComponentType | null>(null);
   const [editComponentTypeName, setEditComponentTypeName] = useState('');
+  const [editComponentType, setEditComponentType] = useState('');
   const [isEditLoading, setIsEditLoading] = useState(false);
   
   // Salary Component Dialog States
@@ -127,6 +138,7 @@ export function PayrollPage() {
   const handleEditClick = (componentType: ComponentType) => {
     setEditingComponentType(componentType);
     setEditComponentTypeName(componentType.name);
+    setEditComponentType(componentType.type || '');
     setIsEditDialogOpen(true);
   };
 
@@ -140,11 +152,21 @@ export function PayrollPage() {
       return;
     }
 
+    if (!editComponentType) {
+      toast({
+        title: "Error",
+        description: "Please select a component type",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsEditLoading(true);
     try {
       await httpClient.put<ApiResponse<any>>('/salary_component_types/update', {
         id: editingComponentType.id,
-        name: editComponentTypeName.trim()
+        name: editComponentTypeName.trim(),
+        type: editComponentType
       });
 
       toast({
@@ -152,6 +174,7 @@ export function PayrollPage() {
         description: "Component type updated successfully",
       });
       setEditComponentTypeName('');
+      setEditComponentType('');
       setIsEditDialogOpen(false);
       setEditingComponentType(null);
       // Refresh the list
@@ -177,10 +200,20 @@ export function PayrollPage() {
       return;
     }
 
+    if (!componentType) {
+      toast({
+        title: "Error",
+        description: "Please select a component type",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await httpClient.post<ApiResponse<any>>('/salary_component_types/create', {
-        name: componentTypeName.trim()
+        name: componentTypeName.trim(),
+        type: componentType
       });
 
       toast({
@@ -188,6 +221,7 @@ export function PayrollPage() {
         description: "Component type created successfully",
       });
       setComponentTypeName('');
+      setComponentType('');
       setIsDialogOpen(false);
       // Refresh the list
       fetchComponentTypes();
@@ -369,6 +403,23 @@ export function PayrollPage() {
                           className="w-full"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="type" className="text-sm font-medium text-gray-700">
+                          Type *
+                        </Label>
+                        <Select value={componentType} onValueChange={setComponentType}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select component type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {COMPONENT_TYPE_OPTIONS.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <DialogFooter className="gap-2 sm:gap-0">
                       <Button
@@ -419,6 +470,7 @@ export function PayrollPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Created At</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -428,6 +480,15 @@ export function PayrollPage() {
                       <TableRow key={componentType.id}>
                         <TableCell className="font-medium">
                           {componentType.name}
+                        </TableCell>
+                        <TableCell>
+                          {componentType.type ? (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              {COMPONENT_TYPE_OPTIONS.find(opt => opt.value === componentType.type)?.label || componentType.type}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-sm">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {new Date(componentType.created_at).toLocaleDateString()}
@@ -505,6 +566,23 @@ export function PayrollPage() {
                     placeholder="e.g., HRA, Allowance, Bonus"
                     className="w-full"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-type" className="text-sm font-medium text-gray-700">
+                    Type *
+                  </Label>
+                  <Select value={editComponentType} onValueChange={setEditComponentType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select component type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COMPONENT_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <DialogFooter className="gap-2 sm:gap-0">
