@@ -857,7 +857,7 @@ export default function EmployeeDetail() {
           description={`Are you sure you want to delete the salary component type "${deletingComponentName}"? This action cannot be undone.`}
           confirmText="Delete"
           cancelText="Cancel"
-          type="delete"
+          type="danger"
         />
 
         <TabsContent value="documents" className="space-y-4">
