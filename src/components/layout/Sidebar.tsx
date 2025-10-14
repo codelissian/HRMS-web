@@ -21,7 +21,9 @@ import {
   CalendarDays,
   Shield,
   Cog,
-  DollarSign
+  DollarSign,
+  RotateCcw,
+  Calculator
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -62,13 +64,16 @@ const navigationModules = [
     roles: ['admin', 'hr_manager'],
     isMainModule: true
   },
-   {
-    id: 'employee-management',
+  {
+    id: 'payroll',
     name: 'Payroll',
-    href: 'payroll',
     icon: DollarSign,
     roles: ['admin', 'hr_manager'],
-    isMainModule: true
+    isMainModule: true,
+    subModules: [
+      { name: 'Payroll Cycle', href: 'payroll-cycle', icon: RotateCcw },
+      { name: 'Payroll', href: 'payroll', icon: Calculator }
+    ]
   },
   // { name: 'Payroll', href: 'payroll', icon: DollarSign, section: 'Payroll', roles: ['admin', 'hr_manager'] },
   {
@@ -115,6 +120,11 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     }
     
     // Employee Management is now a direct link, no need to expand
+    
+    // Auto-expand payroll if on any payroll route
+    if (pathname.startsWith('/admin/payroll-cycle') || pathname.startsWith('/admin/payroll')) {
+      modulesToExpand.push('payroll');
+    }
     
     // Auto-expand attendance-leave if on any attendance/leave route
     if (pathname.startsWith('/admin/attendance') || pathname.startsWith('/admin/leave-requests')) {
