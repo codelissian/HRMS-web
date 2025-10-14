@@ -40,6 +40,7 @@ export default function EmployeeDetail() {
   const [isSalaryComponentLoading, setIsSalaryComponentLoading] = useState(false);
   const [componentTypes, setComponentTypes] = useState<SalaryComponentType[]>([]);
   const [deletingComponentId, setDeletingComponentId] = useState<string | null>(null);
+  const [deletingComponentName, setDeletingComponentName] = useState<string>('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Fetch employee details
@@ -215,6 +216,7 @@ export default function EmployeeDetail() {
 
       // Reset delete state
       setDeletingComponentId(null);
+      setDeletingComponentName('');
       setShowDeleteDialog(false);
 
       // Refresh salary components data
@@ -231,7 +233,12 @@ export default function EmployeeDetail() {
 
   // Handle delete button click
   const handleDeleteClick = (componentId: string) => {
+    // Find the component to get its type name
+    const component = salaryComponentsResponse?.data?.find(comp => comp.id === componentId);
+    const componentTypeName = component?.salary_component_type?.name || 'Unknown Component';
+    
     setDeletingComponentId(componentId);
+    setDeletingComponentName(componentTypeName);
     setShowDeleteDialog(true);
   };
 
@@ -842,11 +849,12 @@ export default function EmployeeDetail() {
             setShowDeleteDialog(open);
             if (!open) {
               setDeletingComponentId(null);
+              setDeletingComponentName('');
             }
           }}
           onConfirm={handleDeleteSalaryComponent}
           title="Delete Salary Component"
-          description="Are you sure you want to delete this salary component? This action cannot be undone."
+          description={`Are you sure you want to delete the salary component type "${deletingComponentName}"? This action cannot be undone.`}
           confirmText="Delete"
           cancelText="Cancel"
           type="delete"
