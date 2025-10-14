@@ -50,7 +50,8 @@ const navigationModules = [
       { name: 'Organization Management', href: 'organization', icon: Globe },
       { name: 'Department', href: 'departments', icon: Building },
       { name: 'Shift', href: 'shifts', icon: Clock },
-      { name: 'Leave Management', href: 'leave-management', icon: Calendar }
+      { name: 'Leave Management', href: 'leave-management', icon: Calendar },
+      { name: 'Salary Component Types', href: 'salary-component-types', icon: Settings }
     ]
   },
   {
@@ -108,7 +109,8 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     if (pathname.startsWith('/admin/organization') || 
         pathname.startsWith('/admin/departments') || 
         pathname.startsWith('/admin/shifts') || 
-        pathname.startsWith('/admin/leave-management')) {
+        pathname.startsWith('/admin/leave-management') ||
+        pathname.startsWith('/admin/salary-component-types')) {
       modulesToExpand.push('master');
     }
     
