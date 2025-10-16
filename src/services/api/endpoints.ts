@@ -156,6 +156,13 @@ const API = {
   PAYROLL_CYCLES_LIST: `/payroll_cycles/list`,
   PAYROLL_CYCLES_ONE: `/payroll_cycles/one`,
   PAYROLL_CYCLES_DELETE: `/payroll_cycles/delete`,
+
+  // Payrolls
+  PAYROLLS_CREATE: `/payrolls/create`,
+  PAYROLLS_UPDATE: `/payrolls/update`,
+  PAYROLLS_LIST: `/payrolls/list`,
+  PAYROLLS_ONE: `/payrolls/one`,
+  PAYROLLS_DELETE: `/payrolls/delete`,
 };
 
 export const API_ENDPOINTS = API;

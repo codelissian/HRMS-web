@@ -85,7 +85,7 @@ export function DataTable<T extends Record<string, any>>({
     },
   ];
 
-  const tableActions = actions.length > 0 ? actions : defaultActions;
+  const tableActions = actions.length > 0 ? actions : [];
 
   if (loading) {
     return (

@@ -1,9 +1,21 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calculator, DollarSign } from 'lucide-react';
+import { PayrollCycleFilter, PayrollTable } from '@/components/payroll';
+import { PayrollCycle } from '@/types/payrollCycle';
 
 export function PayrollPage() {
+  const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
+  const [selectedCycle, setSelectedCycle] = useState<PayrollCycle | null>(null);
+
+  const handleCycleSelect = useCallback((cycleId: string | null, cycle: PayrollCycle | null) => {
+    setSelectedCycleId(cycleId);
+    setSelectedCycle(cycle);
+    console.log('Selected Cycle ID:', cycleId);
+    console.log('Selected Cycle:', cycle);
+  }, []);
+
   return (
     <div className="space-y-6">
       <Card>
@@ -17,18 +29,21 @@ export function PayrollPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-12">
-            <DollarSign className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              Payroll Management
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              Payroll management features will be available here. This includes salary calculations, 
-              payment processing, tax calculations, and payroll reports.
-            </p>
-            <Button disabled className="opacity-50">
-              Coming Soon
-            </Button>
+          <div className="space-y-6">
+            {/* Payroll Cycle Filter */}
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Filter by Cycle:
+              </label>
+              <PayrollCycleFilter 
+                onCycleSelect={handleCycleSelect}
+                selectedCycleId={selectedCycleId}
+              />
+            </div>
+
+
+            {/* Payroll Table */}
+            <PayrollTable payrollCycleId={selectedCycleId} />
           </div>
         </CardContent>
       </Card>
