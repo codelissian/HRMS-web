@@ -149,6 +149,13 @@ const API = {
   SALARY_COMPONENT_TYPES_LIST: `/salary_component_types/list`,
   SALARY_COMPONENT_TYPES_ONE: `/salary_component_types/one`,
   SALARY_COMPONENT_TYPES_DELETE: `/salary_component_types/delete`,
+
+  // Payroll Cycles
+  PAYROLL_CYCLES_CREATE: `/payroll_cycles/create`,
+  PAYROLL_CYCLES_UPDATE: `/payroll_cycles/update`,
+  PAYROLL_CYCLES_LIST: `/payroll_cycles/list`,
+  PAYROLL_CYCLES_ONE: `/payroll_cycles/one`,
+  PAYROLL_CYCLES_DELETE: `/payroll_cycles/delete`,
 };
 
 export const API_ENDPOINTS = API;

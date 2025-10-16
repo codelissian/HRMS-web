@@ -22,9 +22,10 @@ export interface Column<T> {
 
 export interface TableAction<T> {
   label: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon?: React.ComponentType<{ className?: string }>;
   onClick: (row: T) => void;
   variant?: 'default' | 'destructive';
+  textOnly?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -183,15 +184,19 @@ export function DataTable<T extends Record<string, any>>({
                           return (
                             <Button
                               key={actionIndex}
-                              variant="ghost"
-                              size="icon"
+                              variant={action.textOnly ? "outline" : "ghost"}
+                              size={action.textOnly ? "sm" : "icon"}
                               onClick={() => action.onClick(row)}
                               className={cn(
-                                "h-8 w-8",
+                                action.textOnly ? "h-8 px-3" : "h-8 w-8",
                                 action.variant === 'destructive' && "text-red-600 hover:text-red-800 hover:bg-red-100 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/30"
                               )}
                             >
-                              <Icon className="h-4 w-4" />
+                              {action.textOnly ? (
+                                action.label
+                              ) : (
+                                Icon && <Icon className="h-4 w-4" />
+                              )}
                             </Button>
                           );
                         })}
