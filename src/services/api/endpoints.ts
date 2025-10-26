@@ -137,11 +137,11 @@ const API = {
   CURRENCY_EXCHANGE_RATES_DELETE: `/currency-exchange-rates/delete`,
 
   // Work Day Rules
-  WORK_DAY_RULES_CREATE: `/work-day-rules/create`,
-  WORK_DAY_RULES_UPDATE: `/work-day-rules/update`,
+  WORK_DAY_RULES_CREATE: `/working_day_rules/create`,
+  WORK_DAY_RULES_UPDATE: `/working_day_rule/update`,
   WORK_DAY_RULES_LIST: `/working_day_rules/list`,
-  WORK_DAY_RULES_ONE: `/work-day-rules/one`,
-  WORK_DAY_RULES_DELETE: `/work-day-rules/delete`,
+  WORK_DAY_RULES_ONE: `/working_day_rule/one`,
+  WORK_DAY_RULES_DELETE: `/working_day_rule/delete`,
 
   // Salary Components
   SALARY_COMPONENTS_CREATE: `/salary_components/create`,

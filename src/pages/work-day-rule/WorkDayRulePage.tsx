@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkDayRuleTable } from '@/components/work-day-rule/WorkDayRuleTable';
+import { WorkDayRuleForm } from '@/components/work-day-rule/WorkDayRuleForm';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { WorkDayRule } from '@/types/workDayRule';
 import { Plus } from 'lucide-react';
@@ -45,6 +46,48 @@ export default function WorkDayRulePage() {
   const rules = rulesResponse?.data || [];
   const totalCount = rulesResponse?.total_count || 0;
   const pageCount = rulesResponse?.page_count || 0;
+
+  // Create mutation
+  const createMutation = useMutation({
+    mutationFn: (data: any) => WorkDayRuleService.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-day-rules'] });
+      toast({
+        title: "Success",
+        description: "Work day rule created successfully",
+      });
+      setShowDetails(false);
+      setSelectedRule(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || "Failed to create work day rule",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update mutation
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => WorkDayRuleService.update(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['work-day-rules'] });
+      toast({
+        title: "Success",
+        description: "Work day rule updated successfully",
+      });
+      setShowDetails(false);
+      setSelectedRule(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error?.response?.data?.message || "Failed to update work day rule",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Delete mutation
   const deleteMutation = useMutation({
@@ -192,6 +235,20 @@ export default function WorkDayRulePage() {
           </div>
         </div>
       )}
+
+      {/* Work Day Rule Form */}
+      <WorkDayRuleForm
+        open={showDetails}
+        onOpenChange={setShowDetails}
+        workDayRule={selectedRule}
+        onSave={async (formData) => {
+          if (formMode === 'edit' && selectedRule) {
+            updateMutation.mutate({ id: selectedRule.id, ...formData });
+          } else {
+            createMutation.mutate(formData);
+          }
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmationDialog

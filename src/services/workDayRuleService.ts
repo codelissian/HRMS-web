@@ -2,20 +2,16 @@ import { httpClient } from '@/lib/httpClient';
 import { 
   WorkDayRule, 
   WorkDayRuleListResponse,
-  WorkDayRuleListParams 
+  WorkDayRuleListParams,
+  WorkDayRuleFormData
 } from '@/types/workDayRule';
 import { API_ENDPOINTS } from '@/services/api/endpoints';
 import { ApiResponse } from '@/types/api';
 
-export interface CreateWorkDayRuleRequest {
-  name: string;
-  workweek: 'five_days' | 'six_days' | 'seven_days';
-}
+export interface CreateWorkDayRuleRequest extends WorkDayRuleFormData {}
 
-export interface UpdateWorkDayRuleRequest {
+export interface UpdateWorkDayRuleRequest extends WorkDayRuleFormData {
   id: string;
-  name: string;
-  workweek: 'five_days' | 'six_days' | 'seven_days';
 }
 
 export class WorkDayRuleService {

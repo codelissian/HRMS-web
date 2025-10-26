@@ -48,6 +48,21 @@ export function WorkDayRuleTable({
     }
   };
 
+  const getPayrollDays = (workDayRule: WorkDayRule) => {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    
+    const payrollDays = days.filter(day => {
+      const payrollKey = `include_${day}_in_payroll` as keyof WorkDayRule;
+      return workDayRule[payrollKey];
+    });
+    
+    return payrollDays.map(day => {
+      const index = days.indexOf(day);
+      return dayNames[index];
+    }).join(', ');
+  };
+
   if (loading) {
     return (
       <Card>
@@ -103,7 +118,7 @@ export function WorkDayRuleTable({
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Work Week</TableHead>
-                <TableHead>Organization ID</TableHead>
+                <TableHead>Payroll Days</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -119,7 +134,7 @@ export function WorkDayRuleTable({
                     </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {workDayRule.organisation_id}
+                    {getPayrollDays(workDayRule)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
