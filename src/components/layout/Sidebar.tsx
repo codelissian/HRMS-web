@@ -53,6 +53,7 @@ const navigationModules = [
       { name: 'Organization Management', href: 'organization', icon: Globe },
       { name: 'Department', href: 'departments', icon: Building },
       { name: 'Shift', href: 'shifts', icon: Clock },
+      { name: 'Attendance & Work Day Rule', href: 'attendance-and-work-day-rule', icon: CalendarCheck },
       { name: 'Leave Management', href: 'leave-management', icon: Calendar },
       { name: 'Holidays', href: 'holidays', icon: PartyPopper },
       { name: 'Salary Component Types', href: 'salary-component-types', icon: Settings }
@@ -85,7 +86,6 @@ const navigationModules = [
     roles: ['admin', 'hr_manager', 'employee'],
     isMainModule: true,
     subModules: [
-      { name: 'Attendance & Work Day Rule', href: 'attendance-and-work-day-rule', icon: CalendarCheck },
       { name: 'Leave Requests', href: 'leave-requests', icon: Calendar },
       { name: 'Attendance Management', href: 'attendance', icon: Clock }
     ]
