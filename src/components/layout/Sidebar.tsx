@@ -23,7 +23,8 @@ import {
   Cog,
   DollarSign,
   RotateCcw,
-  Calculator
+  Calculator,
+  PartyPopper
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
@@ -53,6 +54,7 @@ const navigationModules = [
       { name: 'Department', href: 'departments', icon: Building },
       { name: 'Shift', href: 'shifts', icon: Clock },
       { name: 'Leave Management', href: 'leave-management', icon: Calendar },
+      { name: 'Holidays', href: 'holidays', icon: PartyPopper },
       { name: 'Salary Component Types', href: 'salary-component-types', icon: Settings }
     ]
   },

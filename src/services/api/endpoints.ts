@@ -108,6 +108,13 @@ const API = {
   LEAVE_REQUESTS_DELETE: `/leave_requests/delete`,
   LEAVE_REQUESTS_STATISTICS: `/requests/statistics`,
 
+  // Holidays
+  HOLIDAYS_CREATE: `/holidays/create`,
+  HOLIDAYS_UPDATE: `/holidays/update`,
+  HOLIDAYS_LIST: `/holidays/list`,
+  HOLIDAYS_ONE: `/holidays/one`,
+  HOLIDAYS_DELETE: `/holidays/delete`,
+
   // Leave Encashments
   LEAVE_ENCASHMENTS_CREATE: `/leave-encashments/create`,
   LEAVE_ENCASHMENTS_UPDATE: `/leave-encashments/update`,

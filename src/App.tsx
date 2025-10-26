@@ -26,6 +26,8 @@ import CreateAttendancePolicyPage from "@/pages/attendance-policies/CreateAttend
 import { PayrollPage } from "@/pages/payroll";
 import { PayrollCyclePage } from "@/pages/payroll-cycle";
 import { SalaryComponentTypesPage } from "@/pages/salary-component-types";
+import HolidayList from "@/pages/holidays/HolidayList";
+import HolidayDetail from "@/pages/holidays/HolidayDetail";
 import NotFound from "@/pages/not-found";
 import EmployeeLayout from "@/employee/layout/EmployeeLayout";
 import EmployeeDashboard from "@/employee/pages/Dashboard";
@@ -108,6 +110,8 @@ function AppRoutes() {
         <Route path="attendance" element={<AttendanceManagementPage />} />
         <Route path="leave-requests" element={<LeaveRequestsPage />} />
         <Route path="leave-management" element={<LeaveManagementPage />} />
+        <Route path="holidays" element={<HolidayList />} />
+        <Route path="holidays/:id" element={<HolidayDetail />} />
         <Route path="salary-component-types" element={<SalaryComponentTypesPage />} />
         <Route path="payroll-cycle" element={<PayrollCyclePage />} />
         <Route path="payroll" element={<PayrollPage />} />
