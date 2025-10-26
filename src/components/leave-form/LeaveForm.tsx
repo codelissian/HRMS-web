@@ -31,6 +31,12 @@ interface LeaveFormProps {
 
 export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps) {
   const [isLoading, setIsLoading] = useState(false);
+  
+  console.log('🔍 LeaveForm rendered with props:', { 
+    open, 
+    leave: leave?.id || 'new', 
+    onSave: !!onSave 
+  });
 
   const {
     register,
@@ -48,18 +54,15 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
       description: '',
       color: '#3B82F6',
       icon: '📋',
-      category: 'PAID',
+      expiry_method: 'YEARLY', // ✅ Added: Backend expects this field
       accrual_method: 'MONTHLY',
       accrual_rate: 0,
-      initial_balance: 0,
-      max_balance: 0,
-      min_balance: 0,
       allow_carry_forward: false,
       carry_forward_limit: 0,
       carry_forward_expiry_months: 0,
       allow_encashment: false,
       encashment_rate: 0,
-      requires_approval: true,
+      requires_approval: false,
       requires_documentation: false,
       required_documents: [],
       auto_approve_for_days: 0,
@@ -68,7 +71,7 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
       min_advance_notice_days: 0,
       max_consecutive_days: 0,
       blackout_dates: [],
-      active_flag: true,
+      // ❌ Removed: category, initial_balance, max_balance, min_balance, active_flag
     },
   });
 
@@ -77,22 +80,34 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
   const watchedAllowCarryForward = watch('allow_carry_forward');
   const watchedAllowEncashment = watch('allow_encashment');
   const watchedRequiresApproval = watch('requires_approval');
+  
+  // Debug form state
+  console.log('🔍 Form state:', { 
+    open, 
+    isLoading, 
+    errors: Object.keys(errors),
+    formValues: {
+      name: watch('name'),
+      code: watch('code'),
+      accrual_method: watch('accrual_method')
+    }
+  });
 
   // Set form data when editing
   useEffect(() => {
+    console.log('🔄 LeaveForm useEffect triggered:', { open, leave: leave?.id || 'new' });
+    
     if (open && leave) {
+      console.log('📝 Setting form data for editing leave:', leave.id);
       reset({
         name: leave.name,
         code: leave.code,
         description: leave.description || '',
         color: leave.color || '#3B82F6',
         icon: leave.icon || '📋',
-        category: (leave.category as 'PAID' | 'UNPAID' | 'HALF_DAY') || 'PAID',
+        expiry_method: (leave as any).expiry_method || 'YEARLY', // ✅ Added: Backend expects this field
         accrual_method: (leave.accrual_method as 'MONTHLY' | 'YEARLY' | 'QUARTERLY' | 'NONE') || 'MONTHLY',
         accrual_rate: leave.accrual_rate || 0,
-        initial_balance: leave.initial_balance || 0,
-        max_balance: leave.max_balance || 0,
-        min_balance: leave.min_balance || 0,
         allow_carry_forward: leave.allow_carry_forward || false,
         carry_forward_limit: leave.carry_forward_limit || 0,
         carry_forward_expiry_months: leave.carry_forward_expiry_months || 0,
@@ -107,28 +122,26 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
         min_advance_notice_days: leave.min_advance_notice_days || 0,
         max_consecutive_days: leave.max_consecutive_days || 0,
         blackout_dates: Array.isArray(leave.blackout_dates) ? leave.blackout_dates : [],
-        active_flag: leave.active_flag || true,
+        // ❌ Removed: category, initial_balance, max_balance, min_balance, active_flag
       });
     } else if (open && !leave) {
-      // Reset form for new leave with empty values
+      console.log('🆕 Setting form data for new leave');
+      // Reset form for new leave with proper default values
       reset({
         name: '',
         code: '',
         description: '',
-        color: '',
-        icon: '',
-        category: 'PAID',
+        color: '#3B82F6', // ✅ Fixed: Default blue color
+        icon: '📋', // ✅ Fixed: Default icon
+        expiry_method: 'YEARLY', // ✅ Added: Backend expects this field
         accrual_method: 'MONTHLY',
         accrual_rate: 0,
-        initial_balance: 0,
-        max_balance: 0,
-        min_balance: 0,
         allow_carry_forward: false,
         carry_forward_limit: 0,
         carry_forward_expiry_months: 0,
         allow_encashment: false,
         encashment_rate: 0,
-        requires_approval: true,
+        requires_approval: false,
         requires_documentation: false,
         required_documents: [],
         auto_approve_for_days: 0,
@@ -137,40 +150,54 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
         min_advance_notice_days: 0,
         max_consecutive_days: 0,
         blackout_dates: [],
-        active_flag: true,
+        // ❌ Removed: category, initial_balance, max_balance, min_balance, active_flag
       });
     }
   }, [open, leave, reset]);
 
   const handleFormSubmit = async (data: LeaveFormData) => {
+    console.log('📝 Form submitted with data:', data);
+    console.log('🔍 Form errors:', errors);
+    console.log('📝 Form is valid:', Object.keys(errors).length === 0);
+    
+    if (Object.keys(errors).length > 0) {
+      console.log('❌ Form validation failed, preventing submission');
+      console.log('❌ Validation errors:', errors);
+      return;
+    }
+    
+    console.log('✅ Form validation passed, proceeding with submission');
+    
     setIsLoading(true);
     try {
+      console.log('📡 Calling onSave callback');
       onSave(data);
+      console.log('✅ onSave callback completed');
+    } catch (error) {
+      console.error('❌ Error in handleFormSubmit:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    // Reset form to empty state when closing
+    console.log('🚪 Closing LeaveForm dialog');
+    // Reset form to default state when closing
     reset({
       name: '',
       code: '',
       description: '',
-      color: '',
-      icon: '',
-      category: 'PAID',
+      color: '#3B82F6', // ✅ Fixed: Default blue color
+      icon: '📋', // ✅ Fixed: Default icon
+      expiry_method: 'YEARLY', // ✅ Added: Backend expects this field
       accrual_method: 'MONTHLY',
       accrual_rate: 0,
-      initial_balance: 0,
-      max_balance: 0,
-      min_balance: 0,
       allow_carry_forward: false,
       carry_forward_limit: 0,
       carry_forward_expiry_months: 0,
       allow_encashment: false,
       encashment_rate: 0,
-      requires_approval: true,
+      requires_approval: false,
       requires_documentation: false,
       required_documents: [],
       auto_approve_for_days: 0,
@@ -179,7 +206,7 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
       min_advance_notice_days: 0,
       max_consecutive_days: 0,
       blackout_dates: [],
-      active_flag: true,
+      // ❌ Removed: category, initial_balance, max_balance, min_balance, active_flag
     });
     onOpenChange(false);
   };
@@ -260,28 +287,10 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
               Leave Configuration
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="category">Category <span className="text-red-500">*</span></Label>
-                <Controller
-                  name="category"
-                  control={control}
-                  render={({ field }) => (
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="PAID">Paid</SelectItem>
-                        <SelectItem value="UNPAID">Unpaid</SelectItem>
-                        <SelectItem value="HALF_DAY">Half Day</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="accrual_method">Accrual Method <span className="text-red-500">*</span></Label>
+               <div className="space-y-2">
+                <Label htmlFor="accrual_method">
+                  Accrual Method <span className="text-red-500">*</span>
+                </Label>
                 <Controller
                   name="accrual_method"
                   control={control}
@@ -303,7 +312,9 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
               
               {watchedAccrualMethod !== 'NONE' && (
                 <div className="space-y-2">
-                  <Label htmlFor="accrual_rate">Accrual Rate (days)</Label>
+                  <Label htmlFor="accrual_rate">
+                    Accrual Rate (days)
+                  </Label>
                   <Input
                     id="accrual_rate"
                     type="number"
@@ -315,32 +326,25 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="initial_balance">Initial Balance (days)</Label>
-                <Input
-                  id="initial_balance"
-                  type="number"
-                  {...register('initial_balance', { valueAsNumber: true })}
-                  placeholder="25"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="max_balance">Maximum Balance (days)</Label>
-                <Input
-                  id="max_balance"
-                  type="number"
-                  {...register('max_balance', { valueAsNumber: true })}
-                  placeholder="30"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="min_balance">Minimum Balance (days)</Label>
-                <Input
-                  id="min_balance"
-                  type="number"
-                  {...register('min_balance', { valueAsNumber: true })}
-                  placeholder="0"
+                <Label htmlFor="expiry_method">
+                  Expiry Method
+                </Label>
+                <Controller
+                  name="expiry_method"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select expiry method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="YEARLY">Yearly</SelectItem>
+                        <SelectItem value="MONTHLY">Monthly</SelectItem>
+                        <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                        <SelectItem value="NONE">No Expiry</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                 />
               </div>
             </div>
@@ -368,22 +372,31 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
                   />
                 </div>
                 {watchedAllowCarryForward && (
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    <Input
-                      placeholder="Limit"
-                      type="number"
-                      {...register('carry_forward_limit', { valueAsNumber: true })}
-                    />
-                    <Input
-                      placeholder="Expiry (months)"
-                      type="number"
-                      {...register('carry_forward_expiry_months', { valueAsNumber: true })}
-                    />
+                  <div className="space-y-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="carry_forward_limit">Carry Forward Limit (days)</Label>
+                      <Input
+                        id="carry_forward_limit"
+                        placeholder="Limit"
+                        type="number"
+                        {...register('carry_forward_limit', { valueAsNumber: true })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="carry_forward_expiry_months">Carry Forward Expiry (months)</Label>
+                      <Input
+                        id="carry_forward_expiry_months"
+                        placeholder="Expiry (months)"
+                        type="number"
+                        {...register('carry_forward_expiry_months', { valueAsNumber: true })}
+                      />
+                    </div>
                   </div>
                 )}
               </div>
               
-              <div className="space-y-2">
+              {/* Allow Encashment - Hidden by default */}
+              <div className="space-y-2" style={{ display: 'none' }}>
                 <div className="flex items-center justify-between">
                   <Label htmlFor="allow_encashment">Allow Encashment</Label>
                   <Controller
@@ -408,7 +421,8 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Hidden: Requires Approval and Requires Documentation */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ display: 'none' }}>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="requires_approval">Requires Approval</Label>
@@ -493,31 +507,19 @@ export function LeaveForm({ open, onOpenChange, leave, onSave }: LeaveFormProps)
             </div>
           </div>
 
-          {/* Status */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-medium text-gray-900 dark:text-white">
-              Status
-            </h4>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="active_flag">Active</Label>
-              <Controller
-                name="active_flag"
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                )}
-              />
-            </div>
-          </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={handleClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              disabled={isLoading}
+              onClick={() => {
+                console.log('🖱️ Submit button clicked');
+                console.log('📝 Form state:', { isLoading, errors: Object.keys(errors) });
+              }}
+            >
               {isLoading ? 'Saving...' : (leave ? 'Update Leave Type' : 'Create Leave Type')}
             </Button>
           </DialogFooter>

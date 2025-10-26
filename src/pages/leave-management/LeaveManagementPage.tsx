@@ -18,6 +18,7 @@ import { Leave } from '../../types/database';
 import { leaveService } from '@/services/leaveService';
 import { useToast } from '@/hooks/use-toast';
 import { LoadingSpinner } from '@/components/common';
+import { useAuth } from '@/hooks/useAuth'; // ✅ Added: Import useAuth
 
 export default function LeaveManagementPage() {
   const [leaves, setLeaves] = useState<Leave[]>([]);
@@ -25,6 +26,7 @@ export default function LeaveManagementPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingLeave, setEditingLeave] = useState<Leave | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth(); // ✅ Added: Get user from auth context
   
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -66,8 +68,11 @@ export default function LeaveManagementPage() {
   }, []);
 
   const handleCreateLeave = () => {
+    console.log('🖱️ Create Leave Type button clicked');
+    console.log('📝 Current state:', { editingLeave, showForm });
     setEditingLeave(null);
     setShowForm(true);
+    console.log('✅ Form should now be open');
   };
 
   const handleEditLeave = (leave: Leave) => {
@@ -110,15 +115,6 @@ export default function LeaveManagementPage() {
         setDeleteDialogOpen(false);
         setLeaveToDelete(null);
       }
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'PAID': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'UNPAID': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'HALF_DAY': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
     }
   };
 
@@ -168,58 +164,32 @@ export default function LeaveManagementPage() {
                   <div>
                     <CardTitle className="text-lg">{leave.name}</CardTitle>
                     <p className="text-sm text-gray-500 dark:text-gray-400">{leave.code}</p>
+                    {leave.description && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        {leave.description}
+                      </p>
+                    )}
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Badge 
-                    variant={leave.active_flag ? 'default' : 'secondary'}
-                    className={leave.active_flag ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
-                  >
-                    {leave.active_flag ? 'Active' : 'Inactive'}
-                  </Badge>
-                  
-                  <Button variant="ghost" size="sm">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
+                <Badge 
+                  variant={(leave as any).active_flag ? 'default' : 'secondary'}
+                  className={(leave as any).active_flag ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
+                >
+                  {(leave as any).active_flag ? 'Active' : 'Inactive'}
+                </Badge>
                 </div>
               </div>
             </CardHeader>
             
             <CardContent className="space-y-4">
-              {leave.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {leave.description}
-                </p>
-              )}
-              
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Category:</span>
-                  <Badge className={getCategoryColor(leave.category || 'PAID')}>
-                    {leave.category || 'PAID'}
-                  </Badge>
-                </div>
-                
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-500 dark:text-gray-400">Accrual:</span>
                   <span className="font-medium">
                     {leave.accrual_method === 'NONE' ? 'No Accrual' : 
                       `${leave.accrual_rate || 0} days ${getAccrualMethodLabel(leave.accrual_method || 'MONTHLY').toLowerCase()}`}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Balance:</span>
-                  <span className="font-medium">
-                    {leave.initial_balance} days
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Approval:</span>
-                  <span className="font-medium">
-                    {leave.requires_approval ? `${leave.approval_levels} level(s)` : 'Auto-approve'}
                   </span>
                 </div>
               </div>
@@ -277,14 +247,17 @@ export default function LeaveManagementPage() {
         onOpenChange={setShowForm}
         leave={editingLeave}
         onSave={async (leaveData) => {
+          console.log('🚀 Form onSave called with data:', leaveData);
+          console.log('📝 Is editing mode:', !!editingLeave);
+          console.log('👤 User context:', { user: user?.id, organisation_id: user?.organisation_id });
+          
           try {
             if (editingLeave) {
               // Update existing leave
               const response = await leaveService.updateLeaveType({
                 id: editingLeave.id,
                 ...leaveData,
-                approval_levels: Number(leaveData.approval_levels), // Ensure it's sent as a number
-              } as any); // Type assertion to bypass schema mismatch
+              });
               
               if (response.status && response.data) {
                 toast({
@@ -301,19 +274,40 @@ export default function LeaveManagementPage() {
               }
             } else {
               // Create new leave
+              console.log('🆕 Creating new leave type');
+              console.log('📝 Leave data to send:', leaveData);
+              
+              if (!user?.organisation_id) {
+                console.log('❌ No organization ID found');
+                toast({
+                  title: "Error",
+                  description: "Organization ID not found. Please log in again.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              
+              console.log('📡 Calling leaveService.createLeaveType with:', {
+                ...leaveData,
+                organisation_id: user.organisation_id
+              });
+              
               const response = await leaveService.createLeaveType({
                 ...leaveData,
-                approval_levels: Number(leaveData.approval_levels), // Ensure it's sent as a number
-                organisation_id: "1823a724-3843-4aef-88b4-7505e4aa88f7", // TODO: Get from auth context
-              } as any); // Type assertion to bypass schema mismatch
+                organisation_id: user.organisation_id, // ✅ Fixed: Use auth context
+              });
+              
+              console.log('📡 API Response:', response);
               
               if (response.status && response.data) {
+                console.log('✅ Leave type created successfully');
                 toast({
                   title: "Success",
                   description: "Leave type created successfully",
                 });
                 fetchLeaves(); // Refresh the list
               } else {
+                console.log('❌ Leave type creation failed:', response);
                 toast({
                   title: "Error",
                   description: response.message || "Failed to create leave type",
@@ -324,7 +318,11 @@ export default function LeaveManagementPage() {
             setShowForm(false);
             setEditingLeave(null);
           } catch (error) {
-            console.error('Error saving leave:', error);
+            console.error('❌ Error saving leave:', error);
+            console.error('❌ Error details:', {
+              message: error instanceof Error ? error.message : 'Unknown error',
+              stack: error instanceof Error ? error.stack : undefined
+            });
             toast({
               title: "Error",
               description: "Failed to save leave type. Please try again.",

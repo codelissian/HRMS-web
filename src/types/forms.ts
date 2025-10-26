@@ -46,7 +46,6 @@ export const employeeFormSchema = z.object({
   attendance_rule_id: z.string().optional(),
   geo_radius_meters: z.number().min(1, "Radius must be at least 1 meter").optional(),
   bank_details: z.any().optional(),
-  role_id: z.string().optional(),
 });
 
 export const departmentFormSchema = z.object({
@@ -69,18 +68,17 @@ export const shiftFormSchema = z.object({
 });
 
 export const leaveFormSchema = z.object({
+  // ✅ Required fields
   name: z.string().min(1, "Leave name is required"),
   code: z.string().min(1, "Leave code is required"),
+  
+  // ✅ Optional fields that backend accepts
   description: z.string().optional(),
   color: z.string().optional(),
   icon: z.string().optional(),
-  organisation_id: z.string().min(1, "Organisation ID is required"),
-  category: z.string().optional(),
+  expiry_method: z.string().optional(), // ✅ Added: Backend expects this field
   accrual_method: z.string().optional(),
   accrual_rate: z.number().optional(),
-  initial_balance: z.number().optional(),
-  max_balance: z.number().optional(),
-  min_balance: z.number().optional(),
   allow_carry_forward: z.boolean().optional(),
   carry_forward_limit: z.number().optional(),
   carry_forward_expiry_months: z.number().optional(),
@@ -90,11 +88,14 @@ export const leaveFormSchema = z.object({
   requires_documentation: z.boolean().optional(),
   required_documents: z.any().optional(),
   auto_approve_for_days: z.number().optional(),
-  approval_levels: z.string().optional(),
+  approval_levels: z.number().optional(),
   min_service_months: z.number().optional(),
   min_advance_notice_days: z.number().optional(),
   max_consecutive_days: z.number().optional(),
   blackout_dates: z.any().optional(),
+  
+  // ❌ Removed fields that backend doesn't accept:
+  // category, initial_balance, max_balance, min_balance, active_flag
 });
 
 export const leaveRequestFormSchema = z.object({

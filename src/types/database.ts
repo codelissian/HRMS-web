@@ -52,6 +52,7 @@ export interface Employee {
   department_id?: string;
   designation_id?: string;
   shift_id?: string;
+  attendance_rule_id?: string; // ✅ Added missing field
   bank_details?: any;
   role_id?: string;
   active_flag?: boolean;
@@ -119,7 +120,7 @@ export interface Leave {
   requires_documentation?: boolean;
   required_documents?: any;
   auto_approve_for_days?: number;
-  approval_levels?: string;
+  approval_levels?: number;
   min_service_months?: number;
   min_advance_notice_days?: number;
   max_consecutive_days?: number;
@@ -128,6 +129,7 @@ export interface Leave {
   delete_flag?: boolean;
   created_at?: string;
   updated_at?: string;
+  expiry_method?: string; // ✅ Added: Backend expects this field
 }
 
 export interface LeaveRequest {
