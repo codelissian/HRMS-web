@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { httpClient } from '@/lib/httpClient';
 import { ApiResponse } from '@/types/api';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pagination } from '@/components/common';
 
 interface ComponentType {
   id: string;
@@ -49,6 +50,10 @@ export function SalaryComponentTypesPage() {
   const [editComponentType, setEditComponentType] = useState('');
   const [editComponentTypeSequence, setEditComponentTypeSequence] = useState('');
   const [isEditLoading, setIsEditLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
   
   const { toast } = useToast();
 
@@ -56,10 +61,12 @@ export function SalaryComponentTypesPage() {
     setIsLoadingList(true);
     try {
       const response = await httpClient.post<ApiResponse<ComponentType[]>>('/salary_component_types/list', {
-        page: 1,
-        page_size: 100
+        page: currentPage,
+        page_size: pageSize
       });
       setComponentTypes(response.data.data || []);
+      setTotalCount(response.data.total_count || 0);
+      setPageCount(response.data.page_count || 0);
     } catch (error) {
       toast({
         title: "Error",
@@ -245,7 +252,7 @@ export function SalaryComponentTypesPage() {
 
   useEffect(() => {
     fetchComponentTypes();
-  }, []);
+  }, [currentPage, pageSize]);
 
   return (
     <div className="space-y-6">
@@ -451,6 +458,26 @@ export function SalaryComponentTypesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalCount > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newPageSize) => {
+                setPageSize(newPageSize);
+                setCurrentPage(1);
+              }}
+              showFirstLast={false}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

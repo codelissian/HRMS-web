@@ -4,8 +4,10 @@ import { PayrollCycle } from '@/types/payrollCycle';
 import { PayrollCycleService } from '@/services/payrollCycleService';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { PayrollCycleUpdateDialog } from './PayrollCycleUpdateDialog';
+import { Pagination } from '@/components/common';
 
 export function PayrollCycleTable() {
   const [payrollCycles, setPayrollCycles] = useState<PayrollCycle[]>([]);
@@ -13,13 +15,22 @@ export function PayrollCycleTable() {
   const [error, setError] = useState<string | null>(null);
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
   const [selectedPayrollCycle, setSelectedPayrollCycle] = useState<PayrollCycle | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
 
   const fetchPayrollCycles = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await PayrollCycleService.getPayrollCycles();
+      const response = await PayrollCycleService.getPayrollCycles({
+        page: currentPage,
+        page_size: pageSize
+      });
       setPayrollCycles(response.data);
+      setTotalCount(response.total_count || 0);
+      setPageCount(response.page_count || 0);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch payroll cycles');
       console.error('Error fetching payroll cycles:', err);
@@ -30,7 +41,7 @@ export function PayrollCycleTable() {
 
   useEffect(() => {
     fetchPayrollCycles();
-  }, []);
+  }, [currentPage, pageSize]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -153,6 +164,26 @@ export function PayrollCycleTable() {
         loading={loading}
         searchable={false}
       />
+      
+      {/* Pagination */}
+      {totalCount > 0 && (
+        <Card className="mt-4">
+          <CardContent className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newPageSize) => {
+                setPageSize(newPageSize);
+                setCurrentPage(1);
+              }}
+              showFirstLast={false}
+            />
+          </CardContent>
+        </Card>
+      )}
       
       <PayrollCycleUpdateDialog
         open={updateDialogOpen}

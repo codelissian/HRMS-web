@@ -19,7 +19,7 @@ export default function EmployeeList() {
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(10);
   
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

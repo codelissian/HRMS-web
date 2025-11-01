@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { EmptyState } from '../../components/common/EmptyState';
+import { EmptyState, Pagination } from '../../components/common';
 import { ShiftForm } from '../../components/shifts';
 import { Clock, Edit, Power, PowerOff, Trash2 } from 'lucide-react';
 import { useShifts } from '../../contexts/ShiftsContext';
@@ -23,18 +23,23 @@ const ShiftsPage: React.FC = () => {
   const [shiftToDelete, setShiftToDelete] = useState<any>(null);
   const { 
     shifts, 
-    totalCount, 
+    totalCount,
+    pageCount,
+    currentPage,
+    pageSize,
     isLoading, 
     fetchShifts, 
     selectShift, 
     toggleShiftStatus,
-    deleteShift
+    deleteShift,
+    setCurrentPage,
+    setPageSize
   } = useShifts();
 
   // Fetch shifts on component mount
   useEffect(() => {
     fetchShifts();
-  }, [fetchShifts]);
+  }, []);
 
   const handleEditShift = (shift: any) => {
     selectShift(shift);
@@ -172,6 +177,23 @@ const ShiftsPage: React.FC = () => {
             onClick: () => setIsCreateDialogOpen(true)
           }}
         />
+      )}
+
+      {/* Pagination */}
+      {totalCount > 0 && (
+        <Card className="mt-4">
+          <CardContent className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+              showFirstLast={false}
+            />
+          </CardContent>
+        </Card>
       )}
 
       <ShiftForm

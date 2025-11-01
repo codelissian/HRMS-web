@@ -13,7 +13,7 @@ import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 export default function WorkDayRulePage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(10);
   
   // Modal states
   const [showDetails, setShowDetails] = useState(false);
