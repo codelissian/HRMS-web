@@ -92,6 +92,7 @@ const API = {
   ATTENDANCE_LIST: `/attendance/list`,
   ATTENDANCE_ONE: `/attendance/one`,
   ATTENDANCE_DELETE: `/attendance/delete`,
+  ATTENDANCE_DAY: `/attendance/day`,
 
   // Leaves
   LEAVES_CREATE: `/leaves/create`,

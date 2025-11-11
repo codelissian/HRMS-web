@@ -18,7 +18,7 @@ import EmployeeFormPage from "@/pages/employees/EmployeeFormPage";
 import DepartmentList from "@/pages/departments/DepartmentList";
 import { ShiftsPage } from "@/pages/shifts";
 import { AttendanceAndWorkDayRulePage } from "@/pages/attendance-and-work-day-rule";
-import { AttendanceManagementPage } from "@/pages/attendance";
+import { AttendanceManagementPage, TodaysAttendancePage } from "@/pages/attendance";
 import { LeaveManagementPage } from "@/pages/leave-management";
 import { LeaveRequestsPage } from "@/pages/leave-requests";
 import { OrganizationPage } from "@/pages/organization";
@@ -107,6 +107,7 @@ function AppRoutes() {
         <Route path="attendance-and-work-day-rule" element={<AttendanceAndWorkDayRulePage />} />
         <Route path="attendance-policies/create" element={<CreateAttendancePolicyPage />} />
         <Route path="attendance-policies/:id/edit" element={<CreateAttendancePolicyPage />} />
+        <Route path="attendance/today" element={<TodaysAttendancePage />} />
         <Route path="attendance" element={<AttendanceManagementPage />} />
         <Route path="leave-requests" element={<LeaveRequestsPage />} />
         <Route path="leave-management" element={<LeaveManagementPage />} />
