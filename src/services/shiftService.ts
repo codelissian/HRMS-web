@@ -55,8 +55,11 @@ export class ShiftService {
     }
   }
 
-  static async getShifts(): Promise<ShiftsResponse> {
-    const response = await httpClient.post(API_ENDPOINTS.SHIFTS_LIST, {});
+  static async getShifts(params?: { page?: number; page_size?: number }): Promise<ShiftsResponse> {
+    const response = await httpClient.post(API_ENDPOINTS.SHIFTS_LIST, {
+      page: params?.page || 1,
+      page_size: params?.page_size || 10
+    });
     return response.data;
   }
 

@@ -76,6 +76,34 @@ export interface AttendanceStats {
   previous_month_rate: number;
 }
 
+// Today's Attendance API types
+export interface TodaysAttendanceRequest {
+  shift_id?: string;
+  organisation_id?: string;
+  date: {
+    gte: string; // ISO date string
+    lte: string; // ISO date string
+  };
+  page?: number;
+  page_size?: number;
+}
+
+export interface TodaysAttendanceRecord {
+  id: string;
+  name: string;
+  organisation_id: string;
+  mobile: string;
+  email: string;
+  code: string;
+  department_id: string;
+  designation_id: string;
+  shift_id: string;
+  status: 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'ON_LEAVE' | 'WEEKEND';
+  attendance_records: AttendanceEvent[];
+  // Include other employee fields as needed
+  [key: string]: any;
+}
+
 class AttendanceService {
   // Transform raw events into attendance records for UI display
   private transformEventsToRecords(events: AttendanceEvent[]): AttendanceRecord[] {
@@ -231,6 +259,15 @@ class AttendanceService {
 
   async deleteAttendance(id: string): Promise<ApiResponse<boolean>> {
     const response = await httpClient.patch<ApiResponse<boolean>>(API_ENDPOINTS.ATTENDANCE_DELETE, {});
+    return response.data;
+  }
+
+  async getTodaysAttendance(params: TodaysAttendanceRequest, organisationId?: string): Promise<ApiResponse<TodaysAttendanceRecord[]>> {
+    // Build query string for organisation parameter
+    const queryParams = organisationId ? `?organisation=${organisationId}` : '';
+    const url = `${API_ENDPOINTS.ATTENDANCE_DAY}${queryParams}`;
+    
+    const response = await httpClient.post<ApiResponse<TodaysAttendanceRecord[]>>(url, params);
     return response.data;
   }
 }

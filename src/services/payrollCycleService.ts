@@ -17,8 +17,11 @@ export class PayrollCycleService {
     }
   }
 
-  static async getPayrollCycles(): Promise<PayrollCyclesResponse> {
-    const response = await httpClient.post(API_ENDPOINTS.PAYROLL_CYCLES_LIST, {});
+  static async getPayrollCycles(params?: { page?: number; page_size?: number }): Promise<PayrollCyclesResponse> {
+    const response = await httpClient.post(API_ENDPOINTS.PAYROLL_CYCLES_LIST, {
+      page: params?.page || 1,
+      page_size: params?.page_size || 10
+    });
     return response.data;
   }
 

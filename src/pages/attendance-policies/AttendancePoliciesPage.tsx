@@ -14,7 +14,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AttendancePoliciesPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(10);
   
   // Modal states
   const [showDetails, setShowDetails] = useState(false);

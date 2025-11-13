@@ -3,7 +3,9 @@ import { DataTable, Column } from '@/components/common/DataTable';
 import { Payroll } from '@/types/payroll';
 import { PayrollService } from '@/services/payrollService';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
+import { Pagination } from '@/components/common';
 
 interface PayrollTableProps {
   payrollCycleId?: string | null;
@@ -13,6 +15,10 @@ export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
 
   const fetchPayrolls = async () => {
     try {
@@ -21,12 +27,20 @@ export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
       
       let response;
       if (payrollCycleId) {
-        response = await PayrollService.getPayrollsByCycle(payrollCycleId);
+        response = await PayrollService.getPayrollsByCycle(payrollCycleId, {
+          page: currentPage,
+          page_size: pageSize
+        });
       } else {
-        response = await PayrollService.getPayrolls();
+        response = await PayrollService.getPayrolls({
+          page: currentPage,
+          page_size: pageSize
+        });
       }
       
       setPayrolls(response.data);
+      setTotalCount(response.total_count || 0);
+      setPageCount(response.page_count || 0);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch payrolls');
       console.error('Error fetching payrolls:', err);
@@ -37,7 +51,7 @@ export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
 
   useEffect(() => {
     fetchPayrolls();
-  }, [payrollCycleId]);
+  }, [payrollCycleId, currentPage, pageSize]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -155,6 +169,26 @@ export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
         loading={loading}
         searchable={false}
       />
+      
+      {/* Pagination */}
+      {totalCount > 0 && (
+        <Card className="mt-4">
+          <CardContent className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newPageSize) => {
+                setPageSize(newPageSize);
+                setCurrentPage(1);
+              }}
+              showFirstLast={false}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

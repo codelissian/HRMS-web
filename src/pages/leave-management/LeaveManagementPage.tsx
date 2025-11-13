@@ -13,7 +13,7 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { LeaveForm } from '@/components/leave-form';
-import { ConfirmationDialog } from '@/components/common';
+import { ConfirmationDialog, Pagination } from '@/components/common';
 import { Leave } from '../../types/database';
 import { leaveService } from '@/services/leaveService';
 import { useToast } from '@/hooks/use-toast';
@@ -25,6 +25,10 @@ export default function LeaveManagementPage() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingLeave, setEditingLeave] = useState<Leave | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth(); // ✅ Added: Get user from auth context
   
@@ -37,12 +41,14 @@ export default function LeaveManagementPage() {
     try {
       setLoading(true);
       const response = await leaveService.getLeaveTypes({
-        page: 1,
-        page_size: 1000 // Get all leaves for now
+        page: currentPage,
+        page_size: pageSize
       });
       
       if (response.status && response.data) {
         setLeaves(response.data);
+        setTotalCount(response.total_count || 0);
+        setPageCount(response.page_count || 0);
       } else {
         toast({
           title: "Error",
@@ -62,10 +68,10 @@ export default function LeaveManagementPage() {
     }
   };
 
-  // Load leaves on component mount
+  // Load leaves on component mount and when pagination changes
   useEffect(() => {
     fetchLeaves();
-  }, []);
+  }, [currentPage, pageSize]);
 
   const handleCreateLeave = () => {
     console.log('🖱️ Create Leave Type button clicked');
@@ -173,12 +179,12 @@ export default function LeaveManagementPage() {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                <Badge 
+                  <Badge 
                   variant={(leave as any).active_flag ? 'default' : 'secondary'}
                   className={(leave as any).active_flag ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
-                >
+                  >
                   {(leave as any).active_flag ? 'Active' : 'Inactive'}
-                </Badge>
+                  </Badge>
                 </div>
               </div>
             </CardHeader>
@@ -237,6 +243,26 @@ export default function LeaveManagementPage() {
               <Plus className="h-4 w-4 mr-2" />
               Create Leave Type
             </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pagination */}
+      {totalCount > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newPageSize) => {
+                setPageSize(newPageSize);
+                setCurrentPage(1); // Reset to first page when changing page size
+              }}
+              showFirstLast={false}
+            />
           </CardContent>
         </Card>
       )}

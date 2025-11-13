@@ -28,7 +28,7 @@ export default function AttendanceManagementPage() {
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(10);
 
   // API calls with proper filtering and pagination
   const { data: statsResponse, isLoading: statsLoading, refetch: refetchStats } = useQuery({

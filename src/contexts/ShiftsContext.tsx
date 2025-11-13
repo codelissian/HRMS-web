@@ -19,15 +19,20 @@ interface ShiftsContextValue {
   selectedShift: ShiftSummary | null;
   isLoading: boolean;
   totalCount: number;
+  pageCount: number;
+  currentPage: number;
+  pageSize: number;
   
   // Actions
-  fetchShifts: () => Promise<void>;
+  fetchShifts: (page?: number, pageSize?: number) => Promise<void>;
   selectShift: (shift: ShiftSummary) => void;
   clearSelection: () => void;
   createShift: (data: CreateShiftData) => Promise<void>;
   updateShift: (id: string, data: Partial<CreateShiftData>) => Promise<void>;
   deleteShift: (id: string) => Promise<void>;
   toggleShiftStatus: (id: string) => Promise<void>;
+  setCurrentPage: (page: number) => void;
+  setPageSize: (size: number) => void;
 }
 
 const ShiftsContext = createContext<ShiftsContextValue | undefined>(undefined);
@@ -37,6 +42,9 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
   const [selectedShift, setSelectedShift] = useState<ShiftSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const { toast } = useToast();
 
   // Transform API response to store only essential data
@@ -54,7 +62,7 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     return transformed;
   }, []);
 
-  const fetchShifts = useCallback(async () => {
+  const fetchShifts = useCallback(async (page?: number, size?: number) => {
     try {
       setIsLoading(true);
       const organisationId = getOrganisationId();
@@ -68,13 +76,21 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const response: ShiftsResponse = await ShiftService.getShifts(organisationId);
+      const paginationParams = {
+        page: page ?? currentPage,
+        page_size: size ?? pageSize
+      };
+
+      const response: ShiftsResponse = await ShiftService.getShifts(paginationParams);
       
       if (response.status && response.data) {
         // Transform and store only essential data
         const transformedShifts = response.data.map(transformShiftData);
         setShifts(transformedShifts);
-        setTotalCount(response.total_count);
+        setTotalCount(response.total_count || 0);
+        setPageCount(response.page_count || 0);
+        if (page !== undefined) setCurrentPage(page);
+        if (size !== undefined) setPageSize(size);
       } else {
         console.error('API returned error:', response.message);
         toast({
@@ -94,7 +110,7 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, transformShiftData]);
+  }, [toast, transformShiftData, currentPage, pageSize]);
 
   const selectShift = useCallback((shift: ShiftSummary) => {
     setSelectedShift(shift);
@@ -224,11 +240,25 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [shifts, toast, transformShiftData]);
 
+  const handleSetCurrentPage = useCallback((page: number) => {
+    setCurrentPage(page);
+    fetchShifts(page, undefined);
+  }, [fetchShifts]);
+
+  const handleSetPageSize = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+    fetchShifts(1, size);
+  }, [fetchShifts]);
+
   const value: ShiftsContextValue = {
     shifts,
     selectedShift,
     isLoading,
     totalCount,
+    pageCount,
+    currentPage,
+    pageSize,
     fetchShifts,
     selectShift,
     clearSelection,
@@ -236,6 +266,8 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     updateShift,
     deleteShift,
     toggleShiftStatus,
+    setCurrentPage: handleSetCurrentPage,
+    setPageSize: handleSetPageSize,
   };
 
   return (

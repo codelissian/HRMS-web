@@ -80,14 +80,24 @@ const navigationModules = [
   },
   // { name: 'Payroll', href: 'payroll', icon: DollarSign, section: 'Payroll', roles: ['admin', 'hr_manager'] },
   {
-    id: 'attendance-leave',
-    name: 'Attendance & Leave',
-    icon: CalendarCheck,
+    id: 'attendance',
+    name: 'Attendance',
+    icon: Clock,
     roles: ['admin', 'hr_manager', 'employee'],
     isMainModule: true,
     subModules: [
-      { name: 'Leave Requests', href: 'leave-requests', icon: Calendar },
-      { name: 'Attendance Management', href: 'attendance', icon: Clock }
+      { name: "Today's Attendance", href: 'attendance/today', icon: Calendar },
+      { name: 'Attendance Management', href: 'attendance', icon: UserCheck }
+    ]
+  },
+  {
+    id: 'leaves',
+    name: 'Leaves',
+    icon: Calendar,
+    roles: ['admin', 'hr_manager', 'employee'],
+    isMainModule: true,
+    subModules: [
+      { name: 'Leave Requests', href: 'leave-requests', icon: CalendarCheck }
     ]
   },
   {
@@ -128,9 +138,14 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
       modulesToExpand.push('payroll');
     }
     
-    // Auto-expand attendance-leave if on any attendance/leave route
-    if (pathname.startsWith('/admin/attendance') || pathname.startsWith('/admin/leave-requests')) {
-      modulesToExpand.push('attendance-leave');
+    // Auto-expand attendance if on attendance route
+    if (pathname.startsWith('/admin/attendance')) {
+      modulesToExpand.push('attendance');
+    }
+    
+    // Auto-expand leaves if on leave requests route
+    if (pathname.startsWith('/admin/leave-requests')) {
+      modulesToExpand.push('leaves');
     }
     
     // Auto-expand administration if on any admin route
@@ -172,7 +187,13 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
   };
 
   const isSubModuleActive = (subModule: any) => {
-    return pathname === `${basePath}/${subModule.href}` || pathname.startsWith(`${basePath}/${subModule.href}/`);
+    const fullPath = `${basePath}/${subModule.href}`;
+    // For "attendance" route, only match exact path to avoid matching "attendance/today"
+    if (subModule.href === 'attendance') {
+      return pathname === fullPath;
+    }
+    // For other routes, allow exact match or sub-routes
+    return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
   };
 
   return (

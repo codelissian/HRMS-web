@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { departmentService } from '@/services/departmentService';
 import { designationService, Designation as ServiceDesignation } from '@/services/designationService';
 import { Department as SchemaDepartment } from '../../types/database';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { LoadingSpinner, Pagination } from '@/components/common';
 import { authToken } from '@/services/authToken';
 import AddDepartmentDialog from '@/components/departments/AddDepartmentDialog';
 import EditDepartmentDialog from '@/components/departments/EditDepartmentDialog';
@@ -32,6 +32,10 @@ export default function DepartmentList() {
   const [departments, setDepartments] = useState<DepartmentWithDesignations[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -62,7 +66,7 @@ export default function DepartmentList() {
 
   useEffect(() => {
     fetchDepartments();
-  }, []);
+  }, [currentPage, pageSize]);
 
   const fetchDepartments = async () => {
     try {
@@ -83,8 +87,8 @@ export default function DepartmentList() {
       const response = await departmentService.getDepartments({
         active_flag: true,
         delete_flag: false,
-        page: 1,
-        page_size: 100
+        page: currentPage,
+        page_size: pageSize
       });
 
       console.log('API Response:', response);
@@ -102,6 +106,8 @@ export default function DepartmentList() {
         }));
         
         setDepartments(departmentsWithDesignations);
+        setTotalCount(response.total_count || 0);
+        setPageCount(response.page_count || 0);
         
         // Now fetch designations for all departments
         await fetchAllDesignations(departmentsWithDesignations);
@@ -756,6 +762,26 @@ export default function DepartmentList() {
             {searchTerm ? 'Try adjusting your search terms.' : 'Get started by creating your first department.'}
           </p>
         </div>
+      )}
+
+      {/* Pagination */}
+      {!searchTerm && totalCount > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newPageSize) => {
+                setPageSize(newPageSize);
+                setCurrentPage(1);
+              }}
+              showFirstLast={false}
+            />
+          </CardContent>
+        </Card>
       )}
     </div>
 
