@@ -14,7 +14,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const isMobile = useIsMobile();
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-slate-800 dark:to-indigo-900">
+    <div className="min-h-screen flex bg-white">
       {/* Fixed Sidebar */}
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
@@ -27,12 +27,12 @@ export function AppLayout({ children }: AppLayoutProps) {
       )}
       
       {/* Main content area - positioned to account for fixed sidebar */}
-      <div className="flex-1 flex flex-col lg:ml-72 min-w-0">
+      <div className="flex-1 flex flex-col lg:ml-72 min-w-0 bg-white">
         {/* Header within main content area */}
         <Header onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         
         {/* Scrollable main content */}
-        <main className="flex-1 overflow-auto p-3 lg:p-4 animate-fade-in">
+        <main className="flex-1 overflow-auto p-3 lg:p-4 animate-fade-in bg-white">
           {children}
           <Outlet />
         </main>

@@ -95,7 +95,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   };
 
   return (
-    <header className="bg-white/20 dark:bg-gray-900/20 backdrop-blur-xl border-b border-white/20 dark:border-gray-700/30 h-16 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40 shadow-lg">
+    <header className="bg-white border-b border-gray-200 h-16 flex items-center justify-between px-4 lg:px-6 sticky top-0 z-40 shadow-sm">
       <div className="flex items-center">
         <Button
           variant="ghost"

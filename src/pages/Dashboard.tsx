@@ -1,166 +1,520 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, Clock, Building } from 'lucide-react';
-import { useApi } from '@/hooks/useApi';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { 
+  UserCheck, 
+  UserX, 
+  Calendar, 
+  Users, 
+  TrendingUp, 
+  TrendingDown,
+  Plus,
+  Search,
+  Eye,
+  Clock,
+  Briefcase,
+  Cake
+} from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { StatsData } from '@/types/api';
+import { employeeService } from '@/services/employeeService';
+import { attendanceService } from '@/services/attendanceService';
+import { leaveService } from '@/services/leaveService';
+import { useAuth } from '@/hooks/useAuth';
+import { 
+  ChartContainer, 
+  ChartTooltip, 
+  ChartTooltipContent 
+} from '@/components/ui/chart';
+import { 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
+
+// Mock data for charts (replace with real API data later)
+const employeeDistributionData = [
+  { name: 'Software Engineer', value: 50, color: 'hsl(203.8863, 88.2845%, 53.1373%)' },
+  { name: 'UI/UX Designer', value: 28, color: 'hsl(203.8863, 88.2845%, 45%)' },
+  { name: 'Data Analyst', value: 25, color: 'hsl(203.8863, 88.2845%, 60%)' },
+  { name: 'Mobile Development', value: 10, color: 'hsl(203.8863, 88.2845%, 40%)' },
+  { name: 'Project Manager', value: 7, color: 'hsl(203.8863, 88.2845%, 35%)' },
+];
+
+const employeeChartConfig = {
+  'Software Engineer': {
+    label: "Software Engineer",
+    color: 'hsl(203.8863, 88.2845%, 53.1373%)',
+  },
+  'UI/UX Designer': {
+    label: "UI/UX Designer",
+    color: 'hsl(203.8863, 88.2845%, 45%)',
+  },
+  'Data Analyst': {
+    label: "Data Analyst",
+    color: 'hsl(203.8863, 88.2845%, 60%)',
+  },
+  'Mobile Development': {
+    label: "Mobile Development",
+    color: 'hsl(203.8863, 88.2845%, 40%)',
+  },
+  'Project Manager': {
+    label: "Project Manager",
+    color: 'hsl(203.8863, 88.2845%, 35%)',
+  },
+};
+
+// Mock events data (replace with real API data later)
+const eventsData = [
+  { id: 1, title: 'Marketing Meeting', type: 'Meeting', time: '8:00 am', date: '07/08/2024' },
+  { id: 2, title: 'Development meeting', type: 'Job interview', time: '10:00 am', date: '08/08/2024' },
+  { id: 3, title: 'Safety', type: 'Consulting', time: '11:30 am', date: '10/08/2024' },
+  { id: 4, title: 'Meeting with Designer', type: 'Meeting', time: '13:00 pm', date: '11/08/2024' },
+];
+
+// Mock birthdays data (replace with real API data later)
+const birthdaysData = [
+  { id: 1, name: 'Madelyn Philips', role: 'Sr. UI/UX Designer', date: '12/08/2024', initials: 'MP' },
+  { id: 2, name: 'Ann Stanton', role: 'HR Manager', date: '20/08/2024', initials: 'AS' },
+  { id: 3, name: 'Terry Saris', role: 'Software Developer', date: '22/08/2024', initials: 'TS' },
+  { id: 4, name: 'Jordyn Curtis', role: 'Design Head', date: '28/08/2024', initials: 'JC' },
+];
 
 export default function Dashboard() {
-  const { data: stats, loading } = useApi<StatsData>('/dashboard/stats');
+  const { user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const statsCards = [
-    {
-      title: 'Total Employees',
-      value: stats?.totalEmployees || 0,
-      icon: Users,
-      color: 'text-blue-600 dark:text-blue-400',
-      bgColor: 'bg-blue-100 dark:bg-blue-900/30',
-      change: '+12%',
-      changeText: 'from last month'
-    },
-    {
-      title: 'Present Today',
-      value: stats?.presentToday || 0,
-      icon: UserCheck,
-      color: 'text-green-600 dark:text-green-400',
-      bgColor: 'bg-green-100 dark:bg-green-900/30',
-      change: '81%',
-      changeText: 'attendance rate'
-    },
-    {
-      title: 'Pending Leaves',
-      value: stats?.pendingLeaves || 0,
-      icon: Clock,
-      color: 'text-yellow-600 dark:text-yellow-400',
-      bgColor: 'bg-yellow-100 dark:bg-yellow-900/30',
-      change: '-3',
-      changeText: 'from yesterday'
-    },
-    {
-      title: 'Departments',
-      value: stats?.departments || 0,
-      icon: Building,
-      color: 'text-purple-600 dark:text-purple-400',
-      bgColor: 'bg-purple-100 dark:bg-purple-900/30',
-      change: 'No change',
-      changeText: ''
-    },
-  ];
+  // Fetch employees for the table
+  const { data: employeesResponse, isLoading: employeesLoading } = useQuery({
+    queryKey: ['employees', 'dashboard', { page: 1, page_size: 10 }],
+    queryFn: () => employeeService.getEmployees({ 
+      page: 1, 
+      page_size: 10,
+      include: ['department', 'designation']
+    }),
+  });
 
-  if (loading) {
+  // Fetch today's attendance stats
+  const { data: attendanceStats, isLoading: attendanceLoading } = useQuery({
+    queryKey: ['attendance', 'today-stats'],
+    queryFn: async () => {
+      try {
+        const today = new Date();
+        const startOfDay = new Date(today);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(today);
+        endOfDay.setHours(23, 59, 59, 999);
+        
+        const response = await attendanceService.getTodaysAttendance({
+          date: {
+            gte: startOfDay.toISOString(),
+            lte: endOfDay.toISOString(),
+          },
+          page: 1,
+          page_size: 1000,
+        });
+        const records = response.data || [];
+        // Count present/absent based on check_in_time or status
+        const present = records.filter((r: any) => r.check_in_time || r.status === 'present' || r.status === 'Present').length;
+        const absent = records.filter((r: any) => !r.check_in_time && (r.status === 'absent' || r.status === 'Absent')).length;
+        return { present, absent, total: records.length };
+      } catch {
+        return { present: 0, absent: 0, total: 0 };
+      }
+    },
+  });
+
+  // Fetch leave requests for "On Leave" count
+  const { data: leaveRequestsResponse, isLoading: leavesLoading } = useQuery({
+    queryKey: ['leave-requests', 'active'],
+    queryFn: () => leaveService.getLeaveRequests({ 
+      page: 1, 
+      page_size: 100,
+      status: 'APPROVED'
+    }),
+  });
+
+  const employees = employeesResponse?.data || [];
+  const totalPresent = attendanceStats?.present || 0;
+  const totalAbsent = attendanceStats?.absent || 0;
+  const totalOnLeave = leaveRequestsResponse?.data?.filter((lr: any) => {
+    const today = new Date();
+    const startDate = new Date(lr.start_date);
+    const endDate = new Date(lr.end_date);
+    return today >= startDate && today <= endDate;
+  }).length || 0;
+
+  const isLoading = employeesLoading || attendanceLoading || leavesLoading;
+
+  // Get user's first name for greeting
+  const firstName = user?.name?.split(' ')[0] || 'User';
+  const currentHour = new Date().getHours();
+  const greeting = currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
+
+  // Filter employees based on search
+  const filteredEmployees = employees.filter((emp: any) => 
+    emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.department?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    emp.designation?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-xl p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">Welcome back! 👋</h1>
-        <p className="text-blue-100">Here's what's happening with your organisation today.</p>
+    <div className="space-y-6">
+      {/* First Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Hello John Card - Column 3 */}
+        <div className="lg:col-span-3">
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800 h-full">
+            <CardContent className="p-6">
+              {/* Illustration Placeholder */}
+              <div className="mb-6 h-48 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg flex items-center justify-center relative overflow-hidden">
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Users className="h-24 w-24 text-blue-300 dark:text-blue-700 opacity-50" />
+                </div>
+                {/* Floating icons */}
+                <Clock className="absolute top-4 left-4 h-6 w-6 text-blue-400 dark:text-blue-600 animate-pulse" />
+                <Briefcase className="absolute top-8 right-8 h-5 w-5 text-indigo-400 dark:text-indigo-600 animate-pulse delay-75" />
+                <Calendar className="absolute bottom-6 left-8 h-5 w-5 text-blue-500 dark:text-blue-700 animate-pulse delay-150" />
+              </div>
+
+              {/* Greeting Text */}
+              <div className="space-y-3">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  HELLO {firstName.toUpperCase()}!
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {greeting}! You have {leaveRequestsResponse?.data?.filter((lr: any) => lr.status === 'PENDING').length || 0} new applications. 
+                  It's a lot of work for today! So let's get started.
+                </p>
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                  Review it
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsCards.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index} className="bg-white dark:bg-gray-850 hover:shadow-lg transition-shadow duration-200">
+        {/* Right Section - Column 9 */}
+        <div className="lg:col-span-9 space-y-6">
+          {/* Row 1: Total Attendance Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Total Present */}
+            <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {stat.title}
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Total Present
                     </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {stat.value}
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {totalPresent}
                     </p>
                   </div>
-                  <div className={`w-12 h-12 ${stat.bgColor} rounded-lg flex items-center justify-center`}>
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <UserCheck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                 </div>
                 <div className="mt-4 flex items-center text-sm">
-                  <span className="text-green-600 dark:text-green-400">
-                    {stat.change}
-                  </span>
-                  {stat.changeText && (
-                    <span className="text-gray-500 dark:text-gray-400 ml-2">
-                      {stat.changeText}
-                    </span>
-                  )}
+                  <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
+                  <span className="text-green-600 dark:text-green-400 font-medium">+5</span>
                 </div>
               </CardContent>
             </Card>
-          );
-        })}
+
+            {/* Total Absent */}
+            <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Total Absent
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {totalAbsent}
+                    </p>
       </div>
-
-      {/* Charts and Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-white dark:bg-gray-850">
-          <CardHeader>
-            <CardTitle>Attendance Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 flex items-center justify-center text-gray-500 dark:text-gray-400">
-              <div className="text-center">
-                <Users className="h-16 w-16 mx-auto mb-4" />
-                <p>Chart implementation pending</p>
-                <p className="text-sm">Integrate with Chart.js or Recharts</p>
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
+                    <UserX className="h-6 w-6 text-red-600 dark:text-red-400" />
               </div>
+            </div>
+                <div className="mt-4 flex items-center text-sm">
+                  <TrendingDown className="h-4 w-4 text-red-600 mr-1" />
+                  <span className="text-red-600 dark:text-red-400 font-medium">-2</span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-white dark:bg-gray-850">
-          <CardHeader>
-            <CardTitle>Recent Activities</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                  <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            {/* Total On Leave */}
+            <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      Total On Leave
+                    </p>
+                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                      {totalOnLeave}
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                    <Calendar className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900 dark:text-white">
-                    New employee onboarded
+                <div className="mt-4 flex items-center text-sm">
+                  <span className="text-gray-500 dark:text-gray-400 text-sm">Active leaves</span>
+                </div>
+              </CardContent>
+            </Card>
+              </div>
+              
+          {/* Row 2: Employee Chart and Events/Meetings */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Employee Chart - 7 columns */}
+            <div className="lg:col-span-7">
+              <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Total Employee
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1">
+                <div className="flex items-center justify-between">
+                  <div className="w-48 h-48">
+                    <ChartContainer 
+                      config={employeeChartConfig}
+                      className="h-full w-full"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={employeeDistributionData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={90}
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {employeeDistributionData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
+                  <div className="flex-1 space-y-3 ml-6">
+                    {employeeDistributionData.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-sm text-gray-600 dark:text-gray-400">
+                            {item.name}
+                          </span>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {item.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+              </Card>
+            </div>
+
+            {/* Events and Meetings - 5 columns */}
+            <div className="lg:col-span-5">
+              <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
+                <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Events and Meetings
+                </CardTitle>
+                <Button variant="outline" size="sm" className="h-8 text-xs">
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-hidden flex flex-col p-0">
+                <div className="space-y-2 overflow-y-auto px-4 pb-4" style={{ maxHeight: '200px' }}>
+                  {eventsData.map((event) => (
+                    <div key={event.id} className="flex items-start space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
+                          {event.title}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    2 hours ago
-                  </p>
+                          {event.type}
+                        </p>
+                        <div className="flex items-center space-x-1 mt-0.5">
+                          <Clock className="h-3 w-3 text-gray-400" />
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {event.time}
+                          </span>
+                          <span className="text-xs text-gray-400">•</span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {event.date}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+              </Card>
+            </div>
+          </div>
                 </div>
               </div>
               
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                  <UserCheck className="h-4 w-4 text-green-600 dark:text-green-400" />
+      {/* Second Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Employee List - Column 8 */}
+        <div className="lg:col-span-8">
+          <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Employee Status
+                  </CardTitle>
+                  <div className="flex items-center space-x-2">
+                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                      Sort & Filter
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search employees..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-9 h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50 dark:bg-gray-800">
+                          <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">ID</TableHead>
+                          <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Name</TableHead>
+                          <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Job role</TableHead>
+                          <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Status</TableHead>
+                          <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">TL</TableHead>
+                          <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">View</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEmployees.slice(0, 4).map((employee: any) => (
+                          <TableRow key={employee.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                            <TableCell className="text-xs text-gray-900 dark:text-white">
+                              {employee.id?.slice(-4) || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
+                              {employee.name || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                              {employee.designation?.name || employee.department?.name || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={employee.active_flag ? 'default' : 'secondary'}
+                                className={employee.active_flag 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                                }
+                              >
+                                {employee.active_flag ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                              {employee.department?.name?.split(' ')[0] || 'N/A'}
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-6 w-6">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </CardContent>
+              </Card>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900 dark:text-white">
-                    Leave request approved
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    4 hours ago
+
+        {/* Birthdays - Column 4 */}
+        <div className="lg:col-span-4">
+          <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                  <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Birthdays
+                  </CardTitle>
+                  <Select defaultValue="This month">
+                    <SelectTrigger className="w-32 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="This month">This month</SelectItem>
+                      <SelectItem value="Next month">Next month</SelectItem>
+                      <SelectItem value="This year">This year</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {birthdaysData.map((person) => (
+                      <div key={person.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                            {person.initials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                            {person.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {person.role}
                   </p>
                 </div>
+                        <div className="flex items-center space-x-1 text-xs text-gray-500 dark:text-gray-400">
+                          <Cake className="h-3 w-3" />
+                          <span>{person.date}</span>
               </div>
-              
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-900 dark:text-white">
-                    New leave request pending
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    6 hours ago
-                  </p>
-                </div>
-              </div>
+                      </div>
+                    ))}
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );

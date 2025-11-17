@@ -39,6 +39,9 @@ import { CssBaseline } from '@mui/material';
 
 // Create Material-UI theme that matches your design
 const muiTheme = createTheme({
+  typography: {
+    fontFamily: '"Public Sans", sans-serif',
+  },
   palette: {
     primary: {
       main: '#3b82f6', // Blue color to match your design
