@@ -179,10 +179,15 @@ export default function HolidayList() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">Holidays</h1>
-            <p className="text-gray-600">Manage organization holidays</p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Search holidays..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
           <Button onClick={handleCreateHoliday}>
             <Plus className="h-4 w-4 mr-2" />
@@ -201,20 +206,8 @@ export default function HolidayList() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold">Holidays</h1>
-          <p className="text-gray-600">Manage organization holidays</p>
-        </div>
-        <Button onClick={handleCreateHoliday}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Holiday
-        </Button>
-      </div>
-
-      {/* Search */}
-      <div className="flex items-center space-x-4">
+      {/* Search and Create Button */}
+      <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
@@ -224,6 +217,10 @@ export default function HolidayList() {
             className="pl-10"
           />
         </div>
+        <Button onClick={handleCreateHoliday}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Holiday
+        </Button>
       </div>
 
       {/* Holidays Table */}

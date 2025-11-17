@@ -67,30 +67,23 @@ const ShiftsPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto p-4">
       {/* Search and Actions */}
-      <Card className="mb-8">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search shifts..."
-                className="max-w-md"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                onClick={() => setIsCreateDialogOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <Clock className="h-4 w-4" />
-                Create Shift
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search shifts..."
+          />
+        </div>
+        
+        <Button
+          onClick={() => setIsCreateDialogOpen(true)}
+          className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
+        >
+          <Clock className="h-4 w-4" />
+          Create Shift
+        </Button>
+      </div>
       
       {isLoading ? (
         <div className="text-center py-8">
@@ -98,7 +91,7 @@ const ShiftsPage: React.FC = () => {
           <p className="text-gray-500 mt-2">Loading shifts...</p>
         </div>
       ) : totalCount > 0 ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+        <div className="bg-white border border-gray-200 rounded-lg">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Current Shifts ({totalCount})

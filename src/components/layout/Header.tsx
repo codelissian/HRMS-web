@@ -40,6 +40,9 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path === '/admin/attendance') return 'Attendance Management';
       if (path === '/admin/leave-requests') return 'Leave Requests';
       if (path === '/admin/leave-management') return 'Leave Management';
+      if (path === '/admin/organization') return 'Organization';
+      if (path === '/admin/holidays') return 'Holidays';
+      if (path === '/admin/salary-component-types') return 'Salary Component Types';
       if (path === '/admin/payroll') return 'Payroll Management';
       if (path === '/admin/payroll-cycle') return 'Payroll Cycle Management';
     }
@@ -73,6 +76,9 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path === '/admin/attendance') return 'Monitor employee attendance and statistics';
       if (path === '/admin/leave-requests') return 'Review and manage leave requests';
       if (path === '/admin/leave-management') return 'Configure leave types and policies';
+      if (path === '/admin/organization') return 'Manage your organization settings and details';
+      if (path === '/admin/holidays') return 'Manage organization holidays';
+      if (path === '/admin/salary-component-types') return 'Manage salary component types for your payroll system';
       if (path === '/admin/payroll-cycle') return 'Manage payroll cycles, define pay periods, and schedule payroll processing';
     }
     

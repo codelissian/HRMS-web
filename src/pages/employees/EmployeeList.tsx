@@ -211,96 +211,43 @@ export default function EmployeeList() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 max-w-7xl mx-auto space-y-4">
       {/* Search and Actions */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search employees..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-md"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleExportEmployees}>
-                <Upload className="h-4 w-4 mr-2" />
-                Export
-              </Button>
-              <label htmlFor="bulk-import">
-                <Button variant="outline" asChild>
-                  <span>
-                    <Download className="h-4 w-4 mr-2" />
-                    Import
-                  </span>
-                </Button>
-              </label>
-              <input
-                id="bulk-import"
-                type="file"
-                accept=".csv"
-                onChange={handleBulkImport}
-                className="hidden"
-              />
-              <Button onClick={handleAddEmployee}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Employee
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Input
-                placeholder="Search employees..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div>
-              <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder={departmentsLoading ? "Loading..." : "All Departments"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Departments</SelectItem>
-                  {departments.map((department) => (
-                    <SelectItem key={department.id} value={department.id}>
-                      {department.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Button variant="outline" className="w-full">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search employees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportEmployees}>
+            <Upload className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <label htmlFor="bulk-import">
+            <Button variant="outline" asChild>
+              <span>
+                <Download className="h-4 w-4 mr-2" />
+                Import
+              </span>
+            </Button>
+          </label>
+          <input
+            id="bulk-import"
+            type="file"
+            accept=".csv"
+            onChange={handleBulkImport}
+            className="hidden"
+          />
+          <Button onClick={handleAddEmployee} className="bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Employee
+          </Button>
+        </div>
+      </div>
 
       {/* Employee Table */}
       <EmployeeTable

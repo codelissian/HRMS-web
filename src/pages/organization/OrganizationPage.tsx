@@ -108,11 +108,7 @@ export default function OrganizationPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Organization</h1>
-          <p className="text-gray-600 dark:text-gray-400">Manage your organization settings and details</p>
-        </div>
+      <div className="flex items-center justify-end">
         {!isEditing && (
           <Button onClick={handleEdit} className="flex items-center gap-2">
             <Edit className="h-4 w-4" />

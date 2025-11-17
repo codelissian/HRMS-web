@@ -275,7 +275,6 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
                     {/* Sub Modules */}
                     <CollapsibleContent className="space-y-3 mt-2">
                       {module.subModules.map((subModule) => {
-                        const SubIcon = subModule.icon;
                         const isSubActive = isSubModuleActive(subModule);
 
                         return (
@@ -286,20 +285,12 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
                           >
                             <div
                               className={cn(
-                                "flex items-center space-x-2 px-3 py-2.5 ml-4 text-sm rounded-lg transition-all duration-200 group mb-1",
+                                "flex items-center px-3 py-2.5 ml-8 text-sm rounded-lg transition-all duration-200 group mb-1",
                                 isSubActive
                                   ? "bg-white text-[#0B2E5C] shadow-md"
                                   : "text-white hover:bg-white hover:text-[#0B2E5C] border border-transparent"
                               )}
                             >
-                              <div className={cn(
-                                "p-1 rounded-sm transition-all duration-200",
-                                isSubActive
-                                  ? "bg-[#0B2E5C]/10 text-[#0B2E5C]"
-                                  : "text-white group-hover:text-[#0B2E5C]"
-                              )}>
-                                <SubIcon className="h-3.5 w-3.5" />
-                              </div>
                               <span className="font-medium">{subModule.name}</span>
                             </div>
                           </NavLink>

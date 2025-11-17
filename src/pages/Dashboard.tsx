@@ -46,34 +46,35 @@ import {
 } from '@/components/ui/table';
 
 // Mock data for charts (replace with real API data later)
+// Using shades of #0B2E5C (navigation drawer color)
 const employeeDistributionData = [
-  { name: 'Software Engineer', value: 50, color: 'hsl(203.8863, 88.2845%, 53.1373%)' },
-  { name: 'UI/UX Designer', value: 28, color: 'hsl(203.8863, 88.2845%, 45%)' },
-  { name: 'Data Analyst', value: 25, color: 'hsl(203.8863, 88.2845%, 60%)' },
-  { name: 'Mobile Development', value: 10, color: 'hsl(203.8863, 88.2845%, 40%)' },
-  { name: 'Project Manager', value: 7, color: 'hsl(203.8863, 88.2845%, 35%)' },
+  { name: 'Software Engineer', value: 50, color: '#0B2E5C' },
+  { name: 'UI/UX Designer', value: 28, color: '#0D3A6B' },
+  { name: 'Data Analyst', value: 25, color: '#0F467A' },
+  { name: 'Mobile Development', value: 10, color: '#115289' },
+  { name: 'Project Manager', value: 7, color: '#135E98' },
 ];
 
 const employeeChartConfig = {
   'Software Engineer': {
     label: "Software Engineer",
-    color: 'hsl(203.8863, 88.2845%, 53.1373%)',
+    color: '#0B2E5C',
   },
   'UI/UX Designer': {
     label: "UI/UX Designer",
-    color: 'hsl(203.8863, 88.2845%, 45%)',
+    color: '#0D3A6B',
   },
   'Data Analyst': {
     label: "Data Analyst",
-    color: 'hsl(203.8863, 88.2845%, 60%)',
+    color: '#0F467A',
   },
   'Mobile Development': {
     label: "Mobile Development",
-    color: 'hsl(203.8863, 88.2845%, 40%)',
+    color: '#115289',
   },
   'Project Manager': {
     label: "Project Manager",
-    color: 'hsl(203.8863, 88.2845%, 35%)',
+    color: '#135E98',
   },
 };
 
@@ -181,29 +182,31 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Hello John Card - Column 3 */}
         <div className="lg:col-span-3">
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800 h-full">
-            <CardContent className="p-6">
-              {/* Illustration Placeholder */}
-              <div className="mb-6 h-48 bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 rounded-lg flex items-center justify-center relative overflow-hidden">
+          <Card className="bg-white border-gray-200 h-full flex flex-col">
+            <CardContent className="p-6 flex flex-col flex-1">
+              {/* Illustration Placeholder - Reduced height */}
+              <div className="mb-4 h-24 bg-gradient-to-br from-[#0B2E5C]/10 to-[#0B2E5C]/5 rounded-lg flex items-center justify-center relative overflow-hidden">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <Users className="h-24 w-24 text-blue-300 dark:text-blue-700 opacity-50" />
+                  <Users className="h-12 w-12 text-[#0B2E5C] opacity-30" />
                 </div>
                 {/* Floating icons */}
-                <Clock className="absolute top-4 left-4 h-6 w-6 text-blue-400 dark:text-blue-600 animate-pulse" />
-                <Briefcase className="absolute top-8 right-8 h-5 w-5 text-indigo-400 dark:text-indigo-600 animate-pulse delay-75" />
-                <Calendar className="absolute bottom-6 left-8 h-5 w-5 text-blue-500 dark:text-blue-700 animate-pulse delay-150" />
+                <Clock className="absolute top-2 left-2 h-4 w-4 text-[#0B2E5C] opacity-50 animate-pulse" />
+                <Briefcase className="absolute top-4 right-4 h-3 w-3 text-[#0B2E5C] opacity-50 animate-pulse delay-75" />
+                <Calendar className="absolute bottom-3 left-4 h-3 w-3 text-[#0B2E5C] opacity-50 animate-pulse delay-150" />
               </div>
 
               {/* Greeting Text */}
-              <div className="space-y-3">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                  HELLO {firstName.toUpperCase()}!
-                </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  {greeting}! You have {leaveRequestsResponse?.data?.filter((lr: any) => lr.status === 'PENDING').length || 0} new applications. 
-                  It's a lot of work for today! So let's get started.
-                </p>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+              <div className="space-y-3 flex-1 flex flex-col justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    HELLO {firstName.toUpperCase()}!
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                    {greeting}! You have {leaveRequestsResponse?.data?.filter((lr: any) => lr.status === 'PENDING').length || 0} new applications. 
+                    It's a lot of work for today! So let's get started.
+                  </p>
+                </div>
+                <Button className="w-full bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white">
                   Review it
                 </Button>
               </div>
@@ -216,70 +219,55 @@ export default function Dashboard() {
           {/* Row 1: Total Attendance Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Total Present */}
-            <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <Card className="bg-white border-gray-200">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                
                       Total Present
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {totalPresent}
-                    </p>
+                   
+                  
                   </div>
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                    <UserCheck className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                     {totalPresent}
                   </div>
                 </div>
-                <div className="mt-4 flex items-center text-sm">
-                  <TrendingUp className="h-4 w-4 text-green-600 mr-1" />
-                  <span className="text-green-600 dark:text-green-400 font-medium">+5</span>
-                </div>
+             
               </CardContent>
             </Card>
 
             {/* Total Absent */}
-            <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <Card className="bg-white border-gray-200">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                
                       Total Absent
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {totalAbsent}
-                    </p>
+                 
       </div>
-                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-                    <UserX className="h-6 w-6 text-red-600 dark:text-red-400" />
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                   {totalAbsent}
               </div>
             </div>
-                <div className="mt-4 flex items-center text-sm">
-                  <TrendingDown className="h-4 w-4 text-red-600 mr-1" />
-                  <span className="text-red-600 dark:text-red-400 font-medium">-2</span>
-            </div>
+                
           </CardContent>
         </Card>
 
             {/* Total On Leave */}
-            <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+            <Card className="bg-white border-gray-200">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+                
                       Total On Leave
-                    </p>
-                    <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {totalOnLeave}
-                    </p>
+                  
+                  
                   </div>
-                  <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                    <Calendar className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {totalOnLeave}
                   </div>
                 </div>
-                <div className="mt-4 flex items-center text-sm">
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">Active leaves</span>
-                </div>
+               
               </CardContent>
             </Card>
               </div>
@@ -288,7 +276,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Employee Chart - 7 columns */}
             <div className="lg:col-span-7">
-              <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
+              <Card className="bg-white border-gray-200 h-full flex flex-col">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                   Total Employee
@@ -346,12 +334,12 @@ export default function Dashboard() {
 
             {/* Events and Meetings - 5 columns */}
             <div className="lg:col-span-5">
-              <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm h-full flex flex-col">
+              <Card className="bg-white border-gray-200 h-full flex flex-col">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
                 <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                   Events and Meetings
                 </CardTitle>
-                <Button variant="outline" size="sm" className="h-8 text-xs">
+                <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white">
                   <Plus className="h-3 w-3 mr-1" />
                   Add
                 </Button>
@@ -360,8 +348,8 @@ export default function Dashboard() {
                 <div className="space-y-2 overflow-y-auto px-4 pb-4" style={{ maxHeight: '200px' }}>
                   {eventsData.map((event) => (
                     <div key={event.id} className="flex items-start space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <div className="w-8 h-8 bg-[#0B2E5C]/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <Calendar className="h-4 w-4 text-[#0B2E5C]" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium text-gray-900 dark:text-white truncate">
@@ -395,13 +383,13 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Employee List - Column 8 */}
         <div className="lg:col-span-8">
-          <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <Card className="bg-white border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                     Employee Status
                   </CardTitle>
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" className="h-8 text-xs">
+                    <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white">
                       Sort & Filter
                     </Button>
                   </div>
@@ -472,7 +460,7 @@ export default function Dashboard() {
 
         {/* Birthdays - Column 4 */}
         <div className="lg:col-span-4">
-          <Card className="bg-white dark:bg-gray-850 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <Card className="bg-white border-gray-200">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                     Birthdays
@@ -493,7 +481,7 @@ export default function Dashboard() {
                     {birthdaysData.map((person) => (
                       <div key={person.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
+                          <AvatarFallback className="bg-[#0B2E5C]/10 text-[#0B2E5C]">
                             {person.initials}
                           </AvatarFallback>
                         </Avatar>

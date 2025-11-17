@@ -255,25 +255,16 @@ export function SalaryComponentTypesPage() {
   }, [currentPage, pageSize]);
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Salary Component Types
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Manage salary component types for your payroll system
-              </p>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Component Type
-                </Button>
-              </DialogTrigger>
+    <div className="p-4 max-w-7xl mx-auto space-y-4">
+      {/* Search and Actions */}
+      <div className="flex items-center justify-end">
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white">
+              <Plus className="h-4 w-4" />
+              Add Component Type
+            </Button>
+          </DialogTrigger>
               <DialogContent className="sm:max-w-md [&>button]:hidden">
                 <DialogHeader className="space-y-3">
                   <DialogTitle className="text-xl font-semibold">Add Component Type</DialogTitle>
@@ -339,129 +330,134 @@ export function SalaryComponentTypesPage() {
                     type="button"
                     onClick={handleCreateComponentType}
                     disabled={isLoading}
-                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+                    className="w-full sm:w-auto bg-[#0B2E5C] hover:bg-[#0B2E5C]/90"
                   >
                     {isLoading ? "Creating..." : "Create Component Type"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoadingList ? (
-            <div className="text-center py-12">
-              <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-spin" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                Loading...
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Fetching component types
-              </p>
-            </div>
-          ) : componentTypes.length === 0 ? (
-            <div className="text-center py-12">
-              <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                No Component Types
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400">
-                Start by creating your first component type using the button above.
-              </p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Sequence</TableHead>
-                  <TableHead>Created At</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {componentTypes.map((componentType) => (
-                  <TableRow key={componentType.id}>
-                    <TableCell className="font-medium">
-                      {componentType.name}
-                    </TableCell>
-                    <TableCell>
-                      {componentType.type ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          {COMPONENT_TYPE_OPTIONS.find(opt => opt.value === componentType.type)?.label || componentType.type}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {componentType.sequence ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                          {componentType.sequence}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400 text-sm">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(componentType.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEditClick(componentType)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="text-red-600 hover:text-red-700"
-                              disabled={deletingId === componentType.id}
-                            >
-                              {deletingId === componentType.id ? (
-                                <Settings className="h-4 w-4 animate-spin" />
-                              ) : (
-                                <Trash2 className="h-4 w-4" />
-                              )}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Component Type</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete "{componentType.name}"? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteComponentType(componentType.id)}
-                                className="bg-red-600 hover:bg-red-700"
-                              >
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+      </div>
+
+      {/* Table */}
+      {isLoadingList ? (
+        <div className="text-center py-12">
+          <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-spin" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Loading...
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            Fetching component types
+          </p>
+        </div>
+      ) : componentTypes.length === 0 ? (
+        <div className="text-center py-12">
+          <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            No Component Types
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400">
+            Start by creating your first component type using the button above.
+          </p>
+        </div>
+      ) : (
+        <Card className="bg-white border-gray-200">
+          <CardContent className="p-0">
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50 dark:bg-gray-800">
+                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Name</TableHead>
+                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Type</TableHead>
+                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Sequence</TableHead>
+                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Created At</TableHead>
+                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400 text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {componentTypes.map((componentType) => (
+                    <TableRow key={componentType.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
+                        {componentType.name}
+                      </TableCell>
+                      <TableCell>
+                        {componentType.type ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#0B2E5C]/10 text-[#0B2E5C]">
+                            {COMPONENT_TYPE_OPTIONS.find(opt => opt.value === componentType.type)?.label || componentType.type}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {componentType.sequence ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            {componentType.sequence}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                        {new Date(componentType.created_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="text-gray-400 hover:text-[#0B2E5C] hover:bg-[#0B2E5C]/10"
+                            onClick={() => handleEditClick(componentType)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                disabled={deletingId === componentType.id}
+                              >
+                                {deletingId === componentType.id ? (
+                                  <Settings className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Component Type</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{componentType.name}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteComponentType(componentType.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Pagination */}
       {totalCount > 0 && (
-        <Card>
+        <Card className="bg-white border-gray-200">
           <CardContent className="p-4">
             <Pagination
               currentPage={currentPage}

@@ -525,32 +525,25 @@ export default function DepartmentList() {
 
   return (
     <>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-4 max-w-7xl mx-auto">
       {/* Search and Actions */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="Search departments..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="max-w-md"
-              />
-            </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => setIsAddDialogOpen(true)}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Department
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search departments..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <Button 
+          className="bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
+          onClick={() => setIsAddDialogOpen(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Department
+        </Button>
+      </div>
 
 
 
@@ -567,7 +560,7 @@ export default function DepartmentList() {
                 <div className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                      <div className="w-12 h-12 bg-[#0B2E5C] rounded-lg flex items-center justify-center">
                         <Building className="w-6 h-6 text-white" />
                       </div>
                       <div className="flex-1">
@@ -594,7 +587,7 @@ export default function DepartmentList() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        className="text-gray-400 hover:text-[#0B2E5C] hover:bg-[#0B2E5C]/10 transition-colors"
                         onClick={() => handleEditDepartment(department)}
                         title="Edit Department"
                       >
@@ -624,7 +617,7 @@ export default function DepartmentList() {
                   <div className="mt-4 flex items-center justify-between">
                     <button
                       onClick={() => toggleDepartment(department.id)}
-                      className="flex items-center space-x-2 text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
+                      className="flex items-center space-x-2 text-[#0B2E5C] hover:text-[#0B2E5C]/80 text-sm font-medium transition-colors duration-200"
                     >
                       <div className={`transition-transform duration-300 ease-in-out ${expandedDepartments.has(department.id) ? 'rotate-180' : 'rotate-0'}`}>
                         <ChevronDown className="w-4 h-4" />
@@ -636,7 +629,7 @@ export default function DepartmentList() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => handleOpenCreateDesignationDialog(department.id, department.name)}
-                      className="text-xs h-7 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300 dark:bg-blue-950/30 dark:hover:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
+                      className="text-xs h-7 px-2 bg-[#0B2E5C]/10 hover:bg-[#0B2E5C]/20 text-[#0B2E5C] border-[#0B2E5C]/30 hover:border-[#0B2E5C]/50"
                     >
                       <Plus className="w-3 h-3 mr-1" />
                       Add Designation
@@ -661,7 +654,7 @@ export default function DepartmentList() {
                       {/* Loading State */}
                       {department.designationsLoading && (
                         <div className="text-center py-8 text-gray-500 dark:text-gray-400 animate-in fade-in duration-300">
-                          <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                          <div className="w-8 h-8 border-2 border-[#0B2E5C] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
                           <p>Loading designations...</p>
                         </div>
                       )}
@@ -710,7 +703,7 @@ export default function DepartmentList() {
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
-                                  className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                                  className="text-gray-400 hover:text-[#0B2E5C] hover:bg-[#0B2E5C]/10 transition-colors duration-200"
                                   onClick={() => handleOpenEditDesignationDialog(designation, department.id, department.name)}
                                   title="Edit Designation"
                                 >
@@ -809,7 +802,7 @@ export default function DepartmentList() {
     {deleteConfirmation && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
         <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+          <div className="bg-white border border-gray-200 rounded-lg">
             <div className="p-6">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
@@ -860,7 +853,7 @@ export default function DepartmentList() {
     {deleteDesignationConfirmation && (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
         <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+          <div className="bg-white border border-gray-200 rounded-lg">
             <div className="p-6">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
