@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { EmptyState, Pagination } from '../../components/common';
-import { ShiftForm } from '../../components/shifts';
-import { Clock, Edit, Power, PowerOff, Trash2 } from 'lucide-react';
+import { EmptyState, LoadingSpinner } from '../../components/common';
+import { ShiftForm, ShiftTable } from '../../components/shifts';
+import { Clock, Plus } from 'lucide-react';
 import { useShifts } from '../../contexts/ShiftsContext';
 import { Button } from '../../components/ui/button';
 import { Card, CardContent } from '../../components/ui/card';
 import { Input } from '../../components/ui/input';
+import { Pagination } from '../../components/common';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,13 +28,14 @@ const ShiftsPage: React.FC = () => {
     pageCount,
     currentPage,
     pageSize,
-    isLoading, 
+    isLoading,
+    searchTerm,
     fetchShifts, 
     selectShift, 
-    toggleShiftStatus,
     deleteShift,
     setCurrentPage,
-    setPageSize
+    setPageSize,
+    setSearchTerm
   } = useShifts();
 
   // Fetch shifts on component mount
@@ -44,10 +46,6 @@ const ShiftsPage: React.FC = () => {
   const handleEditShift = (shift: any) => {
     selectShift(shift);
     setIsCreateDialogOpen(true);
-  };
-
-  const handleToggleStatus = async (shiftId: string) => {
-    await toggleShiftStatus(shiftId);
   };
 
   const handleDeleteShift = async (shiftId: string) => {
@@ -67,12 +65,14 @@ const ShiftsPage: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="space-y-6">
       {/* Search and Actions */}
-      <div className="flex items-center justify-between gap-4 mb-4">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex-1 max-w-md">
           <Input
             placeholder="Search shifts..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         
@@ -80,86 +80,42 @@ const ShiftsPage: React.FC = () => {
           onClick={() => setIsCreateDialogOpen(true)}
           className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
         >
-          <Clock className="h-4 w-4" />
+          <Plus className="h-4 w-4" />
           Create Shift
         </Button>
       </div>
       
       {isLoading ? (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-gray-500 mt-2">Loading shifts...</p>
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
         </div>
       ) : totalCount > 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Current Shifts ({totalCount})
-            </h2>
-          </div>
-          <div className="divide-y divide-gray-200 dark:divide-gray-700">
-            {shifts.map((shift) => (
-              <div key={shift.id} className="px-6 py-4">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-                      {shift.name}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      {shift.start} - {shift.end} 
-                      (Grace: {shift.grace_minutes} min)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {shift.active_flag ? (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        Inactive
-                      </span>
-                    )}
-                    
-                    <Button
-                      onClick={() => handleToggleStatus(shift.id)}
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      title={shift.active_flag ? "Deactivate Shift" : "Activate Shift"}
-                    >
-                      {shift.active_flag ? (
-                        <PowerOff className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                      ) : (
-                        <Power className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                      )}
-                    </Button>
-                    
-                    <Button
-                      onClick={() => handleEditShift(shift)}
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-                      title="Edit Shift"
-                    >
-                      <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                    </Button>
-                    
-                    <Button
-                      onClick={() => handleDeleteShift(shift.id)}
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/20"
-                      title="Delete Shift"
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <>
+          {/* Shifts Table */}
+          <ShiftTable
+            shifts={shifts}
+            loading={isLoading}
+            onEdit={handleEditShift}
+            onDelete={handleDeleteShift}
+          />
+
+          {/* Pagination */}
+          {totalCount > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <Pagination
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  totalCount={totalCount}
+                  pageCount={pageCount}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={setPageSize}
+                  showFirstLast={false}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </>
       ) : (
         <EmptyState
           icon={Clock}
@@ -170,23 +126,6 @@ const ShiftsPage: React.FC = () => {
             onClick: () => setIsCreateDialogOpen(true)
           }}
         />
-      )}
-
-      {/* Pagination */}
-      {totalCount > 0 && (
-        <Card className="mt-4">
-          <CardContent className="p-4">
-            <Pagination
-              currentPage={currentPage}
-              pageSize={pageSize}
-              totalCount={totalCount}
-              pageCount={pageCount}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={setPageSize}
-              showFirstLast={false}
-            />
-          </CardContent>
-        </Card>
       )}
 
       <ShiftForm

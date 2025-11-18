@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building, ChevronDown, ChevronUp, Plus, Search, Edit, Trash2, MoreVertical, User, Users, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Search, Edit, Trash2, Users, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -64,9 +64,24 @@ export default function DepartmentList() {
   const [designationToEdit, setDesignationToEdit] = useState<{ id: string; name: string; description?: string } | null>(null);
   const [selectedDepartmentForEdit, setSelectedDepartmentForEdit] = useState<{ id: string; name: string } | null>(null);
 
+  // Debounced search term to avoid too many API calls
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // Reset to page 1 when search term actually changes (after debounce)
+      if (searchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
+      }
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchDepartments();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, debouncedSearchTerm]);
 
   const fetchDepartments = async () => {
     try {
@@ -84,33 +99,42 @@ export default function DepartmentList() {
       console.log('Fetching departments...');
       console.log('Auth token exists:', !!authToken.getToken());
       
-      const response = await departmentService.getDepartments({
+      // Build search object if searchTerm exists
+      const requestBody: any = {
         active_flag: true,
         delete_flag: false,
         page: currentPage,
-        page_size: pageSize
-      });
+        page_size: pageSize,
+        include: ["designations"] // Include designations in the response
+      };
+
+      // Add search parameter if debouncedSearchTerm exists
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        requestBody.search = {
+          keys: ["name", "description"],
+          value: debouncedSearchTerm.trim()
+        };
+      }
+      
+      const response = await departmentService.getDepartments(requestBody);
 
       console.log('API Response:', response);
 
       if (response.status && response.data) {
-        // Transform the API response to include designations
+        // Transform the API response - designations are already included from API
         const departmentsWithDesignations: DepartmentWithDesignations[] = response.data.map(dept => ({
           id: dept.id,
           name: dept.name,
           description: dept.description || `Department for ${dept.name.toLowerCase()} operations`,
           head: 'TBD', // This would come from a different API call
-          designations: [], // Will be populated with designations
-          designationsLoading: false, // Will be set to true when fetching designations
+          designations: dept.designations || [], // Use designations from API response
+          designationsLoading: false,
           designationsError: undefined
         }));
         
         setDepartments(departmentsWithDesignations);
         setTotalCount(response.total_count || 0);
         setPageCount(response.page_count || 0);
-        
-        // Now fetch designations for all departments
-        await fetchAllDesignations(departmentsWithDesignations);
       } else {
         setErrorMessage(response.message || 'Failed to fetch departments');
       }
@@ -126,77 +150,7 @@ export default function DepartmentList() {
     }
   };
 
-  // Removed fetchAllDesignationsForOrg and handleTabChange functions - no longer needed
-
-  const fetchAllDesignations = async (departmentsList: DepartmentWithDesignations[]) => {
-    try {
-      console.log('Fetching designations for all departments...');
-      
-      // Set all departments to loading state
-      setDepartments(prev => prev.map(dept => ({
-        ...dept,
-        designationsLoading: true,
-        designationsError: undefined
-      })));
-      
-      // Fetch designations for each department in parallel
-      const designationPromises = departmentsList.map(async (dept) => {
-        try {
-          const response = await designationService.getDesignations({
-            department_id: dept.id
-          });
-          
-          if (response.status && response.data) {
-            return {
-              departmentId: dept.id,
-              designations: response.data || [],
-              error: null
-            };
-          } else {
-            return {
-              departmentId: dept.id,
-              designations: [],
-              error: response.message || 'Failed to fetch designations'
-            };
-          }
-        } catch (err) {
-          console.error(`Error fetching designations for department ${dept.id}:`, err);
-          return {
-            departmentId: dept.id,
-            designations: [],
-            error: 'Failed to fetch designations. Please try again.'
-          };
-        }
-      });
-      
-      // Wait for all designation requests to complete
-      const results = await Promise.all(designationPromises);
-      
-      // Update departments with fetched designations
-      setDepartments(prev => prev.map(dept => {
-        const result = results.find(r => r.departmentId === dept.id);
-        if (result) {
-          return {
-            ...dept,
-            designations: result.designations,
-            designationsLoading: false,
-            designationsError: result.error
-          };
-        }
-        return dept;
-      }));
-      
-      console.log('All designations fetched successfully');
-    } catch (err) {
-      console.error('Error in fetchAllDesignations:', err);
-      // Mark all departments as having errors
-      setDepartments(prev => prev.map(dept => ({
-        ...dept,
-        designationsLoading: false,
-        designationsError: 'Failed to fetch designations. Please try again.'
-      })));
-    }
-  };
+  // Removed fetchAllDesignations - designations are now included in the department API response
 
   const handleCreateDepartment = async (data: { name: string; description: string }) => {
     try {
@@ -426,7 +380,6 @@ export default function DepartmentList() {
   };
 
   const fetchDesignations = async (departmentId: string) => {
-    try {
       // Set the department to loading state
       setDepartments(prev => prev.map(dept => 
         dept.id === departmentId 
@@ -434,47 +387,9 @@ export default function DepartmentList() {
           : dept
       ));
       
-      const response = await designationService.getDesignations({
-        department_id: departmentId
-      });
-      
-      if (response.status && response.data) {
-        // Update the department with fetched designations
-        setDepartments(prev => prev.map(dept => 
-          dept.id === departmentId 
-            ? { 
-                ...dept, 
-                designations: response.data || [],
-                designationsLoading: false,
-                designationsError: undefined
-              }
-            : dept
-        ));
-      } else {
-        setDepartments(prev => prev.map(dept => 
-          dept.id === departmentId 
-            ? { 
-                ...dept, 
-                designations: [],
-                designationsLoading: false,
-                designationsError: response.message || 'Failed to fetch designations'
-              }
-            : dept
-        ));
-      }
-    } catch (err) {
-      console.error('Error fetching designations:', err);
-      setDepartments(prev => prev.map(dept => 
-        dept.id === departmentId 
-          ? { 
-              ...dept, 
-              designations: [],
-              designationsLoading: false,
-              designationsError: 'Failed to fetch designations. Please try again.'
-            }
-          : dept
-      ));
-    }
+    // Refetch all departments with designations included
+    // This will update all departments including the one we're refreshing
+    await fetchDepartments();
   };
 
   const toggleDepartment = (departmentId: string) => {
@@ -489,16 +404,11 @@ export default function DepartmentList() {
     setExpandedDepartments(newExpanded);
   };
 
-  const filteredDepartments = departments.filter(dept =>
-    dept.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (dept.description && dept.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Removed filteredDesignations - no longer needed
+  // Search is now handled by API - no client-side filtering needed
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[60vh] w-full">
         <LoadingSpinner />
       </div>
     );
@@ -508,7 +418,6 @@ export default function DepartmentList() {
     return (
       <div className="p-6 max-w-7xl mx-auto">
         <div className="text-center py-12">
-          <Building className="w-16 h-16 text-red-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
             Error loading departments
           </h3>
@@ -529,21 +438,21 @@ export default function DepartmentList() {
       {/* Search and Actions */}
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex-1 max-w-md">
-          <Input
-            placeholder="Search departments..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <Button 
+              <Input
+                placeholder="Search departments..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+              <Button 
           className="bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
-          onClick={() => setIsAddDialogOpen(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Department
-        </Button>
-      </div>
+                onClick={() => setIsAddDialogOpen(true)}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Department
+              </Button>
+            </div>
 
 
 
@@ -553,16 +462,13 @@ export default function DepartmentList() {
 
       {/* Departments Content */}
       <div className="space-y-4">
-          {filteredDepartments.map((department) => (
+          {departments.map((department) => (
             <Card key={department.id} className="overflow-hidden">
               <CardContent className="p-0">
                 {/* Department Header */}
                 <div className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4">
-                      <div className="w-12 h-12 bg-[#0B2E5C] rounded-lg flex items-center justify-center">
-                        <Building className="w-6 h-6 text-white" />
-                      </div>
                       <div className="flex-1">
                         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
                           {department.name}
@@ -571,10 +477,6 @@ export default function DepartmentList() {
                           {department.description}
                         </p>
                         <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-gray-400">
-                          <div className="flex items-center space-x-2">
-                            <User className="w-4 h-4" />
-                            <span>Head: {department.head}</span>
-                          </div>
                           <div className="flex items-center space-x-2">
                             <Users className="w-4 h-4" />
                             <span>{department.designations.length} designations</span>
@@ -606,9 +508,6 @@ export default function DepartmentList() {
                         ) : (
                           <Trash2 className="w-4 h-4" />
                         )}
-                      </Button>
-                      <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
-                        <MoreVertical className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
@@ -745,20 +644,19 @@ export default function DepartmentList() {
           ))}
         </div>
 
-      {filteredDepartments.length === 0 && !loading && (
+      {departments.length === 0 && !loading && (
         <div className="text-center py-12">
-          <Building className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {searchTerm ? 'No departments found' : 'No departments yet'}
+            {debouncedSearchTerm ? 'No departments found' : 'No departments yet'}
           </h3>
           <p className="text-gray-500 dark:text-gray-400">
-            {searchTerm ? 'Try adjusting your search terms.' : 'Get started by creating your first department.'}
+            {debouncedSearchTerm ? 'Try adjusting your search terms.' : 'Get started by creating your first department.'}
           </p>
         </div>
       )}
 
       {/* Pagination */}
-      {!searchTerm && totalCount > 0 && (
+      {totalCount > 0 && (
         <Card>
           <CardContent className="p-4">
             <Pagination

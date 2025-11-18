@@ -29,11 +29,29 @@ export interface Organisation {
   admin_id?: string;
   name: string;
   plan?: string;
+  code?: string | null;
+  description?: string | null;
   active_modules?: string[];
+  half_day_threshold_hours?: number;
+  default_working_day_rule_id?: string;
+  time_zone?: string;
+  time_zone_offset?: string;
+  is_employee_code_generation_type_auto?: boolean;
+  employee_code_prefix?: string | null;
+  employee_code_from?: number;
+  employee_code_current?: number;
+  employee_code_to?: number;
   active_flag?: boolean;
   delete_flag?: boolean;
   created_at?: string;
-  updated_at?: string;
+  modified_at?: string;
+  created_by?: string | null;
+  modified_by?: string | null;
+  // Included relations (when using include parameter)
+  admin?: Admin;
+  employees?: Employee[];
+  departments?: Department[];
+  designations?: Designation[];
 }
 
 export interface Employee {
@@ -72,6 +90,8 @@ export interface Department {
   modified_at?: string;
   created_by?: string;
   modified_by?: string;
+  // Included relations (when using include parameter)
+  designations?: Designation[];
 }
 
 export interface Designation {

@@ -29,7 +29,7 @@ export class PayrollCycleService {
           timeout: 30000 // 30 seconds timeout for payroll cycles
         }
       );
-      return response.data;
+    return response.data;
     } catch (error: any) {
       // Re-throw with more context
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {

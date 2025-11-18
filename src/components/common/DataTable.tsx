@@ -18,6 +18,7 @@ export interface Column<T> {
   header: string;
   render?: (value: any, row: T) => React.ReactNode;
   sortable?: boolean;
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface TableAction<T> {
@@ -148,7 +149,14 @@ export function DataTable<T extends Record<string, any>>({
           <TableHeader>
             <TableRow className="bg-gray-50 dark:bg-gray-800">
               {columns.map((column, index) => (
-                <TableHead key={index} className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <TableHead 
+                  key={index} 
+                  className={cn(
+                    "text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider",
+                    column.align === 'center' && "text-center",
+                    column.align === 'right' && "text-right"
+                  )}
+                >
                   {column.header}
                 </TableHead>
               ))}
@@ -172,7 +180,14 @@ export function DataTable<T extends Record<string, any>>({
               data.map((row, rowIndex) => (
                 <TableRow key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   {columns.map((column, colIndex) => (
-                    <TableCell key={colIndex} className="text-sm text-gray-900 dark:text-white">
+                    <TableCell 
+                      key={colIndex} 
+                      className={cn(
+                        "text-sm text-gray-900 dark:text-white",
+                        column.align === 'center' && "text-center",
+                        column.align === 'right' && "text-right"
+                      )}
+                    >
                       {column.render ? column.render(row[column.key], row) : row[column.key]}
                     </TableCell>
                   ))}

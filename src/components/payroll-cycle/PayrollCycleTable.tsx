@@ -108,7 +108,7 @@ export function PayrollCycleTable() {
       console.error('Error fetching payroll cycles:', err);
     } finally {
       if (!abortControllerRef.current?.signal.aborted) {
-        setLoading(false);
+      setLoading(false);
       }
     }
   };

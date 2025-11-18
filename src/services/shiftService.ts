@@ -1,6 +1,7 @@
 import { httpClient } from './httpClient';
 import { API_ENDPOINTS } from './api/endpoints';
 import { getOrganisationId } from '@/lib/shift-utils';
+import { FilterRequest, ApiResponse } from '@/types/api';
 
 export interface CreateShiftData {
   name: string;
@@ -55,11 +56,16 @@ export class ShiftService {
     }
   }
 
-  static async getShifts(params?: { page?: number; page_size?: number }): Promise<ShiftsResponse> {
-    const response = await httpClient.post(API_ENDPOINTS.SHIFTS_LIST, {
-      page: params?.page || 1,
-      page_size: params?.page_size || 10
-    });
+  static async getShifts(filters?: FilterRequest): Promise<ShiftsResponse> {
+    const requestBody: FilterRequest = {
+      page: filters?.page || 1,
+      page_size: filters?.page_size || 10,
+      ...(filters?.active_flag !== undefined && { active_flag: filters.active_flag }),
+      ...(filters?.delete_flag !== undefined && { delete_flag: filters.delete_flag }),
+      ...(filters?.search && { search: filters.search }),
+    };
+    
+    const response = await httpClient.post(API_ENDPOINTS.SHIFTS_LIST, requestBody);
     return response.data;
   }
 
