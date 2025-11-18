@@ -87,7 +87,7 @@ const navigationModules = [
     isMainModule: true,
     subModules: [
       { name: "Today's Attendance", href: 'attendance/today', icon: Calendar },
-      { name: 'Attendance Management', href: 'attendance', icon: UserCheck }
+      { name: 'Monthly Attendance', href: 'attendance', icon: UserCheck }
     ]
   },
   {

@@ -16,7 +16,7 @@ import { ExtendedInsertEmployee } from '@/hooks/useEmployeeForm';
 export default function EmployeeFormPage() {
   const { id } = useParams<{ id: string }>();
   const isEditMode = !!id;
-  
+
   // Custom hooks
   const { 
     form, 
@@ -49,7 +49,7 @@ export default function EmployeeFormPage() {
   // Debug form state
   console.log('🔍 Form errors:', errors);
   console.log('🔍 Form is valid:', Object.keys(errors).length === 0);
-  
+
   // Form initialization effect
   useEffect(() => {
     if (isEditMode && employee) {
@@ -68,13 +68,13 @@ export default function EmployeeFormPage() {
       });
     }
   }, [isEditMode, employee, fetchShifts, fetchAttendanceRules, fetchDesignations, reset, setValue, watch, setIsInitialSetup]);
-  
+
   // Initial data fetch effect
   useEffect(() => {
     fetchShifts();
     fetchAttendanceRules();
   }, [fetchShifts, fetchAttendanceRules]);
-  
+
   // Department change effect
   useEffect(() => {
     const watchedDepartmentId = watch('department_id');
@@ -92,7 +92,7 @@ export default function EmployeeFormPage() {
       // Only clear designation selection when department changes (not during initial setup)
       if (!isInitialSetup) {
         console.log('🗑️ Clearing designation (user changed department)');
-        setValue('designation_id', undefined);
+      setValue('designation_id', undefined);
       } else {
         console.log('🚫 Skipping designation clear (initial setup)');
       }
@@ -102,7 +102,7 @@ export default function EmployeeFormPage() {
       setSelectedDepartmentId(undefined);
     }
   }, [watch('department_id'), selectedDepartmentId, isInitialSetup, setValue, fetchDesignations, setSelectedDepartmentId]);
-  
+
   const handleFormSubmit = (data: ExtendedInsertEmployee) => {
     console.log('🚀 Form submitted with data:', data);
     console.log('📝 Is edit mode:', isEditMode);
@@ -128,7 +128,7 @@ export default function EmployeeFormPage() {
   // Loading and error states
   if (isEditMode && isLoading) return <LoadingSpinner />;
   if (isEditMode && (error || !employee)) return <ErrorState error={error} />;
-  
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit(handleFormSubmit, handleFormError)} className="space-y-6">
@@ -136,16 +136,16 @@ export default function EmployeeFormPage() {
           onSubmit={handleSubmit(handleFormSubmit)}
           isLoading={createMutation.isPending || updateMutation.isPending}
           isEditMode={isEditMode}
-        />
+                />
         <PersonalInfoSection 
           register={register}
-          control={control}
+                  control={control}
           errors={errors}
-        />
+                    />
         
         <WorkInfoSection
           register={register}
-          control={control}
+                  control={control}
           errors={errors}
           departments={departments}
           designations={designations}
@@ -160,7 +160,7 @@ export default function EmployeeFormPage() {
         
         <AdditionalInfoSection
           register={register}
-          control={control}
+                  control={control}
           errors={errors}
         />
       </form>

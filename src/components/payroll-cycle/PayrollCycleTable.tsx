@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DataTable, Column, TableAction } from '@/components/common/DataTable';
 import { PayrollCycle } from '@/types/payrollCycle';
 import { PayrollCycleService } from '@/services/payrollCycleService';
@@ -8,6 +8,50 @@ import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { PayrollCycleUpdateDialog } from './PayrollCycleUpdateDialog';
 import { Pagination } from '@/components/common';
+
+// Helper function to check if error is a network error
+const isNetworkError = (error: any): boolean => {
+  if (!error) return false;
+  
+  // Check for network-related error codes
+  if (error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT' || error.code === 'ERR_NETWORK') {
+    return true;
+  }
+  
+  // Check if error message contains network-related keywords
+  const networkKeywords = ['network', 'timeout', 'connection', 'failed to fetch', 'network error'];
+  const errorMessage = (error.message || '').toLowerCase();
+  return networkKeywords.some(keyword => errorMessage.includes(keyword));
+};
+
+// Retry function with exponential backoff
+const retryWithBackoff = async <T,>(
+  fn: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000
+): Promise<T> => {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Only retry network errors
+      if (!isNetworkError(error) || attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Wait before retrying (exponential backoff)
+      const waitTime = delay * Math.pow(2, attempt);
+      console.log(`⚠️ Network error, retrying in ${waitTime}ms... (attempt ${attempt + 1}/${maxRetries + 1})`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+  
+  throw lastError;
+};
 
 export function PayrollCycleTable() {
   const [payrollCycles, setPayrollCycles] = useState<PayrollCycle[]>([]);
@@ -19,28 +63,65 @@ export function PayrollCycleTable() {
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [pageCount, setPageCount] = useState(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchPayrollCycles = async () => {
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this request
+    abortControllerRef.current = new AbortController();
+    
     try {
       setLoading(true);
       setError(null);
-      const response = await PayrollCycleService.getPayrollCycles({
-        page: currentPage,
-        page_size: pageSize
-      });
+      
+      const response = await retryWithBackoff(() => 
+        PayrollCycleService.getPayrollCycles({
+          page: currentPage,
+          page_size: pageSize
+        })
+      );
+      
+      // Check if request was aborted
+      if (abortControllerRef.current?.signal.aborted) {
+        return;
+      }
+      
       setPayrollCycles(response.data);
       setTotalCount(response.total_count || 0);
       setPageCount(response.page_count || 0);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch payroll cycles');
+      // Don't set error if request was aborted
+      if (abortControllerRef.current?.signal.aborted) {
+        return;
+      }
+      
+      const isNetwork = isNetworkError(err);
+      const errorMessage = isNetwork
+        ? 'Network error: Please check your internet connection and try again.'
+        : err.message || 'Failed to fetch payroll cycles';
+      
+      setError(errorMessage);
       console.error('Error fetching payroll cycles:', err);
     } finally {
-      setLoading(false);
+      if (!abortControllerRef.current?.signal.aborted) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
     fetchPayrollCycles();
+    
+    // Cleanup: abort request on unmount or when dependencies change
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [currentPage, pageSize]);
 
   const getStatusBadge = (status: string) => {

@@ -22,10 +22,12 @@ import { Pagination } from '@/components/common/Pagination';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
+import { getOrganisationId } from '@/lib/shift-utils';
+import { authToken } from '@/services/authToken';
 
 export default function TodaysAttendancePage() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedShiftId, setSelectedShiftId] = useState<string>('');
   const [shifts, setShifts] = useState<any[]>([]);
@@ -34,8 +36,34 @@ export default function TodaysAttendancePage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Get organisation_id from user
-  const organisationId = user?.organisation_id;
+  // Get organisation_id from user, with multiple fallbacks
+  const organisationId = useMemo(() => {
+    const fromUser = user?.organisation_id;
+    const fromStorage = getOrganisationId();
+    const fromAuthToken = authToken.getorganisationId();
+    
+    // Try all sources in order of preference
+    const orgId = fromUser || fromStorage || fromAuthToken || '';
+    
+    // Debug logging to help identify the issue
+    if (!orgId) {
+      console.warn('⚠️ No organisation_id found:', {
+        hasUser: !!user,
+        userOrganisationId: fromUser,
+        fromStorage,
+        fromAuthToken,
+        userObject: user
+      });
+    } else {
+      console.log('✅ Organisation ID found:', orgId, { 
+        fromUser: !!fromUser, 
+        fromStorage: !!fromStorage,
+        fromAuthToken: !!fromAuthToken
+      });
+    }
+    
+    return orgId;
+  }, [user]);
 
   // Fetch shifts and departments
   useEffect(() => {
@@ -215,10 +243,23 @@ export default function TodaysAttendancePage() {
     );
   }
 
+  // Show loading while auth is initializing
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Show error if no organisation ID is available after all checks
   if (!organisationId) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">Please select an organization to view attendance</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          If you're logged in, please refresh the page or contact support.
+        </p>
       </div>
     );
   }

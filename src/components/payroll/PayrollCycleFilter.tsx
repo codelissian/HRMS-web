@@ -17,17 +17,46 @@ export function PayrollCycleFilter({ onCycleSelect, selectedCycleId }: PayrollCy
     try {
       setLoading(true);
       setError(null);
-      const response = await PayrollCycleService.getPayrollCycles();
-      setCycles(response.data);
       
-      // Auto-select the first cycle if available
-      if (response.data.length > 0) {
-        const firstCycle = response.data[0];
-        onCycleSelect(firstCycle.id, firstCycle);
+      // Retry logic for network errors
+      let lastError: any;
+      const maxRetries = 3;
+      
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await PayrollCycleService.getPayrollCycles();
+          setCycles(response.data);
+          
+          // Auto-select the first cycle if available
+          if (response.data.length > 0) {
+            const firstCycle = response.data[0];
+            onCycleSelect(firstCycle.id, firstCycle);
+          }
+          return; // Success, exit retry loop
+        } catch (err: any) {
+          lastError = err;
+          
+          // Check if it's a network error and we should retry
+          const isNetworkError = err.code === 'ECONNABORTED' || 
+                                err.code === 'ETIMEDOUT' || 
+                                err.code === 'ERR_NETWORK' ||
+                                err.message?.toLowerCase().includes('network') ||
+                                err.message?.toLowerCase().includes('timeout');
+          
+          if (!isNetworkError || attempt === maxRetries) {
+            break; // Not a network error or max retries reached
+          }
+          
+          // Wait before retrying (exponential backoff)
+          const waitTime = 1000 * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch payroll cycles');
-      console.error('Error fetching payroll cycles:', err);
+      
+      // If we get here, all retries failed
+      const errorMessage = lastError?.message || 'Failed to fetch payroll cycles';
+      setError(errorMessage);
+      console.error('Error fetching payroll cycles:', lastError);
     } finally {
       setLoading(false);
     }

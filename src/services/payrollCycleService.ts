@@ -18,11 +18,28 @@ export class PayrollCycleService {
   }
 
   static async getPayrollCycles(params?: { page?: number; page_size?: number }): Promise<PayrollCyclesResponse> {
-    const response = await httpClient.post(API_ENDPOINTS.PAYROLL_CYCLES_LIST, {
-      page: params?.page || 1,
-      page_size: params?.page_size || 10
-    });
-    return response.data;
+    try {
+      const response = await httpClient.post(
+        API_ENDPOINTS.PAYROLL_CYCLES_LIST, 
+        {
+          page: params?.page || 1,
+          page_size: params?.page_size || 10
+        },
+        {
+          timeout: 30000 // 30 seconds timeout for payroll cycles
+        }
+      );
+      return response.data;
+    } catch (error: any) {
+      // Re-throw with more context
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        throw new Error('Request timeout: The server took too long to respond. Please try again.');
+      }
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        throw new Error('Network error: Unable to connect to the server. Please check your internet connection.');
+      }
+      throw error;
+    }
   }
 
   static async getPayrollCycle(id: string): Promise<PayrollCycle> {
