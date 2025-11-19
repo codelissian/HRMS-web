@@ -1,15 +1,13 @@
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useMemo, useEffect } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Download,
-  Calendar as CalendarIcon
-} from 'lucide-react';
+import { Download, Calendar as CalendarIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService, AttendanceRecord } from '@/services/attendanceService';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { LoadingSpinner, EmptyState } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
 import { format, getDaysInMonth, startOfMonth, eachDayOfInterval, isWeekend } from 'date-fns';
 
@@ -18,16 +16,36 @@ export default function AttendanceManagementPage() {
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // API call for attendance data
   const { data: attendanceResponse, isLoading, error, refetch } = useQuery({
-    queryKey: ['attendance', 'list', { month: selectedMonth, year: selectedYear }],
+    queryKey: ['attendance', 'list', { month: selectedMonth, year: selectedYear, search: debouncedSearchTerm }],
     queryFn: () => {
-      console.log('📡 API Call - Month:', selectedMonth, 'Year:', selectedYear);
-      return attendanceService.getAttendanceList({
+      console.log('📡 API Call - Month:', selectedMonth, 'Year:', selectedYear, 'Search:', debouncedSearchTerm);
+      const params: any = {
         month: selectedMonth,
         year: selectedYear
-      });
+      };
+      
+      // Add search parameter if search term exists
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        params.search = {
+          keys: ["employee_name", "department"],
+          value: debouncedSearchTerm.trim()
+        };
+      }
+      
+      return attendanceService.getAttendanceList(params);
     },
     enabled: true,
   });
@@ -91,7 +109,7 @@ export default function AttendanceManagementPage() {
       grouped[record.employee_id][normalizedDate] = record;
     });
 
-    // Get unique employees
+    // Get unique employees (backend already filtered by search)
     const employees = Array.from(new Set(filteredRecords.map(r => r.employee_id)))
       .map(empId => {
         const firstRecord = filteredRecords.find(r => r.employee_id === empId);
@@ -104,7 +122,7 @@ export default function AttendanceManagementPage() {
       });
 
     return employees;
-  }, [filteredRecords, selectedMonth, selectedYear]);
+  }, [filteredRecords]);
 
   // Get cell content for a specific employee and date
   const getCellContent = (employeeRecords: Record<string, AttendanceRecord>, date: Date) => {
@@ -249,88 +267,78 @@ export default function AttendanceManagementPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Monthly Attendance</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {months[selectedMonth]} {selectedYear}
-          </p>
+      {/* Search and Filters */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search employees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleExportAttendance} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
+
+        <Select value={selectedMonth.toString()} onValueChange={(value) => handleMonthChange(parseInt(value))}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select Month" />
+          </SelectTrigger>
+          <SelectContent>
+            {months.map((month, index) => (
+              <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedYear.toString()} onValueChange={(value) => handleYearChange(parseInt(value))}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Select Year" />
+          </SelectTrigger>
+          <SelectContent>
+            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Button onClick={handleExportAttendance} variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Month</label>
-              <Select value={selectedMonth.toString()} onValueChange={(value) => handleMonthChange(parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month, index) => (
-                    <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Year</label>
-              <Select value={selectedYear.toString()} onValueChange={(value) => handleYearChange(parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Attendance Calendar Grid */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex justify-center py-8 px-6">
-              <LoadingSpinner />
-            </div>
-          ) : attendanceByEmployee.length === 0 ? (
-            <div className="text-center py-8 px-6">
-              <p className="text-muted-foreground">No attendance records found for {months[selectedMonth]} {selectedYear}</p>
-            </div>
-          ) : (
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
+        </div>
+      ) : attendanceByEmployee.length === 0 ? (
+        <EmptyState
+          icon={CalendarIcon}
+          title="No attendance records found"
+          description={`No attendance data available for ${months[selectedMonth]} ${selectedYear}. Records will appear here once attendance is tracked.`}
+        />
+      ) : (
+        <Card>
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead className="sticky left-0 z-10 bg-white dark:bg-gray-950 min-w-[200px] whitespace-nowrap">
+                  <TableRow className="bg-gray-50 dark:bg-gray-800">
+                    <TableHead className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-800 min-w-[200px] text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Employee
                     </TableHead>
-                    <TableHead className="sticky left-[200px] z-10 bg-white dark:bg-gray-950 min-w-[120px] whitespace-nowrap">
+                    <TableHead className="sticky left-[200px] z-10 bg-gray-50 dark:bg-gray-800 min-w-[120px] text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       Department
                     </TableHead>
                     {monthDays.map((day) => (
                       <TableHead 
                         key={format(day, 'yyyy-MM-dd')} 
-                        className="text-center min-w-[100px] whitespace-nowrap"
+                        className="text-center min-w-[80px] text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                       >
                         <div className="flex flex-col">
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-xs">
                             {format(day, 'EEE')}
                           </span>
-                          <span className="font-medium">
+                          <span className="font-semibold text-gray-900 dark:text-white">
                             {format(day, 'd')}
                           </span>
                         </div>
@@ -340,11 +348,11 @@ export default function AttendanceManagementPage() {
                 </TableHeader>
                 <TableBody>
                   {attendanceByEmployee.map((employee) => (
-                    <TableRow key={employee.id} className="hover:bg-muted/50">
-                      <TableCell className="sticky left-0 z-10 bg-white dark:bg-gray-950 font-medium">
+                    <TableRow key={employee.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                      <TableCell className="sticky left-0 z-10 bg-white dark:bg-gray-900 font-medium text-sm text-gray-900 dark:text-white">
                         {employee.name}
                       </TableCell>
-                      <TableCell className="sticky left-[200px] z-10 bg-white dark:bg-gray-950 text-muted-foreground">
+                      <TableCell className="sticky left-[200px] z-10 bg-white dark:bg-gray-900 text-sm text-gray-500 dark:text-gray-400">
                         {employee.department}
                       </TableCell>
                       {monthDays.map((day) => (
@@ -360,9 +368,9 @@ export default function AttendanceManagementPage() {
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

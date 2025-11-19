@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
-import { ConfirmationDialog } from '@/components/common';
+import { ConfirmationDialog, Pagination, LoadingSpinner, EmptyState } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { Employee, EmployeeWithRelations } from '../../types/database';
-import { Plus, Filter, Download, Upload } from 'lucide-react';
+import { Plus, Download, Upload, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
@@ -211,7 +210,7 @@ export default function EmployeeList() {
   }
 
   return (
-    <div className="p-4 max-w-7xl mx-auto space-y-4">
+    <div className="space-y-6">
       {/* Search and Actions */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex-1 max-w-md">
@@ -249,38 +248,51 @@ export default function EmployeeList() {
         </div>
       </div>
 
-      {/* Employee Table */}
-      <EmployeeTable
-        employees={employees}
-        loading={isLoading}
-        onView={handleViewEmployee}
-        onEdit={handleEditEmployee}
-        onDelete={handleDeleteEmployee}
-      />
-
-      {/* Pagination */}
-      {pageCount > 1 && (
-        <div className="flex justify-between items-center">
-          <div className="text-sm text-gray-500">
-            Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} employees
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              disabled={currentPage === pageCount}
-              onClick={() => setCurrentPage(prev => Math.min(pageCount, prev + 1))}
-            >
-              Next
-            </Button>
-          </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
         </div>
+      ) : totalCount > 0 ? (
+        <>
+          {/* Employee Table */}
+          <EmployeeTable
+            employees={employees}
+            loading={isLoading}
+            onView={handleViewEmployee}
+            onEdit={handleEditEmployee}
+            onDelete={handleDeleteEmployee}
+          />
+
+          {/* Pagination */}
+          {totalCount > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <Pagination
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  totalCount={totalCount}
+                  pageCount={pageCount}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(newPageSize) => {
+                    setPageSize(newPageSize);
+                    setCurrentPage(1);
+                  }}
+                  showFirstLast={false}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        <EmptyState
+          icon={Users}
+          title="No employees found"
+          description="Get started by adding your first employee. You can add employees individually or import them in bulk."
+          action={{
+            label: "Add Employee",
+            onClick: handleAddEmployee
+          }}
+        />
       )}
 
       
@@ -289,7 +301,7 @@ export default function EmployeeList() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title="Delete Employee"
-        description="Are you sure you want to delete this employee? This action cannot be undone."
+        description={`Are you sure you want to delete the employee "${employeeToDelete?.name}"? This action cannot be undone and will permanently remove the employee from the system.`}
         type="delete"
         confirmText="Delete Employee"
         onConfirm={confirmDeleteEmployee}

@@ -22,11 +22,11 @@ export default function CreateAttendancePolicyPage() {
   });
 
   const handleSuccess = () => {
-    navigate('/admin/attendance-and-work-day-rule');
+    navigate('/admin/attendance-policies');
   };
 
   const handleClose = () => {
-    navigate('/admin/attendance-and-work-day-rule');
+    navigate('/admin/attendance-policies');
   };
 
   const handleSave = () => {
@@ -56,7 +56,7 @@ export default function CreateAttendancePolicyPage() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <p className="text-red-600 mb-4">Failed to load policy data</p>
-          <Button onClick={() => navigate('/admin/attendance-and-work-day-rule')}>
+          <Button onClick={() => navigate('/admin/attendance-policies')}>
             Go Back
           </Button>
         </div>

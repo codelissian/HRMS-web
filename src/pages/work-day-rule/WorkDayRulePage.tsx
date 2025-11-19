@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { WorkDayRuleTable } from '@/components/work-day-rule/WorkDayRuleTable';
 import { WorkDayRuleForm } from '@/components/work-day-rule/WorkDayRuleForm';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
+import { EmptyState, LoadingSpinner, Pagination } from '@/components/common';
 import { WorkDayRule } from '@/types/workDayRule';
-import { Plus } from 'lucide-react';
+import { Plus, CalendarDays } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { WorkDayRuleService } from '@/services/workDayRuleService';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -122,11 +122,6 @@ export default function WorkDayRulePage() {
     setShowDetails(true);
   };
 
-  const handleView = (rule: WorkDayRule) => {
-    setSelectedRule(rule);
-    setShowDetails(true);
-  };
-
   const handleDelete = (rule: WorkDayRule) => {
     setRuleToDelete(rule);
     setShowDeleteDialog(true);
@@ -146,94 +141,79 @@ export default function WorkDayRulePage() {
 
   if (error) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="text-center">
-            <h3 className="text-lg font-semibold text-red-600 mb-2">Error Loading Work Day Rules</h3>
-            <p className="text-gray-600 mb-4">
-              {error?.response?.data?.message || "Failed to load work day rules"}
-            </p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            Error loading work day rules
+          </h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            {error?.response?.data?.message || "Failed to load work day rules"}
+          </p>
+          <Button onClick={() => window.location.reload()} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {/* Actions */}
       <div className="flex justify-end">
-        <Button onClick={handleCreate} className="flex items-center gap-2">
+        <Button 
+          onClick={handleCreate} 
+          className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
+        >
           <Plus className="h-4 w-4" />
-          Add Work Day Rule
+          Create Work Day Rule
         </Button>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">Show:</span>
-            <Select
-              value={pageSize.toString()}
-              onValueChange={(value) => {
-                setPageSize(Number(value));
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-sm text-gray-600">entries</span>
-          </div>
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
         </div>
-        
-        <div className="text-sm text-gray-600">
-          Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} entries
-        </div>
-      </div>
+      ) : totalCount > 0 ? (
+        <>
+          {/* Work Day Rules Table */}
+          <WorkDayRuleTable
+            workDayRules={rules}
+            loading={isLoading}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
 
-      <WorkDayRuleTable
-        workDayRules={rules}
-        loading={isLoading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onView={handleView}
-      />
-
-      {/* Pagination */}
-      {pageCount > 1 && (
-        <div className="flex justify-center mt-6">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <span className="px-3 py-1 text-sm">
-              Page {currentPage} of {pageCount}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setCurrentPage(prev => Math.min(pageCount, prev + 1))}
-              disabled={currentPage === pageCount}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+          {/* Pagination */}
+          {totalCount > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <Pagination
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  totalCount={totalCount}
+                  pageCount={pageCount}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(newPageSize) => {
+                    setPageSize(newPageSize);
+                    setCurrentPage(1);
+                  }}
+                  showFirstLast={false}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        <EmptyState
+          icon={CalendarDays}
+          title="No work day rules configured"
+          description="Get started by creating your first work day rule. Define which days of the week are working days and which are included in payroll calculations."
+          action={{
+            label: "Create Work Day Rule",
+            onClick: handleCreate
+          }}
+        />
       )}
 
       {/* Work Day Rule Form */}

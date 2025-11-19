@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDepartments } from '@/hooks/useDepartments';
 import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
+import { LoadingSpinner, ConfirmationDialog, EmptyState, Pagination } from '@/components/common';
+import { LeaveRequestTable } from '@/components/leaves';
 import { leaveService } from '@/services/leaveService';
 import { 
-  CalendarDays, 
   Clock, 
   CheckCircle, 
   XCircle, 
   AlertCircle, 
-  Search,
-  Download,
-  Eye
+  ClipboardList
 } from 'lucide-react';
 
 
@@ -37,8 +35,10 @@ const defaultStatistics = {
 
 export default function LeaveRequestsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
   const [statistics, setStatistics] = useState(defaultStatistics);
@@ -47,6 +47,7 @@ export default function LeaveRequestsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
   const [processingRequests, setProcessingRequests] = useState<Set<string>>(new Set());
   
   // Confirmation dialog states
@@ -61,6 +62,18 @@ export default function LeaveRequestsPage() {
   const [isLoadingLeaveDetails, setIsLoadingLeaveDetails] = useState(false);
   
   const { departments, isLoading, error } = useDepartments();
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      if (searchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
+      }
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Fetch statistics based on selected department
   const fetchStatistics = async (departmentId: string) => {
@@ -164,7 +177,7 @@ export default function LeaveRequestsPage() {
         type: 'leave' as const,
         page: currentPage,
         page_size: pageSize,
-        search: searchTerm || undefined,
+        search: debouncedSearchTerm || undefined,
         department_id: selectedDepartment === 'all' ? undefined : selectedDepartment,
         status: (statusFilter === 'all' ? undefined : statusFilter) as 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | undefined
       };
@@ -176,6 +189,7 @@ export default function LeaveRequestsPage() {
       if (response.status && response.data) {
         setLeaveRequests(response.data);
         setTotalCount(response.total_count || 0);
+        setPageCount(response.page_count || 0);
       }
     } catch (error) {
       console.error('Error fetching leave requests:', error);
@@ -196,6 +210,11 @@ export default function LeaveRequestsPage() {
     setSelectedRequestId(id);
     setSelectedEmployeeName(employeeName);
     setRejectDialogOpen(true);
+  };
+
+  // Handle row click - show details dialog (same as eye icon)
+  const handleRowClick = (request: any) => {
+    showLeaveDetails(request.id);
   };
 
   // Show leave request details dialog
@@ -281,50 +300,28 @@ export default function LeaveRequestsPage() {
   // Fetch leave requests when filters change
   useEffect(() => {
     fetchLeaveRequests();
-  }, [currentPage, pageSize, searchTerm, selectedDepartment, statusFilter]);
-
-  // Fetch leave requests on component mount
-  useEffect(() => {
-    fetchLeaveRequests();
-  }, []);
+  }, [currentPage, pageSize, debouncedSearchTerm, selectedDepartment, statusFilter]);
 
 
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      // Handle both uppercase and lowercase status values
-      PENDING: { variant: 'secondary' as const, icon: Clock, text: 'Pending' },
-      APPROVED: { variant: 'default' as const, icon: CheckCircle, text: 'Approved' },
-      REJECTED: { variant: 'destructive' as const, icon: XCircle, text: 'Rejected' },
-      CANCELLED: { variant: 'outline' as const, icon: AlertCircle, text: 'Cancelled' },
-      // Also handle lowercase for backward compatibility
-      pending: { variant: 'secondary' as const, icon: Clock, text: 'Pending' },
-      approved: { variant: 'default' as const, icon: CheckCircle, text: 'Approved' },
-      rejected: { variant: 'destructive' as const, icon: XCircle, text: 'Rejected' },
-      cancelled: { variant: 'outline' as const, icon: AlertCircle, text: 'Cancelled' }
+      PENDING: { variant: 'secondary' as const, icon: Clock, text: 'Pending', className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' },
+      APPROVED: { variant: 'default' as const, icon: CheckCircle, text: 'Approved', className: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' },
+      REJECTED: { variant: 'destructive' as const, icon: XCircle, text: 'Rejected', className: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' },
+      CANCELLED: { variant: 'outline' as const, icon: AlertCircle, text: 'Cancelled', className: '' }
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
     const Icon = config.icon;
 
-          return (
-        <Badge variant={config.variant} className="flex items-center justify-center gap-1 min-w-[80px]">
-          <Icon className="w-3 h-3" />
-          {config.text}
-        </Badge>
-      );
+    return (
+      <Badge variant={config.variant} className={`flex items-center justify-center gap-1 min-w-[100px] ${config.className}`}>
+        <Icon className="w-3 h-3" />
+        {config.text}
+      </Badge>
+    );
   };
-
-  const getLeaveTypeBadge = (leaveType: { leave_type_color: string; leave_type_icon: string; leave_type_code: string }) => (
-    <Badge 
-      variant="outline" 
-      className="flex items-center gap-1"
-      style={{ borderColor: leaveType.leave_type_color, color: leaveType.leave_type_color }}
-    >
-      <span>{leaveType.leave_type_icon}</span>
-      {leaveType.leave_type_code}
-    </Badge>
-  );
 
   if (isLoading) {
     return (
@@ -348,98 +345,62 @@ export default function LeaveRequestsPage() {
     <div className="space-y-6">
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">
-              Total Requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6 pb-6">
             {isLoadingStats ? (
-              <div className="flex items-center justify-center h-8">
+              <div className="flex items-center justify-center h-12">
                 <LoadingSpinner size="sm" />
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                  {statistics.total_requests}
-                </div>
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                  All time requests
-                </p>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Requests</div>
+                <div className="text-3xl font-bold">{statistics.total_requests}</div>
               </>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
-              Pending
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card>
+          <CardContent className="pt-6 pb-6">
             {isLoadingStats ? (
-              <div className="flex items-center justify-center h-8">
+              <div className="flex items-center justify-center h-12">
                 <LoadingSpinner size="sm" />
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">
-                  {statistics.pending_requests}
-                </div>
-                <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-                  Awaiting approval
-                </p>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Pending</div>
+                <div className="text-3xl font-bold">{statistics.pending_requests}</div>
               </>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 border-green-200 dark:border-green-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">
-              Approved
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card>
+          <CardContent className="pt-6 pb-6">
             {isLoadingStats ? (
-              <div className="flex items-center justify-center h-8">
+              <div className="flex items-center justify-center h-12">
                 <LoadingSpinner size="sm" />
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold text-green-900 dark:text-green-100">
-                  {statistics.approved_requests}
-                </div>
-                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                  Successfully approved
-                </p>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Approved</div>
+                <div className="text-3xl font-bold">{statistics.approved_requests}</div>
               </>
             )}
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 border-red-200 dark:border-red-800">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">
-              Rejected
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card>
+          <CardContent className="pt-6 pb-6">
             {isLoadingStats ? (
-              <div className="flex items-center justify-center h-8">
+              <div className="flex items-center justify-center h-12">
                 <LoadingSpinner size="sm" />
               </div>
             ) : (
               <>
-                <div className="text-2xl font-bold text-red-900 dark:text-red-100">
-                  {statistics.rejected_requests}
-                </div>
-                <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                  Declined requests
-                </p>
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Rejected</div>
+                <div className="text-3xl font-bold">{statistics.rejected_requests}</div>
               </>
             )}
           </CardContent>
@@ -447,188 +408,86 @@ export default function LeaveRequestsPage() {
       </div>
 
       {/* Filters and Search */}
-      <Card>
-        <CardContent className='pt-6'>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                  placeholder="Search by employee name or email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Filter by department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
-                {departments.map((department) => (
-                  <SelectItem key={department.id} value={department.id}>
-                    {department.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Leave Requests Title and Summary */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leave Requests</h2>
-          {statusFilter !== 'all' && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Showing {statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} requests 
-              ({leaveRequests.length} of {totalCount})
-            </p>
-          )}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search by employee name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Total: {totalCount} requests
-          </p>
-        </div>
+        
+        <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filter by department" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Departments</SelectItem>
+            {departments.map((department) => (
+              <SelectItem key={department.id} value={department.id}>
+                {department.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="APPROVED">Approved</SelectItem>
+            <SelectItem value="REJECTED">Rejected</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Leave Requests Table */}
-      <Card>
-        <CardContent className="p-0 pb-4">
-
+      {isLoadingRequests ? (
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
+        </div>
+      ) : totalCount > 0 ? (
+        <>
+          <LeaveRequestTable
+            leaveRequests={leaveRequests}
+            loading={isLoadingRequests}
+            onView={showLeaveDetails}
+            onApprove={showApproveDialog}
+            onReject={showRejectDialog}
+            onRowClick={handleRowClick}
+          />
           
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Employee</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Leave Type</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Duration</th>
-                  <th className="text-center py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Status</th>
-                  <th className="text-left py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider whitespace-nowrap">Applied Date</th>
-                  <th className="text-center py-4 px-6 font-semibold text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody>                {isLoadingRequests ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center">
-                      <LoadingSpinner />
-                    </td>
-                  </tr>
-                ) : leaveRequests.length > 0 ? (
-                  leaveRequests.map((request) => (
-                    <tr key={request.id} className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800">
-                      <td className="py-4 px-6">
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-gray-100">
-                            {request.employee?.name || 'Unknown Employee'}
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {request.employee?.email || 'No email'}
-                          </div>
-                          <div className="text-xs text-gray-400 dark:text-gray-500">
-                            Code: {request.employee?.code || 'N/A'} • Mobile: {request.employee?.mobile || 'N/A'}
-                          </div>
-                        </div>
-                      </td>
-                        <td className="py-4 px-6">
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Leave Type: {request.leave_type_name || request.leave?.name || 'Unknown'}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                          Reason: {request.reason}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="text-sm">
-                          <div className="font-medium text-gray-900 dark:text-gray-100">
-                            {new Date(request.start_date).toLocaleDateString()} - {new Date(request.end_date).toLocaleDateString()}
-                          </div>
-                          <div className="text-gray-500 dark:text-gray-400">
-                            {request.total_days} day{request.total_days > 1 ? "'s" : ''}
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex justify-center">
-                          {getStatusBadge(request.status)}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6 text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(request.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="py-4 px-6">
-                                                  <div className={`flex ${request.status === 'PENDING' ? 'gap-2' : 'justify-center'}`}>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="p-2 group"
-                              title="View Details"
-                              onClick={() => showLeaveDetails(request.id)}
-                            >
-                              <Eye className="w-5 h-5 text-blue-600 group-hover:text-blue-400 transition-colors duration-200" />
-                            </Button>
-                          {request.status === 'PENDING' && (
-                            <>
-                                                              <Button 
-                                  variant="ghost"
-                                  size="sm" 
-                                  className="p-2 group"
-                                  onClick={() => showApproveDialog(request.id, request.employee?.name || 'Unknown Employee')}
-                                  title="Approve Request"
-                                >
-                                  <CheckCircle className="w-5 h-5 text-green-600 group-hover:text-green-400 transition-colors duration-200" />
-                                </Button>
-                                                              <Button 
-                                  variant="ghost"
-                                  size="sm"
-                                  className="p-2 group"
-                                  onClick={() => showRejectDialog(request.id, request.employee?.name || 'Unknown Employee')}
-                                  title="Reject Request"
-                                >
-                                  <XCircle className="w-5 h-5 text-red-600 group-hover:text-red-400 transition-colors duration-200" />
-                                </Button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-gray-500 dark:text-gray-400">
-                      No leave requests found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Request Count Description */}
-          <div className="mt-4 text-center text-sm text-gray-500 dark:text-gray-400">
-            Showing {leaveRequests.length} of {totalCount} requests
-          </div>
-
-        </CardContent>
-      </Card>
+          {/* Pagination */}
+          {totalCount > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <Pagination
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  totalCount={totalCount}
+                  pageCount={pageCount}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(newPageSize) => {
+                    setPageSize(newPageSize);
+                    setCurrentPage(1);
+                  }}
+                  showFirstLast={false}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        <EmptyState
+          icon={ClipboardList}
+          title="No leave requests found"
+          description="Leave requests will appear here once employees submit them. You can filter by department and status to find specific requests."
+        />
+      )}
 
       {/* Confirmation Dialogs */}
       <ConfirmationDialog
@@ -658,127 +517,128 @@ export default function LeaveRequestsPage() {
       />
 
       {/* Leave Request Details Dialog */}
-      <div className={`fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center ${viewDialogOpen ? 'block' : 'hidden'}`}>
-        <div className="bg-white border border-gray-200 rounded-lg max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Leave Request Details</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setViewDialogOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <XCircle className="w-5 h-5" />
-              </Button>
-            </div>
-
-            {isLoadingLeaveDetails ? (
-              <div className="flex justify-center items-center py-12">
-                <LoadingSpinner />
-              </div>
-            ) : selectedLeaveRequest ? (
-              <div className="space-y-6">
-                {/* Employee Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Employee Information</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Name:</span> {selectedLeaveRequest.employee?.name || 'N/A'}</div>
-                      <div><span className="font-medium">Email:</span> {selectedLeaveRequest.employee?.email || 'N/A'}</div>
-                      <div><span className="font-medium">Code:</span> {selectedLeaveRequest.employee?.code || 'N/A'}</div>
-                      <div><span className="font-medium">Mobile:</span> {selectedLeaveRequest.employee?.mobile || 'N/A'}</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Leave Information</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Leave Type:</span> {selectedLeaveRequest.leave_type_name || selectedLeaveRequest.leave?.name || 'N/A'}</div>
-                      <div><span className="font-medium">Reason:</span> {selectedLeaveRequest.reason || 'N/A'}</div>
-                      <div><span className="font-medium">Comments:</span> {selectedLeaveRequest.comments || 'N/A'}</div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">Status:</span> 
-                        {getStatusBadge(selectedLeaveRequest.status)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Duration and Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Duration</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Start Date:</span> {new Date(selectedLeaveRequest.start_date).toLocaleDateString()}</div>
-                      <div><span className="font-medium">End Date:</span> {new Date(selectedLeaveRequest.end_date).toLocaleDateString()}</div>
-                      <div><span className="font-medium">Total Days:</span> {selectedLeaveRequest.total_days} day{selectedLeaveRequest.total_days > 1 ? 's' : ''}</div>
-                      <div><span className="font-medium">Half Day:</span> {selectedLeaveRequest.is_half_day ? 'Yes' : 'No'}</div>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Additional Details</h3>
-                    <div className="space-y-2 text-sm">
-                      <div><span className="font-medium">Applied Date:</span> {new Date(selectedLeaveRequest.created_at).toLocaleDateString()}</div>
-                      <div><span className="font-medium">Work Handover To:</span> {selectedLeaveRequest.work_handover_to || 'N/A'}</div>
-                      <div><span className="font-medium">Emergency Contact:</span> {selectedLeaveRequest.emergency_contact_name || 'N/A'}</div>
-                      <div><span className="font-medium">Emergency Phone:</span> {selectedLeaveRequest.emergency_contact_phone || 'N/A'}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Handover Notes */}
-                {selectedLeaveRequest.handover_notes && (
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Handover Notes</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{selectedLeaveRequest.handover_notes}</p>
-                  </div>
-                )}
-
-                {/* Approver Comments */}
-                {selectedLeaveRequest.approver_comments && (
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Approver Comments</h3>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{selectedLeaveRequest.approver_comments}</p>
-                  </div>
-                )}
-
-                {/* Action Buttons - Only show for PENDING status */}
-                {selectedLeaveRequest.status === 'PENDING' && (
-                  <div className="flex justify-center gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Button
-                      size="lg"
-                      className="bg-green-600 hover:bg-green-700 px-8"
-                      onClick={() => {
-                        setViewDialogOpen(false);
-                        showApproveDialog(selectedLeaveRequest.id, selectedLeaveRequest.employee?.name || 'Unknown Employee');
-                      }}
-                    >
-                      <CheckCircle className="w-5 h-5 mr-2" />
-                      Approve Request
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="lg"
-                      className="px-8"
-                      onClick={() => {
-                        setViewDialogOpen(false);
-                        showRejectDialog(selectedLeaveRequest.id, selectedLeaveRequest.employee?.name || 'Unknown Employee');
-                      }}
-                    >
-                      <XCircle className="w-5 h-5 mr-2" />
-                      Reject Request
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-12 text-gray-500">
-                No leave request details found
-              </div>
-            )}
+      <div className={`fixed inset-0 bg-black/50 z-50 flex items-center justify-center ${viewDialogOpen ? 'block' : 'hidden'}`}>
+        <div className="bg-white dark:bg-gray-900 rounded-lg max-w-lg w-full mx-4 shadow-xl">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="font-semibold">Leave Request</h3>
+            <button onClick={() => setViewDialogOpen(false)} className="text-gray-400 hover:text-gray-600">
+              <XCircle className="h-5 w-5" />
+            </button>
           </div>
+
+          {isLoadingLeaveDetails ? (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner />
+            </div>
+          ) : selectedLeaveRequest ? (
+            <div className="p-4 space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium">{selectedLeaveRequest.employee?.name}</p>
+                  <p className="text-sm text-gray-500">{selectedLeaveRequest.employee?.code}</p>
+                </div>
+                {getStatusBadge(selectedLeaveRequest.status)}
+              </div>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Leave Type</span>
+                  <span className="font-medium">{selectedLeaveRequest.leave_type_name || selectedLeaveRequest.leave?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Duration</span>
+                  <span className="font-medium">{selectedLeaveRequest.total_days} day{selectedLeaveRequest.total_days > 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">From</span>
+                  <span>{new Date(selectedLeaveRequest.start_date).toLocaleDateString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">To</span>
+                  <span>{new Date(selectedLeaveRequest.end_date).toLocaleDateString()}</span>
+                </div>
+                {selectedLeaveRequest.is_half_day && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Half Day</span>
+                    <span>Yes</span>
+                  </div>
+                )}
+              </div>
+
+              {selectedLeaveRequest.reason && (
+                <div className="pt-3 border-t">
+                  <p className="text-sm text-gray-500 mb-1">Reason</p>
+                  <p className="text-sm">{selectedLeaveRequest.reason}</p>
+                </div>
+              )}
+
+              {selectedLeaveRequest.comments && (
+                <div className="pt-3 border-t">
+                  <p className="text-sm text-gray-500 mb-1">Comments</p>
+                  <p className="text-sm">{selectedLeaveRequest.comments}</p>
+                </div>
+              )}
+
+              {selectedLeaveRequest.work_handover_to && (
+                <div className="pt-3 border-t">
+                  <p className="text-sm text-gray-500 mb-1">Work Handover</p>
+                  <p className="text-sm">{selectedLeaveRequest.work_handover_to}</p>
+                </div>
+              )}
+
+              {selectedLeaveRequest.handover_notes && (
+                <div className="pt-3 border-t">
+                  <p className="text-sm text-gray-500 mb-1">Handover Notes</p>
+                  <p className="text-sm">{selectedLeaveRequest.handover_notes}</p>
+                </div>
+              )}
+
+              {selectedLeaveRequest.emergency_contact_name && (
+                <div className="pt-3 border-t">
+                  <p className="text-sm text-gray-500 mb-1">Emergency Contact</p>
+                  <p className="text-sm">{selectedLeaveRequest.emergency_contact_name}</p>
+                  {selectedLeaveRequest.emergency_contact_phone && (
+                    <p className="text-sm text-gray-500">{selectedLeaveRequest.emergency_contact_phone}</p>
+                  )}
+                </div>
+              )}
+
+              {selectedLeaveRequest.approver_comments && (
+                <div className="pt-3 border-t">
+                  <p className="text-sm text-gray-500 mb-1">Approver Comments</p>
+                  <p className="text-sm">{selectedLeaveRequest.approver_comments}</p>
+                </div>
+              )}
+
+              {selectedLeaveRequest.status === 'PENDING' && (
+                <div className="flex gap-2 pt-3 border-t">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setViewDialogOpen(false);
+                      showRejectDialog(selectedLeaveRequest.id, selectedLeaveRequest.employee?.name || 'Unknown Employee');
+                    }}
+                  >
+                    Reject
+                  </Button>
+                  <Button
+                    className="flex-1 bg-green-600 hover:bg-green-700"
+                    onClick={() => {
+                      setViewDialogOpen(false);
+                      showApproveDialog(selectedLeaveRequest.id, selectedLeaveRequest.employee?.name || 'Unknown Employee');
+                    }}
+                  >
+                    Approve
+                  </Button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              No details found
+            </div>
+          )}
         </div>
       </div>
     </div>

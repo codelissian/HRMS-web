@@ -2,23 +2,15 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  UserCheck, 
-  Clock, 
-  Calendar,
-  Download,
-  Users,
-  ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
+import { UserCheck, Clock, Calendar, Download, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService, TodaysAttendanceRecord } from '@/services/attendanceService';
 import { ShiftService } from '@/services/shiftService';
 import { departmentService } from '@/services/departmentService';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { Pagination } from '@/components/common/Pagination';
+import { LoadingSpinner, EmptyState, Pagination } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { format } from 'date-fns';
@@ -35,6 +27,17 @@ export default function TodaysAttendancePage() {
   const [departments, setDepartments] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when searching
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Get organisation_id from user, with multiple fallbacks
   const organisationId = useMemo(() => {
@@ -124,15 +127,28 @@ export default function TodaysAttendancePage() {
       dateRange,
       shiftId: selectedShiftId,
       page: currentPage,
-      page_size: pageSize
+      page_size: pageSize,
+      search: debouncedSearchTerm
     }],
-    queryFn: () => attendanceService.getTodaysAttendance({
-      organisation_id: organisationId,
-      shift_id: selectedShiftId || undefined,
-      date: dateRange,
-      page: currentPage,
-      page_size: pageSize
-    }, organisationId),
+    queryFn: () => {
+      const params: any = {
+        organisation_id: organisationId,
+        shift_id: selectedShiftId || undefined,
+        date: dateRange,
+        page: currentPage,
+        page_size: pageSize
+      };
+
+      // Add search parameter if search term exists
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        params.search = {
+          keys: ["name", "code", "department"],
+          value: debouncedSearchTerm.trim()
+        };
+      }
+
+      return attendanceService.getTodaysAttendance(params, organisationId);
+    },
     enabled: !!organisationId && !!selectedShiftId,
   });
 
@@ -266,136 +282,112 @@ export default function TodaysAttendancePage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Today's Attendance</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-            {format(selectedDate, 'EEEE, MMMM dd, yyyy')}
-          </p>
+      {/* Search and Filters */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search employees..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-        <div className="flex gap-2">
-          <Button onClick={handleExportAttendance} variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Date</label>
-              <input
-                type="date"
-                value={format(selectedDate, 'yyyy-MM-dd')}
-                onChange={(e) => {
-                  const date = new Date(e.target.value);
-                  if (!isNaN(date.getTime())) {
-                    handleDateChange(date);
-                  }
-                }}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">Shift</label>
-              <Select 
-                value={selectedShiftId} 
-                onValueChange={handleShiftChange}
-                disabled={shiftsLoading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={shiftsLoading ? "Loading shifts..." : "Select Shift"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {shifts.map((shift) => (
-                    <SelectItem key={shift.id} value={shift.id}>{shift.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <input
+          type="date"
+          value={format(selectedDate, 'yyyy-MM-dd')}
+          onChange={(e) => {
+            const date = new Date(e.target.value);
+            if (!isNaN(date.getTime())) {
+              handleDateChange(date);
+            }
+          }}
+          className="w-[180px] px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-sm"
+        />
+
+        <Select 
+          value={selectedShiftId} 
+          onValueChange={handleShiftChange}
+          disabled={shiftsLoading}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={shiftsLoading ? "Loading..." : "Select Shift"} />
+          </SelectTrigger>
+          <SelectContent>
+            {shifts.map((shift) => (
+              <SelectItem key={shift.id} value={shift.id}>{shift.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Button onClick={handleExportAttendance} variant="outline">
+          <Download className="h-4 w-4 mr-2" />
+          Export
+        </Button>
+      </div>
 
       {/* Today's Statistics */}
       <div className="grid gap-4 md:grid-cols-5">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{todayStats.total}</div>
+          <CardContent className="pt-6 pb-6">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total</div>
+            <div className="text-3xl font-bold">{todayStats.total}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Present</CardTitle>
-            <UserCheck className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">{todayStats.present}</div>
+          <CardContent className="pt-6 pb-6">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Present</div>
+            <div className="text-3xl font-bold">{todayStats.present}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Absent</CardTitle>
-            <Clock className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">{todayStats.absent}</div>
+          <CardContent className="pt-6 pb-6">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Absent</div>
+            <div className="text-3xl font-bold">{todayStats.absent}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Half Day</CardTitle>
-            <Clock className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{todayStats.halfDay}</div>
+          <CardContent className="pt-6 pb-6">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Half Day</div>
+            <div className="text-3xl font-bold">{todayStats.halfDay}</div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">On Leave</CardTitle>
-            <Calendar className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{todayStats.onLeave}</div>
+          <CardContent className="pt-6 pb-6">
+            <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total On Leave</div>
+            <div className="text-3xl font-bold">{todayStats.onLeave}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Today's Attendance Records */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex justify-center py-8 px-6">
-              <LoadingSpinner />
-            </div>
-          ) : attendanceRecords.length === 0 ? (
-            <div className="text-center py-8 px-6">
-              <p className="text-muted-foreground">No attendance records found</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[200px] whitespace-nowrap">Employee</TableHead>
-                    <TableHead className="whitespace-nowrap">Department</TableHead>
-                    <TableHead className="whitespace-nowrap">Shift</TableHead>
-                    <TableHead className="text-center whitespace-nowrap">Check-In</TableHead>
-                    <TableHead className="text-center whitespace-nowrap">Check-Out</TableHead>
-                    <TableHead className="text-center whitespace-nowrap">Is Late</TableHead>
-                    <TableHead className="text-center whitespace-nowrap">Is Early</TableHead>
-                    <TableHead className="text-center whitespace-nowrap">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
+      {isLoading ? (
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
+        </div>
+      ) : attendanceRecords.length === 0 ? (
+        <EmptyState
+          icon={Users}
+          title="No attendance records found"
+          description={`No attendance data available for ${format(selectedDate, 'MMMM dd, yyyy')}. Records will appear here once employees check in.`}
+        />
+      ) : (
+        <>
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-gray-50 dark:bg-gray-800">
+                      <TableHead className="w-[200px] text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employee</TableHead>
+                      <TableHead className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</TableHead>
+                      <TableHead className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Shift</TableHead>
+                      <TableHead className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Check-In</TableHead>
+                      <TableHead className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Check-Out</TableHead>
+                      <TableHead className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Is Late</TableHead>
+                      <TableHead className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Is Early</TableHead>
+                      <TableHead className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
                 <TableBody>
                   {attendanceRecords.map((record) => {
                     // Get check-in and check-out times from attendance_records
@@ -430,61 +422,55 @@ export default function TodaysAttendancePage() {
                     }
 
                     return (
-                      <TableRow key={record.id} className="hover:bg-muted/50">
-                        <TableCell className="font-medium py-3">
+                      <TableRow key={record.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        <TableCell className="py-3">
                           <div className="flex items-center space-x-3">
                             {record.image ? (
-                              <img src={record.image} alt={record.name} className="w-10 h-10 rounded-full flex-shrink-0 object-cover" />
+                              <img src={record.image} alt={record.name} className="w-8 h-8 rounded-full flex-shrink-0 object-cover" />
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">
                                   {record.name?.charAt(0).toUpperCase()}
                                 </span>
                               </div>
                             )}
                             <div className="min-w-0 flex-1">
-                              <div className="font-medium text-sm leading-tight">{record.name}</div>
-                              <div className="text-xs text-muted-foreground mt-0.5">{record.code}</div>
+                              <div className="font-medium text-sm text-gray-900 dark:text-white">{record.name}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{record.code}</div>
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="align-middle py-3 whitespace-nowrap">{departmentName || '-'}</TableCell>
-                        <TableCell className="align-middle py-3 whitespace-nowrap">{shiftName}</TableCell>
-                        <TableCell className="text-center align-middle py-3 whitespace-nowrap">
-                          {checkInTime ? format(checkInTime, 'HH:mm:ss') : <span className="text-muted-foreground">-</span>}
+                        <TableCell className="text-sm text-gray-900 dark:text-white">{departmentName || '-'}</TableCell>
+                        <TableCell className="text-sm text-gray-900 dark:text-white">{shiftName}</TableCell>
+                        <TableCell className="text-center text-sm text-gray-900 dark:text-white">
+                          {checkInTime ? format(checkInTime, 'HH:mm:ss') : <span className="text-gray-500">-</span>}
                         </TableCell>
-                        <TableCell className="text-center align-middle py-3 whitespace-nowrap">
-                          {checkOutTime ? format(checkOutTime, 'HH:mm:ss') : <span className="text-muted-foreground">-</span>}
+                        <TableCell className="text-center text-sm text-gray-900 dark:text-white">
+                          {checkOutTime ? format(checkOutTime, 'HH:mm:ss') : <span className="text-gray-500">-</span>}
                         </TableCell>
-                        <TableCell className="text-center align-middle py-3 whitespace-nowrap">
+                        <TableCell className="text-center">
                           {checkInTime ? (
-                            <div className="flex justify-center">
-                              <Badge variant={isLate ? "destructive" : "outline"} className="inline-flex">
-                                {isLate ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center align-middle py-3 whitespace-nowrap">
-                          {checkOutTime ? (
-                            <div className="flex justify-center">
-                              <Badge variant={isEarly ? "destructive" : "outline"} className="inline-flex">
-                                {isEarly ? "Yes" : "No"}
-                              </Badge>
-                            </div>
-                          ) : (
-                            <span className="text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-center align-middle py-3 whitespace-nowrap">
-                          <div className="flex justify-center">
-                            <Badge className={getStatusColor(record.status || '')}>
-                              {getStatusIcon(record.status || '')}
-                              <span className="ml-1">{formatStatus(record.status || '')}</span>
+                            <Badge variant={isLate ? "destructive" : "outline"} className="inline-flex px-2 py-1">
+                              {isLate ? "Yes" : "No"}
                             </Badge>
-                          </div>
+                          ) : (
+                            <span className="text-gray-500 text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {checkOutTime ? (
+                            <Badge variant={isEarly ? "destructive" : "outline"} className="inline-flex px-2 py-1">
+                              {isEarly ? "Yes" : "No"}
+                            </Badge>
+                          ) : (
+                            <span className="text-gray-500 text-sm">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge className={`${getStatusColor(record.status || '')} inline-flex items-center gap-1 px-2 py-1`}>
+                            {getStatusIcon(record.status || '')}
+                            <span>{formatStatus(record.status || '')}</span>
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     );
@@ -492,44 +478,29 @@ export default function TodaysAttendancePage() {
                 </TableBody>
               </Table>
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Pagination */}
-      {totalCount > 0 && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-muted-foreground">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} records
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </Button>
-                <span className="text-sm text-muted-foreground px-2">
-                  Page {currentPage} of {pageCount}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={currentPage >= pageCount}
-                  onClick={() => setCurrentPage(prev => Math.min(pageCount, prev + 1))}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
+
+        {/* Pagination */}
+        {totalCount > 0 && (
+          <Card>
+            <CardContent className="p-4">
+              <Pagination
+                currentPage={currentPage}
+                pageSize={pageSize}
+                totalCount={totalCount}
+                pageCount={pageCount}
+                onPageChange={setCurrentPage}
+                onPageSizeChange={(newPageSize) => {
+                  setPageSize(newPageSize);
+                  setCurrentPage(1);
+                }}
+                showFirstLast={false}
+              />
+            </CardContent>
+          </Card>
+        )}
+      </>
       )}
     </div>
   );

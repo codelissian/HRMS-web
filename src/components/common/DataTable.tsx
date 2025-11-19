@@ -32,7 +32,7 @@ export interface TableAction<T> {
 interface DataTableProps<T> {
   data: T[];
   columns: Column<T>[];
-  actions?: TableAction<T>[];
+  actions?: TableAction<T>[] | ((row: T) => TableAction<T>[]);
   loading?: boolean;
   searchable?: boolean;
   filterable?: boolean;
@@ -44,6 +44,7 @@ interface DataTableProps<T> {
     onPageSizeChange: (pageSize: number) => void;
   };
   onSearch?: (query: string) => void;
+  onRowClick?: (row: T) => void;
   className?: string;
 }
 
@@ -56,6 +57,7 @@ export function DataTable<T extends Record<string, any>>({
   filterable = false,
   pagination,
   onSearch,
+  onRowClick,
   className,
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,7 +88,17 @@ export function DataTable<T extends Record<string, any>>({
     },
   ];
 
-  const tableActions = actions.length > 0 ? actions : [];
+  // Helper function to get actions for a specific row
+  const getActionsForRow = (row: T): TableAction<T>[] => {
+    if (!actions) return [];
+    if (typeof actions === 'function') {
+      return actions(row);
+    }
+    return actions;
+  };
+
+  // Check if we have any actions (for header and colspan calculations)
+  const hasActions = actions !== undefined && (Array.isArray(actions) ? actions.length > 0 : true);
 
   if (loading) {
     return (
@@ -160,7 +172,7 @@ export function DataTable<T extends Record<string, any>>({
                   {column.header}
                 </TableHead>
               ))}
-              {tableActions.length > 0 && (
+              {hasActions && (
                 <TableHead className="text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </TableHead>
@@ -170,7 +182,7 @@ export function DataTable<T extends Record<string, any>>({
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length + (tableActions.length > 0 ? 1 : 0)} className="text-center py-8">
+                <TableCell colSpan={columns.length + (hasActions ? 1 : 0)} className="text-center py-8">
                   <div className="text-gray-500 dark:text-gray-400">
                     No data available
                   </div>
@@ -178,7 +190,14 @@ export function DataTable<T extends Record<string, any>>({
               </TableRow>
             ) : (
               data.map((row, rowIndex) => (
-                <TableRow key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <TableRow 
+                  key={rowIndex} 
+                  className={cn(
+                    "hover:bg-gray-50 dark:hover:bg-gray-800",
+                    onRowClick && "cursor-pointer"
+                  )}
+                  onClick={() => onRowClick?.(row)}
+                >
                   {columns.map((column, colIndex) => (
                     <TableCell 
                       key={colIndex} 
@@ -191,17 +210,20 @@ export function DataTable<T extends Record<string, any>>({
                       {column.render ? column.render(row[column.key], row) : row[column.key]}
                     </TableCell>
                   ))}
-                  {tableActions.length > 0 && (
+                  {getActionsForRow(row).length > 0 && (
                     <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        {tableActions.map((action, actionIndex) => {
+                      <div className="flex justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+                        {getActionsForRow(row).map((action, actionIndex) => {
                           const Icon = action.icon;
                           return (
                             <Button
                               key={actionIndex}
                               variant={action.textOnly ? "outline" : "ghost"}
                               size={action.textOnly ? "sm" : "icon"}
-                              onClick={() => action.onClick(row)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                action.onClick(row);
+                              }}
                               className={cn(
                                 action.textOnly ? "h-8 px-3" : "h-8 w-8",
                                 action.variant === 'destructive' && "text-red-600 hover:text-red-800 hover:bg-red-100 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/30"

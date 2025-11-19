@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   Plus, 
-  Calendar, 
-  Search,
-  Filter
+  Calendar
 } from 'lucide-react';
 import { HolidayForm } from '@/components/holidays/HolidayForm';
 import { HolidayTable } from '@/components/holidays/HolidayTable';
-import { ConfirmationDialog } from '@/components/common';
+import { ConfirmationDialog, Pagination, EmptyState, LoadingSpinner } from '@/components/common';
 import { Holiday, HolidayFormData } from '@/types/holiday';
 import { holidayService } from '@/services/holidayService';
 import { useToast } from '@/hooks/use-toast';
@@ -20,9 +19,12 @@ export default function HolidayList() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
   
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -31,9 +33,22 @@ export default function HolidayList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // Reset to page 1 when search term changes
+      if (searchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
+      }
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Fetch holidays from API
   const { data: holidaysResponse, isLoading, error, refetch } = useQuery({
-    queryKey: ['holidays', 'list', { page: currentPage, page_size: pageSize }],
+    queryKey: ['holidays', 'list', { page: currentPage, page_size: pageSize, search: debouncedSearchTerm }],
     queryFn: () => holidayService.getHolidays({
       page: currentPage,
       page_size: pageSize
@@ -134,6 +149,8 @@ export default function HolidayList() {
   useEffect(() => {
     if (holidaysResponse?.data) {
       setHolidays(holidaysResponse.data);
+      setTotalCount(holidaysResponse.total_count || 0);
+      setPageCount(holidaysResponse.page_count || 0);
       setLoading(false);
     }
   }, [holidaysResponse]);
@@ -170,27 +187,28 @@ export default function HolidayList() {
     }
   };
 
-  // Filter holidays based on search query
+  // Filter holidays based on search query (client-side for now)
   const filteredHolidays = holidays.filter(holiday =>
-    holiday.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    holiday.description.toLowerCase().includes(searchQuery.toLowerCase())
+    holiday.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    holiday.description.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
 
   if (error) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <div className="flex-1 max-w-md">
             <Input
               placeholder="Search holidays..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Button onClick={handleCreateHoliday}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button
+            onClick={handleCreateHoliday}
+            className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
+          >
+            <Plus className="h-4 w-4" />
             Create Holiday
           </Button>
         </div>
@@ -206,30 +224,70 @@ export default function HolidayList() {
 
   return (
     <div className="space-y-6">
-      {/* Search and Create Button */}
+      {/* Search and Actions */}
       <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+        <div className="flex-1 max-w-md">
           <Input
             placeholder="Search holidays..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button onClick={handleCreateHoliday}>
-          <Plus className="h-4 w-4 mr-2" />
+        
+        <Button
+          onClick={handleCreateHoliday}
+          className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
+        >
+          <Plus className="h-4 w-4" />
           Create Holiday
         </Button>
       </div>
+      
+      {loading || isLoading ? (
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
+        </div>
+      ) : filteredHolidays.length > 0 ? (
+        <>
+          {/* Holidays Table */}
+          <HolidayTable
+            holidays={filteredHolidays}
+            loading={loading || isLoading}
+            onEdit={handleEditHoliday}
+            onDelete={handleDeleteHoliday}
+          />
 
-      {/* Holidays Table */}
-      <HolidayTable
-        holidays={filteredHolidays}
-        onEdit={handleEditHoliday}
-        onDelete={handleDeleteHoliday}
-        isLoading={loading || isLoading}
-      />
+          {/* Pagination */}
+          {totalCount > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <Pagination
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  totalCount={totalCount}
+                  pageCount={pageCount}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(newPageSize) => {
+                    setPageSize(newPageSize);
+                    setCurrentPage(1);
+                  }}
+                  showFirstLast={false}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        <EmptyState
+          icon={Calendar}
+          title="No holidays configured"
+          description="Get started by creating your first holiday. You can set up public holidays, company holidays, or special occasions."
+          action={{
+            label: "Create Holiday",
+            onClick: handleCreateHoliday
+          }}
+        />
+      )}
 
       {/* Holiday Form Modal */}
       <HolidayForm
@@ -244,7 +302,7 @@ export default function HolidayList() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title="Delete Holiday"
-        description="Are you sure you want to delete this holiday? This action cannot be undone."
+        description={`Are you sure you want to delete the holiday "${holidayToDelete?.name}"? This action cannot be undone and will permanently remove the holiday from the system.`}
         type="delete"
         confirmText="Delete Holiday"
         onConfirm={confirmDeleteHoliday}

@@ -5,13 +5,15 @@ import { PayrollService } from '@/services/payrollService';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { Pagination } from '@/components/common';
+import { Pagination, LoadingSpinner, EmptyState } from '@/components/common';
+import { DollarSign } from 'lucide-react';
 
 interface PayrollTableProps {
   payrollCycleId?: string | null;
+  searchTerm?: string;
 }
 
-export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
+export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTableProps) {
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,17 +27,24 @@ export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
       setLoading(true);
       setError(null);
       
+      const requestParams: any = {
+        page: currentPage,
+        page_size: pageSize
+      };
+
+      // Add search parameter if searchTerm exists
+      if (searchTerm && searchTerm.trim()) {
+        requestParams.search = {
+          keys: ["employee.name", "employee.code"],
+          value: searchTerm.trim()
+        };
+      }
+      
       let response;
       if (payrollCycleId) {
-        response = await PayrollService.getPayrollsByCycle(payrollCycleId, {
-          page: currentPage,
-          page_size: pageSize
-        });
+        response = await PayrollService.getPayrollsByCycle(payrollCycleId, requestParams);
       } else {
-        response = await PayrollService.getPayrolls({
-          page: currentPage,
-          page_size: pageSize
-        });
+        response = await PayrollService.getPayrolls(requestParams);
       }
       
       setPayrolls(response.data);
@@ -49,9 +58,16 @@ export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
     }
   };
 
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    if (searchTerm !== undefined) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchPayrolls();
-  }, [payrollCycleId, currentPage, pageSize]);
+  }, [payrollCycleId, currentPage, pageSize, searchTerm]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -84,85 +100,131 @@ export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
     {
       key: 'employee',
       header: 'Employee',
+      align: 'left',
       render: (value, row) => (
         <div>
-          <div className="font-medium">{row.employee?.name || 'Unknown'}</div>
-          <div className="text-sm text-gray-500">{row.employee?.code || '-'}</div>
+          <div className="font-medium text-gray-900 dark:text-white">{row.employee?.name || 'Unknown'}</div>
+          <div className="text-xs text-gray-500 dark:text-gray-400">{row.employee?.code || '-'}</div>
         </div>
       ),
-      sortable: true,
     },
     {
       key: 'working_days',
       header: 'Working Days',
-      render: (value) => value.toString(),
-      sortable: true,
+      align: 'center',
+      render: (value) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {value}
+        </div>
+      ),
     },
     {
       key: 'absent_days',
       header: 'Absent Days',
-      render: (value) => value.toString(),
-      sortable: true,
+      align: 'center',
+      render: (value) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {value}
+        </div>
+      ),
     },
     {
       key: 'leave_days',
       header: 'Leave Days',
-      render: (value) => value.toString(),
-      sortable: true,
+      align: 'center',
+      render: (value) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {value}
+        </div>
+      ),
     },
     {
       key: 'unpaid_leave_days',
-      header: 'Unpaid Leave Days',
-      render: (value) => value.toString(),
-      sortable: true,
+      header: 'Unpaid Leave',
+      align: 'center',
+      render: (value) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {value}
+        </div>
+      ),
     },
     {
       key: 'overtime_hours',
-      header: 'Overtime Hours',
-      render: (value) => value.toString(),
-      sortable: true,
+      header: 'Overtime (hrs)',
+      align: 'center',
+      render: (value) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {value}
+        </div>
+      ),
     },
     {
       key: 'net_salary',
       header: 'Net Salary',
+      align: 'center',
       render: (value) => (
-        <div className="font-semibold text-green-600">
+        <div className="text-sm font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
           {formatCurrency(value)}
         </div>
       ),
-      sortable: true,
     },
     {
       key: 'remarks',
       header: 'Remarks',
+      align: 'left',
       render: (value) => (
-        <div className="max-w-xs truncate" title={value}>
+        <div className="text-sm text-gray-700 dark:text-gray-300 max-w-[200px] truncate" title={value}>
           {value || '-'}
         </div>
       ),
-      sortable: true,
     },
   ];
 
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="text-center text-red-600">
-          <p>{error}</p>
-          <button 
-            onClick={fetchPayrolls} 
-            className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-          >
-            Try Again
-          </button>
-        </div>
+      <div className="text-center py-12">
+        <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+        <button 
+          onClick={fetchPayrolls} 
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          Try Again
+        </button>
       </div>
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] w-full">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (totalCount === 0 && !payrollCycleId) {
+    return (
+      <EmptyState
+        icon={DollarSign}
+        title="No payroll records found"
+        description="Payroll records will appear here once they are processed for a payroll cycle."
+      />
+    );
+  }
+
+  if (totalCount === 0 && payrollCycleId) {
+    return (
+      <EmptyState
+        icon={DollarSign}
+        title="No payroll records for this cycle"
+        description="No payroll has been processed for the selected cycle yet."
+      />
+    );
+  }
+
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       <DataTable
         data={payrolls}
         columns={columns}
@@ -172,7 +234,7 @@ export function PayrollTable({ payrollCycleId }: PayrollTableProps) {
       
       {/* Pagination */}
       {totalCount > 0 && (
-        <Card className="mt-4">
+        <Card>
           <CardContent className="p-4">
             <Pagination
               currentPage={currentPage}

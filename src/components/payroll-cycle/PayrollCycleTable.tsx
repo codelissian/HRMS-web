@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { PayrollCycleUpdateDialog } from './PayrollCycleUpdateDialog';
-import { Pagination } from '@/components/common';
+import { Pagination, LoadingSpinner, EmptyState } from '@/components/common';
+import { Calendar } from 'lucide-react';
 
 // Helper function to check if error is a network error
 const isNetworkError = (error: any): boolean => {
@@ -53,7 +54,11 @@ const retryWithBackoff = async <T,>(
   throw lastError;
 };
 
-export function PayrollCycleTable() {
+interface PayrollCycleTableProps {
+  searchTerm?: string;
+}
+
+export function PayrollCycleTable({ searchTerm = '' }: PayrollCycleTableProps) {
   const [payrollCycles, setPayrollCycles] = useState<PayrollCycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -78,11 +83,21 @@ export function PayrollCycleTable() {
       setLoading(true);
       setError(null);
       
+      const requestBody: any = {
+        page: currentPage,
+        page_size: pageSize
+      };
+
+      // Add search parameter if searchTerm exists
+      if (searchTerm && searchTerm.trim()) {
+        requestBody.search = {
+          keys: ["name"],
+          value: searchTerm.trim()
+        };
+      }
+      
       const response = await retryWithBackoff(() => 
-        PayrollCycleService.getPayrollCycles({
-          page: currentPage,
-          page_size: pageSize
-        })
+        PayrollCycleService.getPayrollCycles(requestBody)
       );
       
       // Check if request was aborted
@@ -113,6 +128,13 @@ export function PayrollCycleTable() {
     }
   };
 
+  // Reset to page 1 when search term changes
+  useEffect(() => {
+    if (searchTerm !== undefined) {
+      setCurrentPage(1);
+    }
+  }, [searchTerm]);
+
   useEffect(() => {
     fetchPayrollCycles();
     
@@ -122,7 +144,7 @@ export function PayrollCycleTable() {
         abortControllerRef.current.abort();
       }
     };
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, searchTerm]);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -225,19 +247,35 @@ export function PayrollCycleTable() {
 
   if (error) {
     return (
-      <div className="p-6">
-        <div className="text-center text-red-600">
-          <p>{error}</p>
-          <Button onClick={fetchPayrollCycles} className="mt-4">
-            Try Again
-          </Button>
-        </div>
+      <div className="text-center py-12">
+        <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+        <Button onClick={fetchPayrollCycles} className="mt-4">
+          Try Again
+        </Button>
       </div>
     );
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] w-full">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  if (totalCount === 0) {
+    return (
+      <EmptyState
+        icon={Calendar}
+        title="No payroll cycles found"
+        description="Payroll cycles will appear here once they are created. Contact your administrator to set up payroll cycles."
+      />
+    );
+  }
+
   return (
-    <div className="p-6">
+    <div className="space-y-6">
       <DataTable
         data={payrollCycles}
         columns={columns}
@@ -248,7 +286,7 @@ export function PayrollCycleTable() {
       
       {/* Pagination */}
       {totalCount > 0 && (
-        <Card className="mt-4">
+        <Card>
           <CardContent className="p-4">
             <Pagination
               currentPage={currentPage}

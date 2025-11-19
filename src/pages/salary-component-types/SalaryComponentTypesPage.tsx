@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Settings, Plus, Trash2, Edit } from 'lucide-react';
+import { Settings, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { httpClient } from '@/lib/httpClient';
 import { ApiResponse } from '@/types/api';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pagination } from '@/components/common';
+import { Pagination, ConfirmationDialog, EmptyState, LoadingSpinner } from '@/components/common';
+import { SalaryComponentTypeTable } from '@/components/salary-component-types';
 
 interface ComponentType {
   id: string;
@@ -43,7 +42,6 @@ export function SalaryComponentTypesPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [componentTypes, setComponentTypes] = useState<ComponentType[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingComponentType, setEditingComponentType] = useState<ComponentType | null>(null);
   const [editComponentTypeName, setEditComponentTypeName] = useState('');
@@ -54,16 +52,45 @@ export function SalaryComponentTypesPage() {
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [pageCount, setPageCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  
+  // Confirmation dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [componentTypeToDelete, setComponentTypeToDelete] = useState<ComponentType | null>(null);
   
   const { toast } = useToast();
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // Reset to page 1 when search term changes
+      if (searchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
+      }
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const fetchComponentTypes = async () => {
     setIsLoadingList(true);
     try {
-      const response = await httpClient.post<ApiResponse<ComponentType[]>>('/salary_component_types/list', {
+      const requestBody: any = {
         page: currentPage,
         page_size: pageSize
-      });
+      };
+
+      // Add search parameter if debouncedSearchTerm exists
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        requestBody.search = {
+          keys: ["name", "type"],
+          value: debouncedSearchTerm.trim()
+        };
+      }
+
+      const response = await httpClient.post<ApiResponse<ComponentType[]>>('/salary_component_types/list', requestBody);
       setComponentTypes(response.data.data || []);
       setTotalCount(response.data.total_count || 0);
       setPageCount(response.data.page_count || 0);
@@ -78,29 +105,36 @@ export function SalaryComponentTypesPage() {
     }
   };
 
-  const handleDeleteComponentType = async (id: string) => {
-    setDeletingId(id);
-    try {
-      await httpClient.patch<ApiResponse<any>>('/salary_component_types/delete', {
-        id
-      }, {
-        includeOrganisationId: false
-      });
+  const handleDeleteClick = (componentType: ComponentType) => {
+    setComponentTypeToDelete(componentType);
+    setDeleteDialogOpen(true);
+  };
 
-      toast({
-        title: "Success",
-        description: "Component type deleted successfully",
-      });
-      // Refresh the list
-      fetchComponentTypes();
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete component type",
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingId(null);
+  const confirmDeleteComponentType = async () => {
+    if (componentTypeToDelete) {
+      try {
+        await httpClient.patch<ApiResponse<any>>('/salary_component_types/delete', {
+          id: componentTypeToDelete.id
+        }, {
+          includeOrganisationId: false
+        });
+
+        toast({
+          title: "Success",
+          description: "Component type deleted successfully",
+        });
+        // Refresh the list
+        fetchComponentTypes();
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to delete component type",
+          variant: "destructive",
+        });
+      } finally {
+        setDeleteDialogOpen(false);
+        setComponentTypeToDelete(null);
+      }
     }
   };
 
@@ -252,12 +286,20 @@ export function SalaryComponentTypesPage() {
 
   useEffect(() => {
     fetchComponentTypes();
-  }, [currentPage, pageSize]);
+  }, [currentPage, pageSize, debouncedSearchTerm]);
 
   return (
-    <div className="p-4 max-w-7xl mx-auto space-y-4">
+    <div className="space-y-6">
       {/* Search and Actions */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search component types..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white">
@@ -338,142 +380,64 @@ export function SalaryComponentTypesPage() {
               </DialogContent>
             </Dialog>
       </div>
-
-      {/* Table */}
+      
       {isLoadingList ? (
-        <div className="text-center py-12">
-          <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-spin" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            Loading...
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            Fetching component types
-          </p>
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
         </div>
-      ) : componentTypes.length === 0 ? (
-        <div className="text-center py-12">
-          <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            No Component Types
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400">
-            Start by creating your first component type using the button above.
-          </p>
-        </div>
+      ) : totalCount > 0 ? (
+        <>
+          {/* Component Types Table */}
+          <SalaryComponentTypeTable
+            componentTypes={componentTypes}
+            loading={isLoadingList}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+          />
+
+          {/* Pagination */}
+          {totalCount > 0 && (
+            <Card>
+              <CardContent className="p-4">
+                <Pagination
+                  currentPage={currentPage}
+                  pageSize={pageSize}
+                  totalCount={totalCount}
+                  pageCount={pageCount}
+                  onPageChange={setCurrentPage}
+                  onPageSizeChange={(newPageSize) => {
+                    setPageSize(newPageSize);
+                    setCurrentPage(1);
+                  }}
+                  showFirstLast={false}
+                />
+              </CardContent>
+            </Card>
+          )}
+        </>
       ) : (
-        <Card className="bg-white border-gray-200">
-          <CardContent className="p-0">
-            <div className="border rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50 dark:bg-gray-800">
-                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Name</TableHead>
-                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Type</TableHead>
-                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Sequence</TableHead>
-                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400">Created At</TableHead>
-                    <TableHead className="h-10 text-xs font-medium text-gray-600 dark:text-gray-400 text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {componentTypes.map((componentType) => (
-                    <TableRow key={componentType.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                      <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
-                        {componentType.name}
-                      </TableCell>
-                      <TableCell>
-                        {componentType.type ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#0B2E5C]/10 text-[#0B2E5C]">
-                            {COMPONENT_TYPE_OPTIONS.find(opt => opt.value === componentType.type)?.label || componentType.type}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {componentType.sequence ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            {componentType.sequence}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs text-gray-600 dark:text-gray-400">
-                        {new Date(componentType.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="text-gray-400 hover:text-[#0B2E5C] hover:bg-[#0B2E5C]/10"
-                            onClick={() => handleEditClick(componentType)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                disabled={deletingId === componentType.id}
-                              >
-                                {deletingId === componentType.id ? (
-                                  <Settings className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="h-4 w-4" />
-                                )}
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Component Type</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{componentType.name}"? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleDeleteComponentType(componentType.id)}
-                                  className="bg-red-600 hover:bg-red-700"
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Settings}
+          title="No component types configured"
+          description="Get started by creating your first salary component type. You can set up different types like Basic, Allowance, Deduction, and more."
+          action={{
+            label: "Add Component Type",
+            onClick: () => setIsDialogOpen(true)
+          }}
+        />
       )}
 
-      {/* Pagination */}
-      {totalCount > 0 && (
-        <Card className="bg-white border-gray-200">
-          <CardContent className="p-4">
-            <Pagination
-              currentPage={currentPage}
-              pageSize={pageSize}
-              totalCount={totalCount}
-              pageCount={pageCount}
-              onPageChange={setCurrentPage}
-              onPageSizeChange={(newPageSize) => {
-                setPageSize(newPageSize);
-                setCurrentPage(1);
-              }}
-              showFirstLast={false}
-            />
-          </CardContent>
-        </Card>
-      )}
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Component Type"
+        description={`Are you sure you want to delete the component type "${componentTypeToDelete?.name}"? This action cannot be undone and will permanently remove the component type from the system.`}
+        type="delete"
+        confirmText="Delete Component Type"
+        onConfirm={confirmDeleteComponentType}
+        itemName={componentTypeToDelete?.name}
+      />
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

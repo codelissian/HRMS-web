@@ -53,7 +53,8 @@ const navigationModules = [
       { name: 'Organization Management', href: 'organization', icon: Globe },
       { name: 'Department', href: 'departments', icon: Building },
       { name: 'Shift', href: 'shifts', icon: Clock },
-      { name: 'Attendance & Work Day Rule', href: 'attendance-and-work-day-rule', icon: CalendarCheck },
+      { name: 'Attendance Policies', href: 'attendance-policies', icon: CalendarCheck },
+      { name: 'Work Day Rules', href: 'work-day-rules', icon: CalendarDays },
       { name: 'Leave Management', href: 'leave-management', icon: Calendar },
       { name: 'Holidays', href: 'holidays', icon: PartyPopper },
       { name: 'Salary Component Types', href: 'salary-component-types', icon: Settings }
@@ -126,6 +127,8 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
     if (pathname.startsWith('/admin/organization') || 
         pathname.startsWith('/admin/departments') || 
         pathname.startsWith('/admin/shifts') || 
+        pathname.startsWith('/admin/attendance-policies') ||
+        pathname.startsWith('/admin/work-day-rules') ||
         pathname.startsWith('/admin/leave-management') ||
         pathname.startsWith('/admin/salary-component-types')) {
       modulesToExpand.push('master');

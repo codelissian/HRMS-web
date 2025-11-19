@@ -43,20 +43,20 @@ export function Pagination({
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Showing {startItem} to {endItem} of {totalCount} results
           </div>
-          <div className="flex items-center gap-2">
-            <Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(parseInt(value))}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="25">25</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-                <SelectItem value="100">100</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-sm text-gray-500 dark:text-gray-400">per page</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(parseInt(value))}>
+            <SelectTrigger className="w-[70px] h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">per page</span>
+        </div>
         </div>
       );
     }
@@ -68,11 +68,11 @@ export function Pagination({
       <div className="text-sm text-gray-500 dark:text-gray-400">
         Showing {startItem} to {endItem} of {totalCount} results
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-4">
         {showPageSizeSelector && (
-          <>
+          <div className="flex items-center gap-2">
             <Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(parseInt(value))}>
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-[70px] h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -82,11 +82,11 @@ export function Pagination({
                 <SelectItem value="100">100</SelectItem>
               </SelectContent>
             </Select>
-            <span className="text-sm text-gray-500 dark:text-gray-400">per page</span>
-          </>
+            <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">per page</span>
+          </div>
         )}
         
-        <div className="flex gap-1">
+        <div className="flex items-center gap-1">
           {showFirstLast && (
             <Button
               variant="outline"
@@ -104,14 +104,17 @@ export function Pagination({
             disabled={currentPage === 1}
             onClick={() => onPageChange(Math.max(1, currentPage - 1))}
             title="Previous page"
+            className="gap-1"
           >
             <ChevronLeft className="h-4 w-4" />
-            {!showFirstLast && 'Previous'}
+            {!showFirstLast && <span>Previous</span>}
           </Button>
           
-          <span className="text-sm text-gray-700 dark:text-gray-300 px-2">
-            Page {currentPage} of {pageCount}
-          </span>
+          <div className="flex items-center justify-center min-w-[100px] px-3">
+            <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              Page {currentPage} of {pageCount}
+            </span>
+          </div>
           
           <Button
             variant="outline"
@@ -119,8 +122,9 @@ export function Pagination({
             disabled={currentPage >= pageCount}
             onClick={() => onPageChange(Math.min(pageCount, currentPage + 1))}
             title="Next page"
+            className="gap-1"
           >
-            {!showFirstLast && 'Next'}
+            {!showFirstLast && <span>Next</span>}
             <ChevronRight className="h-4 w-4" />
           </Button>
           {showFirstLast && (

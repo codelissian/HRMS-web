@@ -1,13 +1,22 @@
-import React, { useState, useCallback } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Calculator, DollarSign } from 'lucide-react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { Input } from '@/components/ui/input';
 import { PayrollCycleFilter, PayrollTable } from '@/components/payroll';
 import { PayrollCycle } from '@/types/payrollCycle';
 
 export function PayrollPage() {
   const [selectedCycleId, setSelectedCycleId] = useState<string | null>(null);
   const [selectedCycle, setSelectedCycle] = useState<PayrollCycle | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   const handleCycleSelect = useCallback((cycleId: string | null, cycle: PayrollCycle | null) => {
     setSelectedCycleId(cycleId);
@@ -18,35 +27,29 @@ export function PayrollPage() {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            Payroll Management
-          </CardTitle>
-          <CardDescription>
-            Manage employee payroll, salary calculations, and payment processing
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Payroll Cycle Filter */}
-            <div className="flex items-center gap-4">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Filter by Cycle:
-              </label>
-              <PayrollCycleFilter 
-                onCycleSelect={handleCycleSelect}
-                selectedCycleId={selectedCycleId}
-              />
-            </div>
+      {/* Search and Filter */}
+      <div className="flex items-center gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search payroll records..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+            Filter by Cycle:
+          </label>
+          <PayrollCycleFilter 
+            onCycleSelect={handleCycleSelect}
+            selectedCycleId={selectedCycleId}
+          />
+        </div>
+      </div>
 
-
-            {/* Payroll Table */}
-            <PayrollTable payrollCycleId={selectedCycleId} />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Payroll Table */}
+      <PayrollTable payrollCycleId={selectedCycleId} searchTerm={debouncedSearchTerm} />
     </div>
   );
 }

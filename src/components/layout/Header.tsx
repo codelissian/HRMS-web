@@ -36,7 +36,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path === '/admin/attendance-policies') return 'Attendance Policies';
       if (path === '/admin/attendance-policies/create') return 'Create Attendance Policy';
       if (path.includes('/admin/attendance-policies/') && path.includes('/edit')) return 'Edit Attendance Policy';
-      if (path === '/admin/attendance-and-work-day-rule') return 'Attendance and Work Day Rule';
+      if (path === '/admin/work-day-rules') return 'Work Day Rules';
       if (path === '/admin/attendance') return 'Attendance Management';
       if (path === '/admin/leave-requests') return 'Leave Requests';
       if (path === '/admin/leave-management') return 'Leave Management';
@@ -72,7 +72,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path === '/admin/attendance-policies') return 'Set attendance rules and policies';
       if (path === '/admin/attendance-policies/create') return 'Configure attendance tracking rules and policies for your organization';
       if (path.includes('/admin/attendance-policies/') && path.includes('/edit')) return 'Update attendance tracking rules and policies for your organization';
-      if (path === '/admin/attendance-and-work-day-rule') return 'Manage attendance policies and work day rules for your organization';
+      if (path === '/admin/work-day-rules') return 'Manage work day rules for your organization';
       if (path === '/admin/attendance') return 'Monitor employee attendance and statistics';
       if (path === '/admin/leave-requests') return 'Review and manage leave requests';
       if (path === '/admin/leave-management') return 'Configure leave types and policies';
@@ -129,7 +129,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/admin/attendance-and-work-day-rule')}
+            onClick={() => navigate('/admin/attendance-policies')}
             className="mr-3"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -141,7 +141,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/admin/attendance-and-work-day-rule')}
+            onClick={() => navigate('/admin/attendance-policies')}
             className="mr-3"
           >
             <ArrowLeft className="h-5 w-5" />
