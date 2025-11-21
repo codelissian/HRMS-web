@@ -258,16 +258,6 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
         );
       },
     },
-    {
-      key: 'remarks',
-      header: 'Remarks',
-      align: 'left',
-      render: (value) => (
-        <div className="text-sm text-gray-700 dark:text-gray-300 max-w-[200px] truncate" title={value}>
-          {value || '-'}
-        </div>
-      ),
-    },
   ];
 
 
