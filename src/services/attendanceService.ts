@@ -106,6 +106,20 @@ export interface TodaysAttendanceRecord {
   [key: string]: any;
 }
 
+// Today's Attendance Statistics API types
+export interface TodayAttendanceStatisticsRequest {
+  shift_id: string;
+  organisation_id: string;
+}
+
+export interface TodayAttendanceStatistics {
+  total_employees: number;
+  present: number;
+  absent: number;
+  on_leave: number;
+  half_day: number;
+}
+
 class AttendanceService {
   // Transform raw events into attendance records for UI display
   private transformEventsToRecords(events: AttendanceEvent[]): AttendanceRecord[] {
@@ -270,6 +284,11 @@ class AttendanceService {
     const url = `${API_ENDPOINTS.ATTENDANCE_DAY}${queryParams}`;
     
     const response = await httpClient.post<ApiResponse<TodaysAttendanceRecord[]>>(url, params);
+    return response.data;
+  }
+
+  async getTodayAttendanceStatistics(params: TodayAttendanceStatisticsRequest): Promise<ApiResponse<TodayAttendanceStatistics>> {
+    const response = await httpClient.post<ApiResponse<TodayAttendanceStatistics>>(API_ENDPOINTS.ATTENDANCE_STATISTICS, params);
     return response.data;
   }
 }
