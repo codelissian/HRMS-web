@@ -223,6 +223,14 @@ export default function Dashboard() {
     navigate(`/admin/employees/${employee.id}`);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] w-full">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* First Row */}
