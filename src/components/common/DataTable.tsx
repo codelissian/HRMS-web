@@ -115,7 +115,7 @@ export function DataTable<T extends Record<string, any>>({
                 {columns.map((column, index) => (
                   <TableHead key={index}>{column.header}</TableHead>
                 ))}
-                {tableActions.length > 0 && <TableHead className="text-right">Actions</TableHead>}
+                {hasActions && <TableHead className="text-right">Actions</TableHead>}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -126,7 +126,7 @@ export function DataTable<T extends Record<string, any>>({
                       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                     </TableCell>
                   ))}
-                  {tableActions.length > 0 && (
+                  {hasActions && (
                     <TableCell>
                       <div className="flex justify-end space-x-2">
                         <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
