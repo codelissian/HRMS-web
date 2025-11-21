@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { DataTable, Column, TableAction } from '@/components/common/DataTable';
 import { PayrollCycle } from '@/types/payrollCycle';
 import { PayrollCycleService } from '@/services/payrollCycleService';
@@ -8,7 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { PayrollCycleUpdateDialog } from './PayrollCycleUpdateDialog';
 import { Pagination, LoadingSpinner, EmptyState } from '@/components/common';
-import { Calendar } from 'lucide-react';
+import { Calendar, Eye } from 'lucide-react';
 
 // Helper function to check if error is a network error
 const isNetworkError = (error: any): boolean => {
@@ -59,6 +60,7 @@ interface PayrollCycleTableProps {
 }
 
 export function PayrollCycleTable({ searchTerm = '' }: PayrollCycleTableProps) {
+  const navigate = useNavigate();
   const [payrollCycles, setPayrollCycles] = useState<PayrollCycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -222,6 +224,10 @@ export function PayrollCycleTable({ searchTerm = '' }: PayrollCycleTableProps) {
     },
   ];
 
+  const handleView = (payrollCycle: PayrollCycle) => {
+    navigate(`/admin/payroll-cycle/${payrollCycle.id}`);
+  };
+
   const handleUpdate = (payrollCycle: PayrollCycle) => {
     setSelectedPayrollCycle(payrollCycle);
     setUpdateDialogOpen(true);
@@ -238,6 +244,11 @@ export function PayrollCycleTable({ searchTerm = '' }: PayrollCycleTableProps) {
   };
 
   const actions: TableAction<PayrollCycle>[] = [
+    {
+      label: 'View',
+      icon: Eye,
+      onClick: handleView,
+    },
     {
       label: 'Update',
       onClick: handleUpdate,
@@ -282,6 +293,7 @@ export function PayrollCycleTable({ searchTerm = '' }: PayrollCycleTableProps) {
         actions={actions}
         loading={loading}
         searchable={false}
+        onRowClick={handleView}
       />
       
       {/* Pagination */}

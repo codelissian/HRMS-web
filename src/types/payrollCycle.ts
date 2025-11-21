@@ -48,3 +48,12 @@ export interface PayrollCyclesResponse {
   page_size: number;
   page: number;
 }
+
+export interface PayrollCycleWithRelations extends PayrollCycle {
+  organisation?: {
+    id: string;
+    name: string;
+    code?: string | null;
+    [key: string]: any;
+  };
+}
