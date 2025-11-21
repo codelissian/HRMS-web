@@ -19,7 +19,7 @@ import {
   Cake
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { LoadingSpinner, EmptyState } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { attendanceService } from '@/services/attendanceService';
 import { leaveService } from '@/services/leaveService';
@@ -27,6 +27,7 @@ import { ShiftService } from '@/services/shiftService';
 import { useAuth } from '@/hooks/useAuth';
 import { getOrganisationId } from '@/lib/shift-utils';
 import { authToken } from '@/services/authToken';
+import { useNavigate } from 'react-router-dom';
 import { 
   ChartContainer, 
   ChartTooltip, 
@@ -99,10 +100,20 @@ const birthdaysData = [
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [selectedShiftId, setSelectedShiftId] = useState<string>('');
   const [shifts, setShifts] = useState<any[]>([]);
   const [shiftsLoading, setShiftsLoading] = useState(false);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Get organisation_id from user, with multiple fallbacks
   const organisationId = useMemo(() => {
@@ -143,12 +154,20 @@ export default function Dashboard() {
 
   // Fetch employees for the table
   const { data: employeesResponse, isLoading: employeesLoading } = useQuery({
-    queryKey: ['employees', 'dashboard', { page: 1, page_size: 10 }],
-    queryFn: () => employeeService.getEmployees({ 
+    queryKey: ['employees', 'dashboard', { 
+      organisationId,
       page: 1, 
       page_size: 10,
+      search: debouncedSearchQuery
+    }],
+    queryFn: () => employeeService.getEmployees({ 
+      organisation_id: organisationId,
+      page: 1, 
+      page_size: 10,
+      search: debouncedSearchQuery || undefined,
       include: ['department', 'designation']
     }),
+    enabled: !!organisationId,
   });
 
   // Fetch today's attendance statistics from API
@@ -199,16 +218,10 @@ export default function Dashboard() {
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
 
-  // Filter employees based on search
-  const filteredEmployees = employees.filter((emp: any) => 
-    emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.department?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.designation?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
+  // Handle view employee
+  const handleViewEmployee = (employee: any) => {
+    navigate(`/admin/employees/${employee.id}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -475,38 +488,64 @@ export default function Dashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredEmployees.slice(0, 4).map((employee: any) => (
-                          <TableRow key={employee.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <TableCell className="text-xs text-gray-900 dark:text-white">
-                              {employee.id?.slice(-4) || 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
-                              {employee.name || 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-xs text-gray-600 dark:text-gray-400">
-                              {employee.designation?.name || employee.department?.name || 'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge 
-                                variant={employee.active_flag ? 'default' : 'secondary'}
-                                className={employee.active_flag 
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                                }
-                              >
-                                {employee.active_flag ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-gray-600 dark:text-gray-400">
-                              {employee.department?.name?.split(' ')[0] || 'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="icon" className="h-6 w-6">
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                        {employeesLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8">
+                              <LoadingSpinner size="sm" />
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : employees.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
+                              No employees found
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          employees.slice(0, 4).map((employee: any) => (
+                            <TableRow 
+                              key={employee.id} 
+                              className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                              onClick={() => handleViewEmployee(employee)}
+                            >
+                              <TableCell className="text-xs text-gray-900 dark:text-white">
+                                {(employee as any).code || employee.id?.slice(-4) || 'N/A'}
+                              </TableCell>
+                              <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
+                                {employee.name || 'N/A'}
+                              </TableCell>
+                              <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                                {employee.designation?.name || 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={employee.active_flag ? 'default' : 'secondary'}
+                                  className={employee.active_flag 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                                  }
+                                >
+                                  {employee.active_flag ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                                {employee.department?.name || 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewEmployee(employee);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
