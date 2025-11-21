@@ -27,6 +27,7 @@ import {
   PartyPopper
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import logo from '@/assets/logo.svg';
 
 interface SidebarProps {
   open: boolean;
@@ -206,8 +207,12 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
         {/* Header */}
         <div className="flex items-center justify-between h-16 px-3 border-b border-white/10 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg">
-              <Users className="h-6 w-6 text-white" />
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shadow-lg p-1.5">
+              <img 
+                src={logo} 
+                alt="OneHR Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <span className="text-xl font-bold text-white">
