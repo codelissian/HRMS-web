@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { PayrollCycleService } from '@/services/payrollCycleService';
 import { PayrollCycleWithRelations } from '@/types/payrollCycle';
-import { ArrowLeft, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function PayrollCycleDetailsPage() {
@@ -159,17 +159,16 @@ export default function PayrollCycleDetailsPage() {
         </div>
       </div>
 
-      {/* Information Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Basic Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Basic Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      {/* Information Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Payroll Cycle Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Cycle Name
@@ -226,18 +225,6 @@ export default function PayrollCycleDetailsPage() {
                 </Badge>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Amount Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              Amount
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 Total Amount
@@ -252,10 +239,9 @@ export default function PayrollCycleDetailsPage() {
                   : '-'}
               </p>
             </div>
-          </CardContent>
-        </Card>
-
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
     </div>
   );
