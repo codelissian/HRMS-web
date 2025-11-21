@@ -254,6 +254,15 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
           console.log('Currency object:', organisation.currency);
         }
         
+        // Don't show net salary if currency symbol is not available
+        if (!currencySymbol) {
+          return (
+            <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+              -
+            </div>
+          );
+        }
+        
         return (
           <div className="text-sm font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
             {formatCurrency(value, currencySymbol)}
