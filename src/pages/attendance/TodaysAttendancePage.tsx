@@ -96,6 +96,21 @@ export default function TodaysAttendancePage() {
     return new Date(selectedDate).toISOString();
   }, [selectedDate]);
 
+  // Fetch attendance statistics
+  const { data: statisticsResponse, isLoading: statisticsLoading } = useQuery({
+    queryKey: ['attendance', 'statistics', 'today', { 
+      organisationId,
+      shiftId: selectedShiftId
+    }],
+    queryFn: () => {
+      return attendanceService.getTodayAttendanceStatistics({
+        organisation_id: organisationId,
+        shift_id: selectedShiftId
+      });
+    },
+    enabled: !!organisationId && !!selectedShiftId,
+  });
+
   // Fetch attendance
   const { data: attendanceResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['attendance', 'today', { 
@@ -132,6 +147,15 @@ export default function TodaysAttendancePage() {
   const attendanceRecords = attendanceResponse?.data || [];
   const totalCount = attendanceResponse?.total_count || 0;
   const pageCount = attendanceResponse?.page_count || 0;
+  
+  // Get statistics from API
+  const statistics = statisticsResponse?.data || {
+    total_employees: 0,
+    present: 0,
+    absent: 0,
+    on_leave: 0,
+    half_day: 0
+  };
 
   const getStatusColor = (status: string) => {
     const normalizedStatus = status?.toLowerCase() || '';
@@ -198,26 +222,6 @@ export default function TodaysAttendancePage() {
     }
   };
 
-  // Calculate statistics
-  const todayStats = useMemo(() => {
-    const present = attendanceRecords.filter(r => r.status?.toLowerCase() === 'present').length;
-    const absent = attendanceRecords.filter(r => r.status?.toLowerCase() === 'absent').length;
-    const halfDay = attendanceRecords.filter(r => 
-      r.status?.toLowerCase() === 'half_day' || r.status?.toLowerCase() === 'half-day'
-    ).length;
-    const onLeave = attendanceRecords.filter(r => 
-      r.status?.toLowerCase() === 'on_leave' || r.status?.toLowerCase() === 'on-leave'
-    ).length;
-    const total = attendanceRecords.length;
-
-    return {
-      present,
-      absent,
-      halfDay,
-      onLeave,
-      total
-    };
-  }, [attendanceRecords]);
 
   if (error) {
     return (
@@ -307,31 +311,31 @@ export default function TodaysAttendancePage() {
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total</div>
-            <div className="text-3xl font-bold">{todayStats.total}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.total_employees}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Present</div>
-            <div className="text-3xl font-bold">{todayStats.present}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.present}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Absent</div>
-            <div className="text-3xl font-bold">{todayStats.absent}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.absent}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Half Day</div>
-            <div className="text-3xl font-bold">{todayStats.halfDay}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.half_day}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total On Leave</div>
-            <div className="text-3xl font-bold">{todayStats.onLeave}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.on_leave}</div>
           </CardContent>
         </Card>
       </div>
