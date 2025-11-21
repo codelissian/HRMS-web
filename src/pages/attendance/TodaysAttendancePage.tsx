@@ -105,18 +105,17 @@ export default function TodaysAttendancePage() {
     }
   }, [organisationId]);
 
-  // Get selected date range (start and end of day in UTC)
+  // Get selected date range (start and end of day)
   const dateRange = useMemo(() => {
     const date = new Date(selectedDate);
-    const startOfDay = new Date(date);
-    startOfDay.setUTCHours(0, 0, 0, 0);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     
-    const endOfDay = new Date(date);
-    endOfDay.setUTCHours(23, 59, 59, 999);
-    
+    // Format as ISO datetime without milliseconds
     return {
-      gte: startOfDay.toISOString(),
-      lte: endOfDay.toISOString()
+      gte: `${year}-${month}-${day}T00:00:00Z`,
+      lte: `${year}-${month}-${day}T23:59:59Z`
     };
   }, [selectedDate]);
 
