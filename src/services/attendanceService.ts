@@ -83,6 +83,11 @@ export interface TodaysAttendanceRequest {
   date: string; // ISO date string
   page?: number;
   page_size?: number;
+  include?: string[]; // Array of relations to include (e.g., ["department"])
+  search?: {
+    keys: string[];
+    value: string;
+  };
 }
 
 export interface TodaysAttendanceRecord {
