@@ -57,12 +57,6 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
       setPayrolls(response.data || []);
       setTotalCount(response.total_count || 0);
       setPageCount(response.page_count || 0);
-      
-      // Debug: Log first payroll to check organisation structure
-      if (response.data && response.data.length > 0) {
-        console.log('First payroll organisation data:', response.data[0].organisation);
-        console.log('Currency symbol path:', response.data[0].organisation?.currency?.symbol);
-      }
     } catch (err: any) {
       setError(err.message || 'Failed to fetch payrolls');
       console.error('Error fetching payrolls:', err);
@@ -246,13 +240,7 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
       align: 'center',
       render: (value, row) => {
         const organisation = (row as any).organisation;
-        const currencySymbol = organisation?.currency?.symbol;
-        
-        // Debug logging
-        if (!currencySymbol && organisation) {
-          console.log('Organisation data:', organisation);
-          console.log('Currency object:', organisation.currency);
-        }
+        const currencySymbol = organisation?.currency_symbol;
         
         // Don't show net salary if currency symbol is not available
         if (!currencySymbol) {

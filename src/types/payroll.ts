@@ -82,10 +82,10 @@ export interface Payroll {
   organisation?: {
     id: string;
     name: string;
-    currency?: {
-      symbol?: string;
-      [key: string]: any;
-    };
+    currency_symbol?: string;
+    currency_position?: string;
+    currence_name?: string;
+    currence_code?: string;
     [key: string]: any;
   };
 }
