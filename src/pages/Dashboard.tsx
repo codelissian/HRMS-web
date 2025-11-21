@@ -458,8 +458,13 @@ export default function Dashboard() {
                     Employee Status
                   </CardTitle>
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white">
-                      Sort & Filter
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white"
+                      onClick={() => navigate('/admin/employees')}
+                    >
+                      View More
                     </Button>
                   </div>
                 </CardHeader>
