@@ -383,18 +383,18 @@ export default function Dashboard() {
 
             {/* Events and Meetings - 5 columns */}
             <div className="lg:col-span-5">
-              <Card className="bg-white border-gray-200 h-full flex flex-col">
+              <Card className="bg-white border-gray-200 h-full flex flex-col relative">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
                 <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                   Events and Meetings
                 </CardTitle>
-                <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white">
+                <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white" disabled>
                   <Plus className="h-3 w-3 mr-1" />
                   Add
                 </Button>
               </CardHeader>
-              <CardContent className="flex-1 overflow-hidden flex flex-col p-0">
-                <div className="space-y-2 overflow-y-auto px-4 pb-4" style={{ maxHeight: '200px' }}>
+              <CardContent className="flex-1 overflow-hidden flex flex-col p-0 relative">
+                <div className="space-y-2 overflow-y-auto px-4 pb-4 blur-sm pointer-events-none" style={{ maxHeight: '200px' }}>
                   {eventsData.map((event) => (
                     <div key={event.id} className="flex items-start space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       <div className="w-8 h-8 bg-[#0B2E5C]/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -420,6 +420,13 @@ export default function Dashboard() {
                       </div>
                     </div>
                   ))}
+                </div>
+                {/* Coming Soon Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-b-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-400 dark:text-gray-500 mb-1">Coming Soon</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">This feature is under development</div>
+                  </div>
                 </div>
               </CardContent>
               </Card>
@@ -509,12 +516,12 @@ export default function Dashboard() {
 
         {/* Birthdays - Column 4 */}
         <div className="lg:col-span-4">
-          <Card className="bg-white border-gray-200">
+          <Card className="bg-white border-gray-200 relative">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                     Birthdays
                   </CardTitle>
-                  <Select defaultValue="This month">
+                  <Select defaultValue="This month" disabled>
                     <SelectTrigger className="w-32 h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
@@ -525,8 +532,8 @@ export default function Dashboard() {
                     </SelectContent>
                   </Select>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                <CardContent className="relative">
+                  <div className="space-y-4 blur-sm pointer-events-none">
                     {birthdaysData.map((person) => (
                       <div key={person.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <Avatar className="h-10 w-10">
@@ -549,6 +556,13 @@ export default function Dashboard() {
                       </div>
                     ))}
             </div>
+                {/* Coming Soon Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-b-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-400 dark:text-gray-500 mb-1">Coming Soon</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">This feature is under development</div>
+                  </div>
+                </div>
           </CardContent>
         </Card>
         </div>
