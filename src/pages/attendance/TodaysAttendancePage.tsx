@@ -113,7 +113,7 @@ export default function TodaysAttendancePage() {
         date: selectedDateISO,
         page: currentPage,
         page_size: pageSize,
-        include: ["department"]
+        include: ["department", "shift"]
       };
 
       // Add search parameter if search term exists
@@ -374,8 +374,8 @@ export default function TodaysAttendancePage() {
                     const checkInTime = clockIn ? new Date(clockIn.event_time) : null;
                     const checkOutTime = clockOut ? new Date(clockOut.event_time) : null;
                     
-                    // Get shift details
-                    const shift = shifts.find(s => s.id === record.shift_id);
+                    // Get shift details from included shift data
+                    const shift = (record as any).shift;
                     const shiftName = shift?.name || 'N/A';
                     
                     // Get department name from included department data
