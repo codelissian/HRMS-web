@@ -44,10 +44,10 @@ export class PayrollCycleService {
 
   static async getPayrollCycle(
     id: string, 
-    include?: { organisation?: boolean }
+    include?: string[]
   ): Promise<PayrollCycle> {
     const payload: any = { id };
-    if (include) {
+    if (include && include.length > 0) {
       payload.include = include;
     }
     const response = await httpClient.post(API_ENDPOINTS.PAYROLL_CYCLES_ONE, payload);
