@@ -105,25 +105,16 @@ export default function TodaysAttendancePage() {
     }
   }, [organisationId]);
 
-  // Get selected date range (start and end of day)
-  const dateRange = useMemo(() => {
-    const date = new Date(selectedDate);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    
-    // Format as ISO datetime without milliseconds
-    return {
-      gte: `${year}-${month}-${day}T00:00:00Z`,
-      lte: `${year}-${month}-${day}T23:59:59Z`
-    };
+  // Get selected date as ISO string
+  const selectedDateISO = useMemo(() => {
+    return new Date(selectedDate).toISOString();
   }, [selectedDate]);
 
   // Fetch attendance
   const { data: attendanceResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['attendance', 'today', { 
       organisationId,
-      dateRange,
+      date: selectedDateISO,
       shiftId: selectedShiftId,
       page: currentPage,
       page_size: pageSize,
@@ -133,7 +124,7 @@ export default function TodaysAttendancePage() {
       const params: any = {
         organisation_id: organisationId,
         shift_id: selectedShiftId || undefined,
-        date: dateRange,
+        date: selectedDateISO,
         page: currentPage,
         page_size: pageSize
       };
