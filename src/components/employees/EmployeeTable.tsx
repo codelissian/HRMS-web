@@ -31,8 +31,18 @@ export function EmployeeTable({
 
   const columns: Column<EmployeeWithRelations>[] = [
     {
+      key: 'id',
+      header: 'Employee ID',
+      align: 'left',
+      render: (_, employee) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {(employee as any).code || employee.id?.slice(-4) || 'N/A'}
+        </div>
+      ),
+    },
+    {
       key: 'name',
-      header: 'Employee',
+      header: 'Name',
       align: 'left',
       render: (_, employee) => (
         <div className="flex items-center space-x-3">
@@ -41,14 +51,19 @@ export function EmployeeTable({
               {getInitials(employee.name)}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <div className="text-sm font-medium text-gray-900 dark:text-white">
-              {employee.name}
-            </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              {employee.email}
-            </div>
+          <div className="text-sm font-medium text-gray-900 dark:text-white">
+            {employee.name}
           </div>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      align: 'left',
+      render: (_, employee) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {employee.email || '-'}
         </div>
       ),
     },
