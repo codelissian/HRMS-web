@@ -13,14 +13,14 @@ export default function PayrollCycleDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Fetch payroll cycle details
+  // Fetch payroll cycle details with organisation included
   const { 
     data: cycleResponse, 
     isLoading, 
     error 
   } = useQuery({
     queryKey: ['payroll-cycle', 'detail', id],
-    queryFn: () => PayrollCycleService.getPayrollCycle(id!),
+    queryFn: () => PayrollCycleService.getPayrollCycle(id!, ['organisation']),
     enabled: !!id,
   });
 
@@ -233,12 +233,32 @@ export default function PayrollCycleDetailsPage() {
                 {payrollCycle.amount 
                   ? new Intl.NumberFormat('en-IN', { 
                       style: 'currency', 
-                      currency: 'INR',
+                      currency: payrollCycle.organisation?.currency_code || 'INR',
                       maximumFractionDigits: 2
                     }).format(payrollCycle.amount)
                   : '-'}
               </p>
             </div>
+            {payrollCycle.organisation && (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Currency
+                  </label>
+                  <p className="text-sm text-gray-900 dark:text-white mt-1">
+                    {payrollCycle.organisation.currency_code || '-'}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Currency Symbol
+                  </label>
+                  <p className="text-sm text-gray-900 dark:text-white mt-1">
+                    {payrollCycle.organisation.currency_symbol || '-'}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

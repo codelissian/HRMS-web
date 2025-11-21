@@ -55,6 +55,8 @@ export interface PayrollCycleWithRelations extends PayrollCycle {
     id: string;
     name: string;
     code?: string | null;
+    currency_code?: string;
+    currency_symbol?: string;
     [key: string]: any;
   };
 }
