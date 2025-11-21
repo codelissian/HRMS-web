@@ -269,49 +269,57 @@ export default function Dashboard() {
           </div>
           
           {/* Row 1: Total Attendance Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Total */}
+            <Card className="bg-white border-gray-200">
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : statistics.total_employees}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Total Present */}
             <Card className="bg-white border-gray-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Total Present
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {attendanceLoading ? '-' : totalPresent}
-                  </div>
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Present</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : totalPresent}
                 </div>
               </CardContent>
             </Card>
 
             {/* Total Absent */}
             <Card className="bg-white border-gray-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Total Absent
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {attendanceLoading ? '-' : totalAbsent}
-                  </div>
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Absent</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : totalAbsent}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Total Half Day */}
+            <Card className="bg-white border-gray-200">
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Half Day</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : totalHalfDay}
                 </div>
               </CardContent>
             </Card>
 
             {/* Total On Leave */}
             <Card className="bg-white border-gray-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                    Total On Leave
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {attendanceLoading ? '-' : totalOnLeave}
-                  </div>
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total On Leave</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : totalOnLeave}
                 </div>
               </CardContent>
             </Card>
-              </div>
+          </div>
               
           {/* Row 2: Employee Chart and Events/Meetings */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
