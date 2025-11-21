@@ -239,7 +239,7 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
       header: 'Net Salary',
       align: 'center',
       render: (value, row) => {
-        const currencySymbol = (row as any).organisation?.default_currency_symbol;
+        const currencySymbol = (row as any).organisation?.currency?.symbol;
         return (
           <div className="text-sm font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
             {formatCurrency(value, currencySymbol)}
