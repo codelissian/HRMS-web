@@ -80,10 +80,7 @@ export interface AttendanceStats {
 export interface TodaysAttendanceRequest {
   shift_id?: string;
   organisation_id?: string;
-  date: {
-    gte: string; // ISO date string
-    lte: string; // ISO date string
-  };
+  date: string; // ISO date string
   page?: number;
   page_size?: number;
 }
