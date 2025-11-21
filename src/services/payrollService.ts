@@ -17,21 +17,23 @@ export class PayrollService {
     }
   }
 
-  static async getPayrolls(params?: { page?: number; page_size?: number }): Promise<PayrollsResponse> {
+  static async getPayrolls(params?: { page?: number; page_size?: number; search?: any }): Promise<PayrollsResponse> {
     const response = await httpClient.post(API_ENDPOINTS.PAYROLLS_LIST, {
       page: params?.page || 1,
       page_size: params?.page_size || 10,
-      include: ["employee"]
+      include: ["employee", "organisation"],
+      ...(params?.search && { search: params.search })
     });
     return response.data;
   }
 
-  static async getPayrollsByCycle(payrollCycleId: string, params?: { page?: number; page_size?: number }): Promise<PayrollsResponse> {
+  static async getPayrollsByCycle(payrollCycleId: string, params?: { page?: number; page_size?: number; search?: any }): Promise<PayrollsResponse> {
     const response = await httpClient.post(API_ENDPOINTS.PAYROLLS_LIST, {
       payroll_cycle_id: payrollCycleId,
       page: params?.page || 1,
       page_size: params?.page_size || 10,
-      include: ["employee"]
+      include: ["employee", "organisation"],
+      ...(params?.search && { search: params.search })
     });
     return response.data;
   }

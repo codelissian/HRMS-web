@@ -54,7 +54,7 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
         response = await PayrollService.getPayrolls(requestParams);
       }
       
-      setPayrolls(response.data);
+      setPayrolls(response.data || []);
       setTotalCount(response.total_count || 0);
       setPageCount(response.page_count || 0);
     } catch (err: any) {
@@ -88,7 +88,13 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number, currencySymbol?: string) => {
+    if (currencySymbol) {
+      return `${currencySymbol}${new Intl.NumberFormat('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }).format(amount)}`;
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
@@ -232,11 +238,14 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
       key: 'net_salary',
       header: 'Net Salary',
       align: 'center',
-      render: (value) => (
-        <div className="text-sm font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
-          {formatCurrency(value)}
-        </div>
-      ),
+      render: (value, row) => {
+        const currencySymbol = (row as any).organisation?.default_currency_symbol;
+        return (
+          <div className="text-sm font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
+            {formatCurrency(value, currencySymbol)}
+          </div>
+        );
+      },
     },
     {
       key: 'remarks',
