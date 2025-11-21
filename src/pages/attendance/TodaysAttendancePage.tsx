@@ -9,7 +9,6 @@ import { UserCheck, Clock, Calendar, Download, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService, TodaysAttendanceRecord } from '@/services/attendanceService';
 import { ShiftService } from '@/services/shiftService';
-import { departmentService } from '@/services/departmentService';
 import { LoadingSpinner, EmptyState, Pagination } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,7 +23,6 @@ export default function TodaysAttendancePage() {
   const [selectedShiftId, setSelectedShiftId] = useState<string>('');
   const [shifts, setShifts] = useState<any[]>([]);
   const [shiftsLoading, setShiftsLoading] = useState(false);
-  const [departments, setDepartments] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +66,7 @@ export default function TodaysAttendancePage() {
     return orgId;
   }, [user]);
 
-  // Fetch shifts and departments
+  // Fetch shifts
   useEffect(() => {
     const fetchShifts = async () => {
       try {
@@ -88,20 +86,8 @@ export default function TodaysAttendancePage() {
       }
     };
 
-    const fetchDepartments = async () => {
-      try {
-        const response = await departmentService.getDepartments({ page: 1, page_size: 100 });
-        if (response.status && response.data) {
-          setDepartments(response.data);
-        }
-      } catch (error) {
-        console.error('Error fetching departments:', error);
-      }
-    };
-
     if (organisationId) {
       fetchShifts();
-      fetchDepartments();
     }
   }, [organisationId]);
 
@@ -126,7 +112,8 @@ export default function TodaysAttendancePage() {
         shift_id: selectedShiftId || undefined,
         date: selectedDateISO,
         page: currentPage,
-        page_size: pageSize
+        page_size: pageSize,
+        include: ["department"]
       };
 
       // Add search parameter if search term exists
@@ -391,9 +378,8 @@ export default function TodaysAttendancePage() {
                     const shift = shifts.find(s => s.id === record.shift_id);
                     const shiftName = shift?.name || 'N/A';
                     
-                    // Get department name (if departments are available)
-                    const department = departments?.find(d => d.id === record.department_id);
-                    const departmentName = department?.name || '';
+                    // Get department name from included department data
+                    const departmentName = (record as any).department?.name || '';
                     
                     // Calculate Is Late (check if check-in is after shift start + grace period)
                     let isLate = false;
