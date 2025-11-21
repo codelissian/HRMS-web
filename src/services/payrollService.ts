@@ -97,4 +97,32 @@ export class PayrollService {
       throw error;
     }
   }
+
+  static async downloadPayroll(id: string): Promise<string> {
+    try {
+      const response = await httpClient.post(API_ENDPOINTS.PAYROLLS_DOWNLOAD, { id }, {
+        responseType: 'text' as any // Expect HTML response as text
+      });
+      
+      // If response is HTML string, return it directly
+      if (typeof response.data === 'string') {
+        return response.data;
+      }
+      
+      // If response is wrapped in an object, extract the HTML
+      if (response.data && typeof response.data === 'object' && (response.data as any).html) {
+        return (response.data as any).html;
+      }
+      
+      // If response.data is an object, try to stringify it
+      if (response.data && typeof response.data === 'object') {
+        return JSON.stringify(response.data);
+      }
+      
+      throw new Error('Invalid response format from download API');
+    } catch (error: any) {
+      console.error('Error downloading payroll:', error);
+      throw new Error(error.response?.data?.message || error.message || 'Failed to download payroll');
+    }
+  }
 }

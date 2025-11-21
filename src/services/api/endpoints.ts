@@ -172,6 +172,7 @@ const API = {
   PAYROLLS_LIST: `/payrolls/list`,
   PAYROLLS_ONE: `/payrolls/one`,
   PAYROLLS_DELETE: `/payrolls/delete`,
+  PAYROLLS_DOWNLOAD: `/payrolls/download`,
 };
 
 export const API_ENDPOINTS = API;

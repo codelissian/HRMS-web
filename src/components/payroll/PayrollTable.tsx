@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { DataTable, Column } from '@/components/common/DataTable';
+import { DataTable, Column, TableAction } from '@/components/common/DataTable';
 import { Payroll } from '@/types/payroll';
 import { PayrollService } from '@/services/payrollService';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { Pagination, LoadingSpinner, EmptyState } from '@/components/common';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, Download, Eye } from 'lucide-react';
+import { PayrollPreviewDialog } from './PayrollPreviewDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface PayrollTableProps {
   payrollCycleId?: string | null;
@@ -21,6 +23,11 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [pageCount, setPageCount] = useState(0);
+  const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewPayrollId, setPreviewPayrollId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchPayrolls = async () => {
     try {
@@ -95,6 +102,69 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
       return dateString;
     }
   };
+
+  const handleDownload = async (payroll: Payroll) => {
+    try {
+      setDownloadingId(payroll.id);
+      const htmlContent = await PayrollService.downloadPayroll(payroll.id);
+      
+      // Create a blob from the HTML content
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `payroll-${payroll.employee?.code || payroll.id}-${format(new Date(), 'yyyy-MM-dd')}.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: 'Success',
+        description: 'Payroll downloaded successfully',
+      });
+    } catch (error: any) {
+      console.error('Error downloading payroll:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to download payroll',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const handlePreview = async (payroll: Payroll) => {
+    try {
+      setPreviewPayrollId(payroll.id);
+      const htmlContent = await PayrollService.downloadPayroll(payroll.id);
+      setPreviewHtml(htmlContent);
+      setPreviewDialogOpen(true);
+    } catch (error: any) {
+      console.error('Error previewing payroll:', error);
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to preview payroll',
+        variant: 'destructive',
+      });
+    } finally {
+      setPreviewPayrollId(null);
+    }
+  };
+
+  const actions: TableAction<Payroll>[] = [
+    {
+      label: 'Preview',
+      icon: Eye,
+      onClick: handlePreview,
+    },
+    {
+      label: 'Download',
+      icon: Download,
+      onClick: handleDownload,
+    },
+  ];
 
   const columns: Column<Payroll>[] = [
     {
@@ -228,6 +298,7 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
       <DataTable
         data={payrolls}
         columns={columns}
+        actions={actions}
         loading={loading}
         searchable={false}
       />
@@ -251,6 +322,14 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
           </CardContent>
         </Card>
       )}
+
+      {/* Preview Dialog */}
+      <PayrollPreviewDialog
+        open={previewDialogOpen}
+        onOpenChange={setPreviewDialogOpen}
+        htmlContent={previewHtml}
+        payrollId={previewPayrollId || undefined}
+      />
     </div>
   );
 }
