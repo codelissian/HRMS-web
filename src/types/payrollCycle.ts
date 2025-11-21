@@ -10,6 +10,7 @@ export interface PayrollCycle {
   organisation_id: string;
   active_flag: boolean;
   delete_flag: boolean;
+  amount?: number;
   modified_at: string;
   created_at: string;
   created_by: string | null;

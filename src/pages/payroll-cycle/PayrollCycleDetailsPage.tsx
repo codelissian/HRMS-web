@@ -6,21 +6,21 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { PayrollCycleService } from '@/services/payrollCycleService';
 import { PayrollCycleWithRelations } from '@/types/payrollCycle';
-import { ArrowLeft, Calendar, Clock, Building2 } from 'lucide-react';
+import { ArrowLeft, Calendar, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function PayrollCycleDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Fetch payroll cycle details with organisation included
+  // Fetch payroll cycle details
   const { 
     data: cycleResponse, 
     isLoading, 
     error 
   } = useQuery({
     queryKey: ['payroll-cycle', 'detail', id],
-    queryFn: () => PayrollCycleService.getPayrollCycle(id!, ['organisation']),
+    queryFn: () => PayrollCycleService.getPayrollCycle(id!),
     enabled: !!id,
   });
 
@@ -229,54 +229,29 @@ export default function PayrollCycleDetailsPage() {
           </CardContent>
         </Card>
 
-        {/* Organisation Information */}
+        {/* Amount Information */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" />
-              Organisation Information
+              <DollarSign className="h-5 w-5" />
+              Amount
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {payrollCycle.organisation ? (
-              <>
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Organisation Name
-                  </label>
-                  <p className="text-sm text-gray-900 dark:text-white mt-1">
-                    {payrollCycle.organisation.name}
-                  </p>
-                </div>
-                {payrollCycle.organisation.code && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                      Organisation Code
-                    </label>
-                    <p className="text-sm text-gray-900 dark:text-white mt-1">
-                      {payrollCycle.organisation.code}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Organisation ID
-                  </label>
-                  <p className="text-sm text-gray-900 dark:text-white mt-1 font-mono text-xs">
-                    {payrollCycle.organisation.id}
-                  </p>
-                </div>
-              </>
-            ) : (
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  Organisation ID
-                </label>
-                <p className="text-sm text-gray-900 dark:text-white mt-1 font-mono text-xs">
-                  {payrollCycle.organisation_id}
-                </p>
-              </div>
-            )}
+            <div>
+              <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Total Amount
+              </label>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
+                {payrollCycle.amount 
+                  ? new Intl.NumberFormat('en-IN', { 
+                      style: 'currency', 
+                      currency: 'INR',
+                      maximumFractionDigits: 2
+                    }).format(payrollCycle.amount)
+                  : '-'}
+              </p>
+            </div>
           </CardContent>
         </Card>
 
