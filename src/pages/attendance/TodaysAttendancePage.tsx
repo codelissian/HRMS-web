@@ -371,12 +371,55 @@ export default function TodaysAttendancePage() {
                   </TableHeader>
                 <TableBody>
                   {attendanceRecords.map((record) => {
-                    // Get check-in and check-out times from attendance_records
-                    const clockIn = record.attendance_records?.find(r => r.event_type === 'CLOCK_IN');
-                    const clockOut = record.attendance_records?.find(r => r.event_type === 'CLOCK_OUT');
+                    // Get check-in and check-out times - prefer direct API fields, fallback to attendance_records
+                    let checkInTime: Date | null = null;
+                    let checkOutTime: Date | null = null;
                     
-                    const checkInTime = clockIn ? new Date(clockIn.event_time) : null;
-                    const checkOutTime = clockOut ? new Date(clockOut.event_time) : null;
+                    // Check for check-in time from API (try multiple possible field names)
+                    const checkInFromAPI = (record as any).check_in_time || (record as any).check_in || (record as any).checkInTime;
+                    if (checkInFromAPI) {
+                      // Use direct field from API if available
+                      try {
+                        checkInTime = new Date(checkInFromAPI);
+                        // Validate the date
+                        if (isNaN(checkInTime.getTime())) {
+                          checkInTime = null;
+                        }
+                      } catch (e) {
+                        checkInTime = null;
+                      }
+                    }
+                    
+                    // If not found in direct fields, try attendance_records
+                    if (!checkInTime) {
+                      const clockIn = record.attendance_records?.find(r => r.event_type === 'CLOCK_IN');
+                      if (clockIn?.event_time) {
+                        checkInTime = new Date(clockIn.event_time);
+                      }
+                    }
+                    
+                    // Check for check-out time from API (try multiple possible field names)
+                    const checkOutFromAPI = (record as any).check_out_time || (record as any).check_out || (record as any).checkOutTime;
+                    if (checkOutFromAPI) {
+                      // Use direct field from API if available
+                      try {
+                        checkOutTime = new Date(checkOutFromAPI);
+                        // Validate the date
+                        if (isNaN(checkOutTime.getTime())) {
+                          checkOutTime = null;
+                        }
+                      } catch (e) {
+                        checkOutTime = null;
+                      }
+                    }
+                    
+                    // If not found in direct fields, try attendance_records
+                    if (!checkOutTime) {
+                      const clockOut = record.attendance_records?.find(r => r.event_type === 'CLOCK_OUT');
+                      if (clockOut?.event_time) {
+                        checkOutTime = new Date(clockOut.event_time);
+                      }
+                    }
                     
                     // Get shift details from included shift data
                     const shift = (record as any).shift;
@@ -385,18 +428,28 @@ export default function TodaysAttendancePage() {
                     // Get department name from included department data
                     const departmentName = (record as any).department?.name || '';
                     
-                    // Calculate Is Late (check if check-in is after shift start + grace period)
-                    let isLate = false;
-                    if (checkInTime && shift?.start) {
+                    // Get Is Late - prefer direct API field, fallback to calculation
+                    let isLate: boolean | null = null;
+                    const hasIsLateFromAPI = (record as any).is_late !== undefined;
+                    if (hasIsLateFromAPI) {
+                      // Use direct field from API if available
+                      isLate = (record as any).is_late;
+                    } else if (checkInTime && shift?.start) {
+                      // Fallback to calculation
                       const shiftStartTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${shift.start}`);
                       const graceMinutes = shift.grace_minutes || 0;
                       const allowedStartTime = new Date(shiftStartTime.getTime() + graceMinutes * 60000);
                       isLate = checkInTime > allowedStartTime;
                     }
                     
-                    // Calculate Is Early (check if check-out is before shift end)
-                    let isEarly = false;
-                    if (checkOutTime && shift?.end) {
+                    // Get Is Early - prefer direct API field, fallback to calculation
+                    let isEarly: boolean | null = null;
+                    const hasIsEarlyFromAPI = (record as any).is_early !== undefined;
+                    if (hasIsEarlyFromAPI) {
+                      // Use direct field from API if available
+                      isEarly = (record as any).is_early;
+                    } else if (checkOutTime && shift?.end) {
+                      // Fallback to calculation
                       const shiftEndTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${shift.end}`);
                       isEarly = checkOutTime < shiftEndTime;
                     }
@@ -429,7 +482,7 @@ export default function TodaysAttendancePage() {
                           {checkOutTime ? format(checkOutTime, 'HH:mm:ss') : <span className="text-gray-500">-</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          {checkInTime ? (
+                          {isLate !== null ? (
                             <Badge variant={isLate ? "destructive" : "outline"} className="inline-flex px-2 py-1">
                               {isLate ? "Yes" : "No"}
                             </Badge>
@@ -438,7 +491,7 @@ export default function TodaysAttendancePage() {
                           )}
                         </TableCell>
                         <TableCell className="text-center">
-                          {checkOutTime ? (
+                          {isEarly !== null ? (
                             <Badge variant={isEarly ? "destructive" : "outline"} className="inline-flex px-2 py-1">
                               {isEarly ? "Yes" : "No"}
                             </Badge>

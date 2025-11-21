@@ -102,6 +102,11 @@ export interface TodaysAttendanceRecord {
   shift_id: string;
   status: 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'ON_LEAVE' | 'WEEKEND';
   attendance_records: AttendanceEvent[];
+  // Direct fields from API (if available)
+  check_in_time?: string;
+  check_out_time?: string;
+  is_late?: boolean;
+  is_early?: boolean;
   // Include other employee fields as needed
   [key: string]: any;
 }

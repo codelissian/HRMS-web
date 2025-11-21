@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,10 @@ import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { employeeService } from '@/services/employeeService';
 import { attendanceService } from '@/services/attendanceService';
 import { leaveService } from '@/services/leaveService';
+import { ShiftService } from '@/services/shiftService';
 import { useAuth } from '@/hooks/useAuth';
+import { getOrganisationId } from '@/lib/shift-utils';
+import { authToken } from '@/services/authToken';
 import { 
   ChartContainer, 
   ChartTooltip, 
@@ -97,6 +100,46 @@ const birthdaysData = [
 export default function Dashboard() {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedShiftId, setSelectedShiftId] = useState<string>('');
+  const [shifts, setShifts] = useState<any[]>([]);
+  const [shiftsLoading, setShiftsLoading] = useState(false);
+
+  // Get organisation_id from user, with multiple fallbacks
+  const organisationId = useMemo(() => {
+    const fromUser = user?.organisation_id;
+    const fromStorage = getOrganisationId();
+    const fromAuthToken = authToken.getorganisationId();
+    
+    // Try all sources in order of preference
+    const orgId = fromUser || fromStorage || fromAuthToken || '';
+    
+    return orgId;
+  }, [user]);
+
+  // Fetch shifts for dropdown
+  useEffect(() => {
+    const fetchShifts = async () => {
+      try {
+        setShiftsLoading(true);
+        const response = await ShiftService.getShifts({ page: 1, page_size: 100 });
+        if (response.status && response.data) {
+          setShifts(response.data);
+          // Set first shift as default
+          if (response.data.length > 0) {
+            setSelectedShiftId(prev => prev || response.data[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching shifts:', error);
+      } finally {
+        setShiftsLoading(false);
+      }
+    };
+
+    if (organisationId) {
+      fetchShifts();
+    }
+  }, [organisationId]);
 
   // Fetch employees for the table
   const { data: employeesResponse, isLoading: employeesLoading } = useQuery({
@@ -108,34 +151,19 @@ export default function Dashboard() {
     }),
   });
 
-  // Fetch today's attendance stats
-  const { data: attendanceStats, isLoading: attendanceLoading } = useQuery({
-    queryKey: ['attendance', 'today-stats'],
-    queryFn: async () => {
-      try {
-        const today = new Date();
-        const startOfDay = new Date(today);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(today);
-        endOfDay.setHours(23, 59, 59, 999);
-        
-        const response = await attendanceService.getTodaysAttendance({
-          date: {
-            gte: startOfDay.toISOString(),
-            lte: endOfDay.toISOString(),
-          },
-          page: 1,
-          page_size: 1000,
-        });
-        const records = response.data || [];
-        // Count present/absent based on check_in_time or status
-        const present = records.filter((r: any) => r.check_in_time || r.status === 'present' || r.status === 'Present').length;
-        const absent = records.filter((r: any) => !r.check_in_time && (r.status === 'absent' || r.status === 'Absent')).length;
-        return { present, absent, total: records.length };
-      } catch {
-        return { present: 0, absent: 0, total: 0 };
-      }
+  // Fetch today's attendance statistics from API
+  const { data: attendanceStatsResponse, isLoading: attendanceLoading } = useQuery({
+    queryKey: ['attendance', 'statistics', 'dashboard', { 
+      organisationId,
+      shiftId: selectedShiftId
+    }],
+    queryFn: () => {
+      return attendanceService.getTodayAttendanceStatistics({
+        organisation_id: organisationId,
+        shift_id: selectedShiftId
+      });
     },
+    enabled: !!organisationId && !!selectedShiftId,
   });
 
   // Fetch leave requests for "On Leave" count
@@ -149,14 +177,20 @@ export default function Dashboard() {
   });
 
   const employees = employeesResponse?.data || [];
-  const totalPresent = attendanceStats?.present || 0;
-  const totalAbsent = attendanceStats?.absent || 0;
-  const totalOnLeave = leaveRequestsResponse?.data?.filter((lr: any) => {
-    const today = new Date();
-    const startDate = new Date(lr.start_date);
-    const endDate = new Date(lr.end_date);
-    return today >= startDate && today <= endDate;
-  }).length || 0;
+  
+  // Get statistics from API
+  const statistics = attendanceStatsResponse?.data || {
+    total_employees: 0,
+    present: 0,
+    absent: 0,
+    on_leave: 0,
+    half_day: 0
+  };
+  
+  const totalPresent = statistics.present || 0;
+  const totalAbsent = statistics.absent || 0;
+  const totalOnLeave = statistics.on_leave || 0;
+  const totalHalfDay = statistics.half_day || 0;
 
   const isLoading = employeesLoading || attendanceLoading || leavesLoading;
 
@@ -216,6 +250,24 @@ export default function Dashboard() {
 
         {/* Right Section - Column 9 */}
         <div className="lg:col-span-9 space-y-6">
+          {/* Shift Filter */}
+          <div className="flex items-center justify-end">
+            <Select 
+              value={selectedShiftId} 
+              onValueChange={setSelectedShiftId}
+              disabled={shiftsLoading}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={shiftsLoading ? "Loading..." : "Select Shift"} />
+              </SelectTrigger>
+              <SelectContent>
+                {shifts.map((shift) => (
+                  <SelectItem key={shift.id} value={shift.id}>{shift.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           {/* Row 1: Total Attendance Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Total Present */}
@@ -223,16 +275,12 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                
-                      Total Present
-                   
-                  
+                    Total Present
                   </div>
                   <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                     {totalPresent}
+                    {attendanceLoading ? '-' : totalPresent}
                   </div>
                 </div>
-             
               </CardContent>
             </Card>
 
@@ -241,33 +289,26 @@ export default function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                
-                      Total Absent
-                 
-      </div>
+                    Total Absent
+                  </div>
                   <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                   {totalAbsent}
-              </div>
-            </div>
-                
-          </CardContent>
-        </Card>
+                    {attendanceLoading ? '-' : totalAbsent}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Total On Leave */}
             <Card className="bg-white border-gray-200">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                
-                      Total On Leave
-                  
-                  
+                    Total On Leave
                   </div>
                   <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {totalOnLeave}
+                    {attendanceLoading ? '-' : totalOnLeave}
                   </div>
                 </div>
-               
               </CardContent>
             </Card>
               </div>
