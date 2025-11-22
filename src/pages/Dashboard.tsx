@@ -206,9 +206,11 @@ export default function Dashboard() {
                     It's a lot of work for today! So let's get started.
                   </p>
                 </div>
-                <Button className="w-full bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white">
-                  Review it
-                </Button>
+                <div className="mt-4">
+                  <Button className="w-full bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white">
+                    Review it
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -335,11 +337,11 @@ export default function Dashboard() {
             {/* Events and Meetings - 5 columns */}
             <div className="lg:col-span-5">
               <Card className="bg-white border-gray-200 h-full flex flex-col">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0 gap-4">
                 <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                   Events and Meetings
                 </CardTitle>
-                <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white">
+                <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white flex-shrink-0">
                   <Plus className="h-3 w-3 mr-1" />
                   Add
                 </Button>
@@ -384,11 +386,11 @@ export default function Dashboard() {
         {/* Employee List - Column 8 */}
         <div className="lg:col-span-8">
           <Card className="bg-white border-gray-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 gap-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                     Employee Status
                   </CardTitle>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 flex-shrink-0">
                     <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white">
                       Sort & Filter
                     </Button>
@@ -444,7 +446,7 @@ export default function Dashboard() {
                             <TableCell className="text-xs text-gray-600 dark:text-gray-400">
                               {employee.department?.name?.split(' ')[0] || 'N/A'}
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="px-2">
                               <Button variant="ghost" size="icon" className="h-6 w-6">
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -461,12 +463,12 @@ export default function Dashboard() {
         {/* Birthdays - Column 4 */}
         <div className="lg:col-span-4">
           <Card className="bg-white border-gray-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 gap-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                     Birthdays
                   </CardTitle>
                   <Select defaultValue="This month">
-                    <SelectTrigger className="w-32 h-8 text-xs">
+                    <SelectTrigger className="w-32 h-8 text-xs flex-shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>

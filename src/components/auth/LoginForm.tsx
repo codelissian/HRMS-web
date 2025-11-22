@@ -1,21 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, LogIn, ArrowLeft, Shield, Users } from 'lucide-react';
+import { Eye, EyeOff, LogIn } from 'lucide-react';
 import { authService } from '@/services/authService';
+import { DashboardPreview } from './DashboardPreview';
+import { Settings2 } from 'lucide-react';
 
 export function LoginForm() {
-  const [loginMethod, setLoginMethod] = useState('email');
-  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('');
+  const [userType, setUserType] = useState('admin');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuth();
@@ -34,7 +35,7 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!emailOrPhone || !password) {
+    if (!email || !password) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -47,10 +48,9 @@ export function LoginForm() {
     
     try {
       const authData = await authService.login({
-        email: loginMethod === 'email' ? emailOrPhone : undefined,
-        mobile: loginMethod === 'phone' ? emailOrPhone : undefined,
+        email,
         password,
-        user_type: (userType || 'employee') as 'admin' | 'employee',
+        user_type: (userType || 'admin') as 'admin' | 'employee',
       });
 
       login(authData);
@@ -73,79 +73,29 @@ export function LoginForm() {
     }
   };
 
-  const getUserTypeInfo = () => {
-    if (userType === 'admin') {
-      return {
-        icon: Shield,
-        title: 'Admin Login',
-        description: 'Access administrative dashboard',
-        color: 'purple'
-      };
-    }
-    return {
-      icon: Users,
-      title: 'Employee Login', 
-      description: 'Access your personal dashboard',
-      color: 'blue'
-    };
-  };
-
-  const typeInfo = getUserTypeInfo();
-
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center gap-3 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/')}
-              className="p-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className={`w-10 h-10 rounded-lg bg-${typeInfo.color}-500 flex items-center justify-center`}>
-              <typeInfo.icon className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <CardTitle className="text-xl">{typeInfo.title}</CardTitle>
-              <CardDescription className="text-sm">{typeInfo.description}</CardDescription>
-            </div>
+  // Only show split-screen for admin, show simple form for employee
+  if (userType === 'employee') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-2">Employee Login</h2>
+            <p className="text-gray-600 dark:text-gray-400">Access your personal dashboard</p>
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
             <div className="space-y-2">
-              <Label htmlFor="loginMethod">Login Method <span className="text-red-500">*</span></Label>
-              <Select value={loginMethod} onValueChange={setLoginMethod}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select login method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="phone">Phone</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="emailOrPhone">
-                {loginMethod === 'email' ? 'Email Address' : 'Phone Number'} <span className="text-red-500">*</span>
-              </Label>
+              <Label htmlFor="email">Email Address</Label>
               <Input
-                id="emailOrPhone"
-                type={loginMethod === 'email' ? 'email' : 'tel'}
-                placeholder={loginMethod === 'email' ? 'Enter your email address' : 'Enter your phone number'}
-                value={emailOrPhone}
-                onChange={(e) => setEmailOrPhone(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                className="focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
             <div className="space-y-2">
-              <Label htmlFor="password">Password <span className="text-red-500">*</span></Label>
+              <Label htmlFor="password">Password</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -154,7 +104,7 @@ export function LoginForm() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="focus:ring-2 focus:ring-blue-500 pr-10"
+                  className="pr-10"
                 />
                 <Button
                   type="button"
@@ -171,39 +121,155 @@ export function LoginForm() {
                 </Button>
               </div>
             </div>
-            
-            <Button 
-              type="submit" 
-              className={`w-full bg-${typeInfo.color}-500 hover:bg-${typeInfo.color}-600`} 
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                  Signing in...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </div>
-              )}
+            <Button type="submit" className="w-full bg-[#0B2E5C] hover:bg-[#0B2E5C]/90" disabled={isLoading}>
+              {isLoading ? 'Signing in...' : 'Log In'}
             </Button>
           </form>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Don't have an account?{' '}
-              <button 
-                onClick={() => navigate('/register')}
-                className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 font-medium"
-              >
-                Sign up
-              </button>
-            </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen flex overflow-hidden">
+      {/* Left Side - Login Form */}
+      <div className="w-full lg:w-1/2 bg-white flex flex-col h-full">
+        {/* Header */}
+        <div className="p-4 lg:p-6 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#0B2E5C] flex items-center justify-center">
+              <Settings2 className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-lg font-bold text-gray-900">OneHR</span>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Form Content */}
+        <div className="flex-1 flex items-center justify-center px-6 lg:px-8 overflow-y-auto">
+          <div className="w-full max-w-md py-4">
+            <div className="mb-6">
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
+                Welcome Back
+              </h1>
+              <p className="text-sm text-gray-600">
+                Enter your email and password to access your account.
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="sellostore@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-10 rounded-lg border-gray-300 focus:border-[#0B2E5C] focus:ring-[#0B2E5C]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Password
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-10 rounded-lg border-gray-300 focus:border-[#0B2E5C] focus:ring-[#0B2E5C] pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-500" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-500" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="remember"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                  />
+                  <Label
+                    htmlFor="remember"
+                    className="text-sm text-gray-600 cursor-pointer"
+                  >
+                    Remember Me
+                  </Label>
+                </div>
+                <button
+                  type="button"
+                  className="text-sm text-[#0B2E5C] hover:underline"
+                >
+                  Forgot Your Password?
+                </button>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full h-10 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white rounded-lg"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Signing in...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Log In
+                  </div>
+                )}
+              </Button>
+            </form>
+
+            {/* Register Link */}
+            <div className="text-center">
+              <p className="text-xs text-gray-600">
+                Don't Have An Account?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigate('/register')}
+                  className="text-[#0B2E5C] hover:underline font-medium"
+                >
+                  Register Now.
+                </button>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 flex items-center justify-between text-xs text-gray-500 flex-shrink-0">
+          <span>Copyright © 2025 OneHR Enterprises LTD.</span>
+          <button className="hover:underline">Privacy Policy</button>
+        </div>
+      </div>
+
+      {/* Right Side - Dashboard Preview */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0B2E5C] to-[#0D3A6B] h-full overflow-hidden">
+        <DashboardPreview />
+      </div>
     </div>
   );
 }

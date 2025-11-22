@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect } fr
 import { ShiftService, CreateShiftData, Shift, ShiftsResponse } from '@/services/shiftService';
 import { getOrganisationId } from '@/lib/shift-utils';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 // Optimized shift data structure - only essential fields
 export interface ShiftSummary {
@@ -50,6 +51,7 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
 
   // Debounce search term
   useEffect(() => {
@@ -80,16 +82,18 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchShifts = useCallback(async (page?: number, size?: number) => {
+    // Don't fetch if user is not authenticated
+    if (!isAuthenticated) {
+      return;
+    }
+
     try {
       setIsLoading(true);
       const organisationId = getOrganisationId();
       
       if (!organisationId) {
-        toast({
-          title: "Error",
-          description: "Organisation ID not found. Please log in again.",
-          variant: "destructive",
-        });
+        // Silently return if no organisation ID (user might not be logged in yet)
+        setIsLoading(false);
         return;
       }
 
@@ -137,7 +141,7 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, transformShiftData, currentPage, pageSize, debouncedSearchTerm]);
+  }, [toast, transformShiftData, currentPage, pageSize, debouncedSearchTerm, isAuthenticated]);
 
   const selectShift = useCallback((shift: ShiftSummary) => {
     setSelectedShift(shift);
@@ -278,12 +282,12 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     fetchShifts(1, size);
   }, [fetchShifts]);
 
-  // Fetch shifts when debouncedSearchTerm changes
+  // Fetch shifts when debouncedSearchTerm changes, but only if user is authenticated
   useEffect(() => {
-    if (debouncedSearchTerm !== undefined) {
+    if (debouncedSearchTerm !== undefined && isAuthenticated) {
       fetchShifts();
     }
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchTerm, isAuthenticated]);
 
   const value: ShiftsContextValue = {
     shifts,
