@@ -80,12 +80,14 @@ export interface AttendanceStats {
 export interface TodaysAttendanceRequest {
   shift_id?: string;
   organisation_id?: string;
-  date: {
-    gte: string; // ISO date string
-    lte: string; // ISO date string
-  };
+  date: string; // ISO date string
   page?: number;
   page_size?: number;
+  include?: string[]; // Array of relations to include (e.g., ["department"])
+  search?: {
+    keys: string[];
+    value: string;
+  };
 }
 
 export interface TodaysAttendanceRecord {
@@ -100,8 +102,27 @@ export interface TodaysAttendanceRecord {
   shift_id: string;
   status: 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'ON_LEAVE' | 'WEEKEND';
   attendance_records: AttendanceEvent[];
+  // Direct fields from API (if available)
+  check_in_time?: string;
+  check_out_time?: string;
+  is_late?: boolean;
+  is_early?: boolean;
   // Include other employee fields as needed
   [key: string]: any;
+}
+
+// Today's Attendance Statistics API types
+export interface TodayAttendanceStatisticsRequest {
+  shift_id: string;
+  organisation_id: string;
+}
+
+export interface TodayAttendanceStatistics {
+  total_employees: number;
+  present: number;
+  absent: number;
+  on_leave: number;
+  half_day: number;
 }
 
 class AttendanceService {
@@ -268,6 +289,11 @@ class AttendanceService {
     const url = `${API_ENDPOINTS.ATTENDANCE_DAY}${queryParams}`;
     
     const response = await httpClient.post<ApiResponse<TodaysAttendanceRecord[]>>(url, params);
+    return response.data;
+  }
+
+  async getTodayAttendanceStatistics(params: TodayAttendanceStatisticsRequest): Promise<ApiResponse<TodayAttendanceStatistics>> {
+    const response = await httpClient.post<ApiResponse<TodayAttendanceStatistics>>(API_ENDPOINTS.ATTENDANCE_STATISTICS, params);
     return response.data;
   }
 }

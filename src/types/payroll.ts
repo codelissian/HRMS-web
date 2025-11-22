@@ -78,7 +78,16 @@ export interface Payroll {
   created_at: string;
   created_by: string | null;
   modified_by: string | null;
-  employee: Employee;
+  employee?: Employee;
+  organisation?: {
+    id: string;
+    name: string;
+    currency_symbol?: string;
+    currency_position?: string;
+    currence_name?: string;
+    currence_code?: string;
+    [key: string]: any;
+  };
 }
 
 export interface CreatePayrollData {

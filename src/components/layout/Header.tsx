@@ -36,6 +36,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path.includes('/admin/attendance-policies/') && path.includes('/edit')) return 'Edit Attendance Policy';
       if (path === '/admin/work-day-rules') return 'Work Day Rules';
       if (path === '/admin/attendance') return 'Attendance Management';
+      if (path === '/admin/attendance/today') return "Today's Attendance";
       if (path === '/admin/leave-requests') return 'Leave Requests';
       if (path === '/admin/leave-management') return 'Leave Management';
       if (path === '/admin/organization') return 'Organization';
@@ -72,6 +73,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path.includes('/admin/attendance-policies/') && path.includes('/edit')) return 'Update attendance tracking rules and policies for your organization';
       if (path === '/admin/work-day-rules') return 'Manage work day rules for your organization';
       if (path === '/admin/attendance') return 'Monitor employee attendance and statistics';
+      if (path === '/admin/attendance/today') return 'Monitor and track employee attendance for today';
       if (path === '/admin/leave-requests') return 'Review and manage leave requests';
       if (path === '/admin/leave-management') return 'Configure leave types and policies';
       if (path === '/admin/organization') return 'Manage your organization settings and details';

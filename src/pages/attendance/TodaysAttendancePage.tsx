@@ -9,7 +9,6 @@ import { UserCheck, Clock, Calendar, Download, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService, TodaysAttendanceRecord } from '@/services/attendanceService';
 import { ShiftService } from '@/services/shiftService';
-import { departmentService } from '@/services/departmentService';
 import { LoadingSpinner, EmptyState, Pagination } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,7 +23,6 @@ export default function TodaysAttendancePage() {
   const [selectedShiftId, setSelectedShiftId] = useState<string>('');
   const [shifts, setShifts] = useState<any[]>([]);
   const [shiftsLoading, setShiftsLoading] = useState(false);
-  const [departments, setDepartments] = useState<any[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,7 +66,7 @@ export default function TodaysAttendancePage() {
     return orgId;
   }, [user]);
 
-  // Fetch shifts and departments
+  // Fetch shifts
   useEffect(() => {
     const fetchShifts = async () => {
       try {
@@ -88,43 +86,36 @@ export default function TodaysAttendancePage() {
       }
     };
 
-    const fetchDepartments = async () => {
-      try {
-        const response = await departmentService.getDepartments({ page: 1, page_size: 100 });
-        if (response.status && response.data) {
-          setDepartments(response.data);
-        }
-      } catch (error) {
-        console.error('Error fetching departments:', error);
-      }
-    };
-
     if (organisationId) {
       fetchShifts();
-      fetchDepartments();
     }
   }, [organisationId]);
 
-  // Get selected date range (start and end of day in UTC)
-  const dateRange = useMemo(() => {
-    const date = new Date(selectedDate);
-    const startOfDay = new Date(date);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(date);
-    endOfDay.setUTCHours(23, 59, 59, 999);
-    
-    return {
-      gte: startOfDay.toISOString(),
-      lte: endOfDay.toISOString()
-    };
+  // Get selected date as ISO string
+  const selectedDateISO = useMemo(() => {
+    return new Date(selectedDate).toISOString();
   }, [selectedDate]);
+
+  // Fetch attendance statistics
+  const { data: statisticsResponse, isLoading: statisticsLoading } = useQuery({
+    queryKey: ['attendance', 'statistics', 'today', { 
+      organisationId,
+      shiftId: selectedShiftId
+    }],
+    queryFn: () => {
+      return attendanceService.getTodayAttendanceStatistics({
+        organisation_id: organisationId,
+        shift_id: selectedShiftId
+      });
+    },
+    enabled: !!organisationId && !!selectedShiftId,
+  });
 
   // Fetch attendance
   const { data: attendanceResponse, isLoading, error, refetch } = useQuery({
     queryKey: ['attendance', 'today', { 
       organisationId,
-      dateRange,
+      date: selectedDateISO,
       shiftId: selectedShiftId,
       page: currentPage,
       page_size: pageSize,
@@ -134,9 +125,10 @@ export default function TodaysAttendancePage() {
       const params: any = {
         organisation_id: organisationId,
         shift_id: selectedShiftId || undefined,
-        date: dateRange,
+        date: selectedDateISO,
         page: currentPage,
-        page_size: pageSize
+        page_size: pageSize,
+        include: ["department", "shift"]
       };
 
       // Add search parameter if search term exists
@@ -155,6 +147,15 @@ export default function TodaysAttendancePage() {
   const attendanceRecords = attendanceResponse?.data || [];
   const totalCount = attendanceResponse?.total_count || 0;
   const pageCount = attendanceResponse?.page_count || 0;
+  
+  // Get statistics from API
+  const statistics = statisticsResponse?.data || {
+    total_employees: 0,
+    present: 0,
+    absent: 0,
+    on_leave: 0,
+    half_day: 0
+  };
 
   const getStatusColor = (status: string) => {
     const normalizedStatus = status?.toLowerCase() || '';
@@ -221,26 +222,6 @@ export default function TodaysAttendancePage() {
     }
   };
 
-  // Calculate statistics
-  const todayStats = useMemo(() => {
-    const present = attendanceRecords.filter(r => r.status?.toLowerCase() === 'present').length;
-    const absent = attendanceRecords.filter(r => r.status?.toLowerCase() === 'absent').length;
-    const halfDay = attendanceRecords.filter(r => 
-      r.status?.toLowerCase() === 'half_day' || r.status?.toLowerCase() === 'half-day'
-    ).length;
-    const onLeave = attendanceRecords.filter(r => 
-      r.status?.toLowerCase() === 'on_leave' || r.status?.toLowerCase() === 'on-leave'
-    ).length;
-    const total = attendanceRecords.length;
-
-    return {
-      present,
-      absent,
-      halfDay,
-      onLeave,
-      total
-    };
-  }, [attendanceRecords]);
 
   if (error) {
     return (
@@ -330,31 +311,31 @@ export default function TodaysAttendancePage() {
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total</div>
-            <div className="text-3xl font-bold">{todayStats.total}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.total_employees}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Present</div>
-            <div className="text-3xl font-bold">{todayStats.present}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.present}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Absent</div>
-            <div className="text-3xl font-bold">{todayStats.absent}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.absent}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Half Day</div>
-            <div className="text-3xl font-bold">{todayStats.halfDay}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.half_day}</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6 pb-6">
             <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total On Leave</div>
-            <div className="text-3xl font-bold">{todayStats.onLeave}</div>
+            <div className="text-3xl font-bold">{statisticsLoading ? '-' : statistics.on_leave}</div>
           </CardContent>
         </Card>
       </div>
@@ -390,33 +371,85 @@ export default function TodaysAttendancePage() {
                   </TableHeader>
                 <TableBody>
                   {attendanceRecords.map((record) => {
-                    // Get check-in and check-out times from attendance_records
-                    const clockIn = record.attendance_records?.find(r => r.event_type === 'CLOCK_IN');
-                    const clockOut = record.attendance_records?.find(r => r.event_type === 'CLOCK_OUT');
+                    // Get check-in and check-out times - prefer direct API fields, fallback to attendance_records
+                    let checkInTime: Date | null = null;
+                    let checkOutTime: Date | null = null;
                     
-                    const checkInTime = clockIn ? new Date(clockIn.event_time) : null;
-                    const checkOutTime = clockOut ? new Date(clockOut.event_time) : null;
+                    // Check for check-in time from API (try multiple possible field names)
+                    const checkInFromAPI = (record as any).check_in_time || (record as any).check_in || (record as any).checkInTime;
+                    if (checkInFromAPI) {
+                      // Use direct field from API if available
+                      try {
+                        checkInTime = new Date(checkInFromAPI);
+                        // Validate the date
+                        if (isNaN(checkInTime.getTime())) {
+                          checkInTime = null;
+                        }
+                      } catch (e) {
+                        checkInTime = null;
+                      }
+                    }
                     
-                    // Get shift details
-                    const shift = shifts.find(s => s.id === record.shift_id);
+                    // If not found in direct fields, try attendance_records
+                    if (!checkInTime) {
+                      const clockIn = record.attendance_records?.find(r => r.event_type === 'CLOCK_IN');
+                      if (clockIn?.event_time) {
+                        checkInTime = new Date(clockIn.event_time);
+                      }
+                    }
+                    
+                    // Check for check-out time from API (try multiple possible field names)
+                    const checkOutFromAPI = (record as any).check_out_time || (record as any).check_out || (record as any).checkOutTime;
+                    if (checkOutFromAPI) {
+                      // Use direct field from API if available
+                      try {
+                        checkOutTime = new Date(checkOutFromAPI);
+                        // Validate the date
+                        if (isNaN(checkOutTime.getTime())) {
+                          checkOutTime = null;
+                        }
+                      } catch (e) {
+                        checkOutTime = null;
+                      }
+                    }
+                    
+                    // If not found in direct fields, try attendance_records
+                    if (!checkOutTime) {
+                      const clockOut = record.attendance_records?.find(r => r.event_type === 'CLOCK_OUT');
+                      if (clockOut?.event_time) {
+                        checkOutTime = new Date(clockOut.event_time);
+                      }
+                    }
+                    
+                    // Get shift details from included shift data
+                    const shift = (record as any).shift;
                     const shiftName = shift?.name || 'N/A';
                     
-                    // Get department name (if departments are available)
-                    const department = departments?.find(d => d.id === record.department_id);
-                    const departmentName = department?.name || '';
+                    // Get department name from included department data
+                    const departmentName = (record as any).department?.name || '';
                     
-                    // Calculate Is Late (check if check-in is after shift start + grace period)
-                    let isLate = false;
-                    if (checkInTime && shift?.start) {
+                    // Get Is Late - prefer direct API field, fallback to calculation
+                    let isLate: boolean | null = null;
+                    const hasIsLateFromAPI = (record as any).is_late !== undefined;
+                    if (hasIsLateFromAPI) {
+                      // Use direct field from API if available
+                      isLate = (record as any).is_late;
+                    } else if (checkInTime && shift?.start) {
+                      // Fallback to calculation
                       const shiftStartTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${shift.start}`);
                       const graceMinutes = shift.grace_minutes || 0;
                       const allowedStartTime = new Date(shiftStartTime.getTime() + graceMinutes * 60000);
                       isLate = checkInTime > allowedStartTime;
                     }
                     
-                    // Calculate Is Early (check if check-out is before shift end)
-                    let isEarly = false;
-                    if (checkOutTime && shift?.end) {
+                    // Get Is Early - prefer direct API field, fallback to calculation
+                    let isEarly: boolean | null = null;
+                    const hasIsEarlyFromAPI = (record as any).is_early !== undefined;
+                    if (hasIsEarlyFromAPI) {
+                      // Use direct field from API if available
+                      isEarly = (record as any).is_early;
+                    } else if (checkOutTime && shift?.end) {
+                      // Fallback to calculation
                       const shiftEndTime = new Date(`${format(selectedDate, 'yyyy-MM-dd')}T${shift.end}`);
                       isEarly = checkOutTime < shiftEndTime;
                     }
@@ -449,7 +482,7 @@ export default function TodaysAttendancePage() {
                           {checkOutTime ? format(checkOutTime, 'HH:mm:ss') : <span className="text-gray-500">-</span>}
                         </TableCell>
                         <TableCell className="text-center">
-                          {checkInTime ? (
+                          {isLate !== null ? (
                             <Badge variant={isLate ? "destructive" : "outline"} className="inline-flex px-2 py-1">
                               {isLate ? "Yes" : "No"}
                             </Badge>
@@ -458,7 +491,7 @@ export default function TodaysAttendancePage() {
                           )}
                         </TableCell>
                         <TableCell className="text-center">
-                          {checkOutTime ? (
+                          {isEarly !== null ? (
                             <Badge variant={isEarly ? "destructive" : "outline"} className="inline-flex px-2 py-1">
                               {isEarly ? "Yes" : "No"}
                             </Badge>

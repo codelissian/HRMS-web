@@ -26,6 +26,8 @@ import CreateAttendancePolicyPage from "@/pages/attendance-policies/CreateAttend
 import { WorkDayRulePage } from "@/pages/work-day-rule";
 import { PayrollPage } from "@/pages/payroll";
 import { PayrollCyclePage } from "@/pages/payroll-cycle";
+import PayrollCycleDetailsPage from "@/pages/payroll-cycle/PayrollCycleDetailsPage";
+import PayrollCycleDetailsTest from "@/pages/payroll-cycle/PayrollCycleDetailsTest";
 import { SalaryComponentTypesPage } from "@/pages/salary-component-types";
 import HolidayList from "@/pages/holidays/HolidayList";
 import HolidayDetail from "@/pages/holidays/HolidayDetail";
@@ -122,6 +124,8 @@ function AppRoutes() {
         <Route path="holidays/:id" element={<HolidayDetail />} />
         <Route path="salary-component-types" element={<SalaryComponentTypesPage />} />
         <Route path="payroll-cycle" element={<PayrollCyclePage />} />
+        <Route path="payroll-cycle/:id" element={<PayrollCycleDetailsPage />} />
+        <Route path="payroll-cycle/test" element={<PayrollCycleDetailsTest />} />
         <Route path="payroll" element={<PayrollPage />} />
         <Route path="" element={<Navigate to="/admin/dashboard" replace />} />
       </Route>

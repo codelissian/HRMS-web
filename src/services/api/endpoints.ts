@@ -93,6 +93,7 @@ const API = {
   ATTENDANCE_ONE: `/attendance/one`,
   ATTENDANCE_DELETE: `/attendance/delete`,
   ATTENDANCE_DAY: `/attendance/day`,
+  ATTENDANCE_STATISTICS: `/attendance/statistics`,
 
   // Leaves
   LEAVES_CREATE: `/leaves/create`,
@@ -171,6 +172,7 @@ const API = {
   PAYROLLS_LIST: `/payrolls/list`,
   PAYROLLS_ONE: `/payrolls/one`,
   PAYROLLS_DELETE: `/payrolls/delete`,
+  PAYROLLS_DOWNLOAD: `/payrolls/download`,
 };
 
 export const API_ENDPOINTS = API;

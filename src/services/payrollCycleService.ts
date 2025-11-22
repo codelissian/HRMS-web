@@ -42,8 +42,15 @@ export class PayrollCycleService {
     }
   }
 
-  static async getPayrollCycle(id: string): Promise<PayrollCycle> {
-    const response = await httpClient.post(API_ENDPOINTS.PAYROLL_CYCLES_ONE, { id });
+  static async getPayrollCycle(
+    id: string, 
+    include?: string[]
+  ): Promise<PayrollCycle> {
+    const payload: any = { id };
+    if (include && include.length > 0) {
+      payload.include = include;
+    }
+    const response = await httpClient.post(API_ENDPOINTS.PAYROLL_CYCLES_ONE, payload);
     if (response.data.status && response.data.data) {
       return response.data.data;
     } else {

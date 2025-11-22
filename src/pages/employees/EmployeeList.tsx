@@ -10,7 +10,6 @@ import { Plus, Download, Upload, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { useDepartments } from '@/hooks/useDepartments';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function EmployeeList() {
@@ -27,7 +26,6 @@ export default function EmployeeList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { departments, isLoading: departmentsLoading } = useDepartments();
   const { user } = useAuth();
 
   // Fetch employees with proper filtering and include department/designation data
@@ -55,7 +53,7 @@ export default function EmployeeList() {
         search: searchTerm || undefined,
         department_id: departmentFilter === 'all' ? undefined : departmentFilter,
         status: statusFilter === 'all' ? undefined : statusFilter,
-        include: ['department', 'designation']
+        include: ['department', 'designation', 'shift']
       });
     },
     enabled: !!user?.organisation_id,

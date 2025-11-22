@@ -10,6 +10,7 @@ export interface PayrollCycle {
   organisation_id: string;
   active_flag: boolean;
   delete_flag: boolean;
+  amount?: number;
   modified_at: string;
   created_at: string;
   created_by: string | null;
@@ -47,4 +48,15 @@ export interface PayrollCyclesResponse {
   page_count: number;
   page_size: number;
   page: number;
+}
+
+export interface PayrollCycleWithRelations extends PayrollCycle {
+  organisation?: {
+    id: string;
+    name: string;
+    code?: string | null;
+    currency_code?: string;
+    currency_symbol?: string;
+    [key: string]: any;
+  };
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,11 +19,15 @@ import {
   Cake
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { LoadingSpinner, EmptyState } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { attendanceService } from '@/services/attendanceService';
 import { leaveService } from '@/services/leaveService';
+import { ShiftService } from '@/services/shiftService';
 import { useAuth } from '@/hooks/useAuth';
+import { getOrganisationId } from '@/lib/shift-utils';
+import { authToken } from '@/services/authToken';
+import { useNavigate } from 'react-router-dom';
 import { 
   ChartContainer, 
   ChartTooltip, 
@@ -96,46 +100,89 @@ const birthdaysData = [
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [selectedShiftId, setSelectedShiftId] = useState<string>('');
+  const [shifts, setShifts] = useState<any[]>([]);
+  const [shiftsLoading, setShiftsLoading] = useState(false);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Get organisation_id from user, with multiple fallbacks
+  const organisationId = useMemo(() => {
+    const fromUser = user?.organisation_id;
+    const fromStorage = getOrganisationId();
+    const fromAuthToken = authToken.getorganisationId();
+    
+    // Try all sources in order of preference
+    const orgId = fromUser || fromStorage || fromAuthToken || '';
+    
+    return orgId;
+  }, [user]);
+
+  // Fetch shifts for dropdown
+  useEffect(() => {
+    const fetchShifts = async () => {
+      try {
+        setShiftsLoading(true);
+        const response = await ShiftService.getShifts({ page: 1, page_size: 100 });
+        if (response.status && response.data) {
+          setShifts(response.data);
+          // Set first shift as default
+          if (response.data.length > 0) {
+            setSelectedShiftId(prev => prev || response.data[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching shifts:', error);
+      } finally {
+        setShiftsLoading(false);
+      }
+    };
+
+    if (organisationId) {
+      fetchShifts();
+    }
+  }, [organisationId]);
 
   // Fetch employees for the table
   const { data: employeesResponse, isLoading: employeesLoading } = useQuery({
-    queryKey: ['employees', 'dashboard', { page: 1, page_size: 10 }],
-    queryFn: () => employeeService.getEmployees({ 
+    queryKey: ['employees', 'dashboard', { 
+      organisationId,
       page: 1, 
       page_size: 10,
+      search: debouncedSearchQuery
+    }],
+    queryFn: () => employeeService.getEmployees({ 
+      organisation_id: organisationId,
+      page: 1, 
+      page_size: 10,
+      search: debouncedSearchQuery || undefined,
       include: ['department', 'designation']
     }),
+    enabled: !!organisationId,
   });
 
-  // Fetch today's attendance stats
-  const { data: attendanceStats, isLoading: attendanceLoading } = useQuery({
-    queryKey: ['attendance', 'today-stats'],
-    queryFn: async () => {
-      try {
-        const today = new Date();
-        const startOfDay = new Date(today);
-        startOfDay.setHours(0, 0, 0, 0);
-        const endOfDay = new Date(today);
-        endOfDay.setHours(23, 59, 59, 999);
-        
-        const response = await attendanceService.getTodaysAttendance({
-          date: {
-            gte: startOfDay.toISOString(),
-            lte: endOfDay.toISOString(),
-          },
-          page: 1,
-          page_size: 1000,
-        });
-        const records = response.data || [];
-        // Count present/absent based on check_in_time or status
-        const present = records.filter((r: any) => r.check_in_time || r.status === 'present' || r.status === 'Present').length;
-        const absent = records.filter((r: any) => !r.check_in_time && (r.status === 'absent' || r.status === 'Absent')).length;
-        return { present, absent, total: records.length };
-      } catch {
-        return { present: 0, absent: 0, total: 0 };
-      }
+  // Fetch today's attendance statistics from API
+  const { data: attendanceStatsResponse, isLoading: attendanceLoading } = useQuery({
+    queryKey: ['attendance', 'statistics', 'dashboard', { 
+      organisationId,
+      shiftId: selectedShiftId
+    }],
+    queryFn: () => {
+      return attendanceService.getTodayAttendanceStatistics({
+        organisation_id: organisationId,
+        shift_id: selectedShiftId
+      });
     },
+    enabled: !!organisationId && !!selectedShiftId,
   });
 
   // Fetch leave requests for "On Leave" count
@@ -149,14 +196,20 @@ export default function Dashboard() {
   });
 
   const employees = employeesResponse?.data || [];
-  const totalPresent = attendanceStats?.present || 0;
-  const totalAbsent = attendanceStats?.absent || 0;
-  const totalOnLeave = leaveRequestsResponse?.data?.filter((lr: any) => {
-    const today = new Date();
-    const startDate = new Date(lr.start_date);
-    const endDate = new Date(lr.end_date);
-    return today >= startDate && today <= endDate;
-  }).length || 0;
+  
+  // Get statistics from API
+  const statistics = attendanceStatsResponse?.data || {
+    total_employees: 0,
+    present: 0,
+    absent: 0,
+    on_leave: 0,
+    half_day: 0
+  };
+  
+  const totalPresent = statistics.present || 0;
+  const totalAbsent = statistics.absent || 0;
+  const totalOnLeave = statistics.on_leave || 0;
+  const totalHalfDay = statistics.half_day || 0;
 
   const isLoading = employeesLoading || attendanceLoading || leavesLoading;
 
@@ -165,15 +218,17 @@ export default function Dashboard() {
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Good morning' : currentHour < 18 ? 'Good afternoon' : 'Good evening';
 
-  // Filter employees based on search
-  const filteredEmployees = employees.filter((emp: any) => 
-    emp.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.department?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    emp.designation?.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Handle view employee
+  const handleViewEmployee = (employee: any) => {
+    navigate(`/admin/employees/${employee.id}`);
+  };
 
   if (isLoading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex items-center justify-center min-h-[60vh] w-full">
+        <LoadingSpinner />
+      </div>
+    );
   }
 
   return (
@@ -218,61 +273,76 @@ export default function Dashboard() {
 
         {/* Right Section - Column 9 */}
         <div className="lg:col-span-9 space-y-6">
+          {/* Shift Filter */}
+          <div className="flex items-center justify-end">
+            <Select 
+              value={selectedShiftId} 
+              onValueChange={setSelectedShiftId}
+              disabled={shiftsLoading}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder={shiftsLoading ? "Loading..." : "Select Shift"} />
+              </SelectTrigger>
+              <SelectContent>
+                {shifts.map((shift) => (
+                  <SelectItem key={shift.id} value={shift.id}>{shift.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
           {/* Row 1: Total Attendance Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Total */}
+            <Card className="bg-white border-gray-200">
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : statistics.total_employees}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Total Present */}
             <Card className="bg-white border-gray-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                
-                      Total Present
-                   
-                  
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                     {totalPresent}
-                  </div>
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Present</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : totalPresent}
                 </div>
-             
               </CardContent>
             </Card>
 
             {/* Total Absent */}
             <Card className="bg-white border-gray-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                
-                      Total Absent
-                 
-      </div>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                   {totalAbsent}
-              </div>
-            </div>
-                
-          </CardContent>
-        </Card>
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Absent</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : totalAbsent}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Total Half Day */}
+            <Card className="bg-white border-gray-200">
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Half Day</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : totalHalfDay}
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Total On Leave */}
             <Card className="bg-white border-gray-200">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
-                
-                      Total On Leave
-                  
-                  
-                  </div>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {totalOnLeave}
-                  </div>
+              <CardContent className="pt-6 pb-6">
+                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total On Leave</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  {attendanceLoading ? '-' : totalOnLeave}
                 </div>
-               
               </CardContent>
             </Card>
-              </div>
+          </div>
               
           {/* Row 2: Employee Chart and Events/Meetings */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -336,18 +406,18 @@ export default function Dashboard() {
 
             {/* Events and Meetings - 5 columns */}
             <div className="lg:col-span-5">
-              <Card className="bg-white border-gray-200 h-full flex flex-col">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0 gap-4">
+              <Card className="bg-white border-gray-200 h-full flex flex-col relative">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 flex-shrink-0">
                 <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                   Events and Meetings
                 </CardTitle>
-                <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white flex-shrink-0">
+                <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white" disabled>
                   <Plus className="h-3 w-3 mr-1" />
                   Add
                 </Button>
               </CardHeader>
-              <CardContent className="flex-1 overflow-hidden flex flex-col p-0">
-                <div className="space-y-2 overflow-y-auto px-4 pb-4" style={{ maxHeight: '200px' }}>
+              <CardContent className="flex-1 overflow-hidden flex flex-col p-0 relative">
+                <div className="space-y-2 overflow-y-auto px-4 pb-4 blur-sm pointer-events-none" style={{ maxHeight: '200px' }}>
                   {eventsData.map((event) => (
                     <div key={event.id} className="flex items-start space-x-2 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                       <div className="w-8 h-8 bg-[#0B2E5C]/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -374,6 +444,13 @@ export default function Dashboard() {
                     </div>
                   ))}
                 </div>
+                {/* Coming Soon Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-b-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-400 dark:text-gray-500 mb-1">Coming Soon</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">This feature is under development</div>
+                  </div>
+                </div>
               </CardContent>
               </Card>
             </div>
@@ -390,9 +467,14 @@ export default function Dashboard() {
                   <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                     Employee Status
                   </CardTitle>
-                  <div className="flex items-center space-x-2 flex-shrink-0">
-                    <Button variant="outline" size="sm" className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white">
-                      Sort & Filter
+                  <div className="flex items-center space-x-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 text-xs border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white"
+                      onClick={() => navigate('/admin/employees')}
+                    >
+                      View More
                     </Button>
                   </div>
                 </CardHeader>
@@ -421,38 +503,64 @@ export default function Dashboard() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredEmployees.slice(0, 4).map((employee: any) => (
-                          <TableRow key={employee.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                            <TableCell className="text-xs text-gray-900 dark:text-white">
-                              {employee.id?.slice(-4) || 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
-                              {employee.name || 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-xs text-gray-600 dark:text-gray-400">
-                              {employee.designation?.name || employee.department?.name || 'N/A'}
-                            </TableCell>
-                            <TableCell>
-                              <Badge 
-                                variant={employee.active_flag ? 'default' : 'secondary'}
-                                className={employee.active_flag 
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                                }
-                              >
-                                {employee.active_flag ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-xs text-gray-600 dark:text-gray-400">
-                              {employee.department?.name?.split(' ')[0] || 'N/A'}
-                            </TableCell>
-                            <TableCell className="px-2">
-                              <Button variant="ghost" size="icon" className="h-6 w-6">
-                                <Eye className="h-4 w-4" />
-                              </Button>
+                        {employeesLoading ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8">
+                              <LoadingSpinner size="sm" />
                             </TableCell>
                           </TableRow>
-                        ))}
+                        ) : employees.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-sm text-gray-500 dark:text-gray-400">
+                              No employees found
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          employees.slice(0, 4).map((employee: any) => (
+                            <TableRow 
+                              key={employee.id} 
+                              className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                              onClick={() => handleViewEmployee(employee)}
+                            >
+                              <TableCell className="text-xs text-gray-900 dark:text-white">
+                                {(employee as any).code || employee.id?.slice(-4) || 'N/A'}
+                              </TableCell>
+                              <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
+                                {employee.name || 'N/A'}
+                              </TableCell>
+                              <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                                {employee.designation?.name || 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant={employee.active_flag ? 'default' : 'secondary'}
+                                  className={employee.active_flag 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                                  }
+                                >
+                                  {employee.active_flag ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                                {employee.department?.name || 'N/A'}
+                              </TableCell>
+                              <TableCell>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleViewEmployee(employee);
+                                  }}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -462,13 +570,13 @@ export default function Dashboard() {
 
         {/* Birthdays - Column 4 */}
         <div className="lg:col-span-4">
-          <Card className="bg-white border-gray-200">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 gap-4">
+          <Card className="bg-white border-gray-200 relative">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                   <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
                     Birthdays
                   </CardTitle>
-                  <Select defaultValue="This month">
-                    <SelectTrigger className="w-32 h-8 text-xs flex-shrink-0">
+                  <Select defaultValue="This month" disabled>
+                    <SelectTrigger className="w-32 h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -478,8 +586,8 @@ export default function Dashboard() {
                     </SelectContent>
                   </Select>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
+                <CardContent className="relative">
+                  <div className="space-y-4 blur-sm pointer-events-none">
                     {birthdaysData.map((person) => (
                       <div key={person.id} className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <Avatar className="h-10 w-10">
@@ -502,6 +610,13 @@ export default function Dashboard() {
                       </div>
                     ))}
             </div>
+                {/* Coming Soon Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-b-lg">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-gray-400 dark:text-gray-500 mb-1">Coming Soon</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">This feature is under development</div>
+                  </div>
+                </div>
           </CardContent>
         </Card>
         </div>
