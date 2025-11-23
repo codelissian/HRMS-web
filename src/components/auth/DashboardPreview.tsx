@@ -1,28 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export function DashboardPreview() {
-  const [imageSrc, setImageSrc] = useState<string | null>(null);
-  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState('/dashboard_preview.png');
 
-  useEffect(() => {
-    // Dynamically import the image to avoid build errors if it doesn't exist
-    const loadImage = async () => {
-      try {
-        // Use dynamic import - this won't break the build if file doesn't exist
-        const imageModule = await import(
-          /* @vite-ignore */
-          '@/assets/dashboard_preview.png'
-        );
-        setImageSrc(imageModule.default);
-        setImageLoaded(true);
-      } catch (error) {
-        // Image not found - will show placeholder
-        console.warn('Dashboard preview image not found:', error);
-        setImageLoaded(true);
-      }
-    };
-    loadImage();
-  }, []);
+  // Try to load image from public folder first, then fallback
+  const handleImageError = () => {
+    if (imageSrc === '/dashboard_preview.png') {
+      // Try alternative path or show placeholder
+      setImageError(true);
+    } else {
+      setImageError(true);
+    }
+  };
 
   return (
     <div className="relative h-full w-full flex items-center justify-center p-4 lg:p-6 overflow-hidden">
@@ -47,26 +37,25 @@ export function DashboardPreview() {
 
         {/* Dashboard Image or Placeholder */}
         <div className="relative transform rotate-[-1deg] hover:rotate-0 transition-transform duration-300">
-          {imageSrc ? (
+          {!imageError ? (
             <img 
               src={imageSrc} 
               alt="Dashboard Preview" 
               className="w-full h-auto rounded-xl lg:rounded-2xl shadow-2xl object-contain max-h-[calc(100vh-220px)]"
-              onError={() => setImageSrc(null)}
+              onError={handleImageError}
             />
-          ) : imageLoaded ? (
+          ) : (
             <div className="w-full h-[500px] bg-white/10 rounded-xl lg:rounded-2xl shadow-2xl flex items-center justify-center border-2 border-white/20">
               <div className="text-center text-white/70 px-8">
                 <p className="text-xl mb-3 font-semibold">Dashboard Preview</p>
-                <p className="text-base mb-2">Image not found</p>
-                <p className="text-sm">Add <code className="bg-white/10 px-2 py-1 rounded">dashboard_preview.png</code> to <code className="bg-white/10 px-2 py-1 rounded">src/assets/</code></p>
-              </div>
-            </div>
-          ) : (
-            <div className="w-full h-[500px] bg-white/10 rounded-xl lg:rounded-2xl shadow-2xl flex items-center justify-center">
-              <div className="text-center text-white/70">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
-                <p className="text-sm">Loading...</p>
+                <p className="text-base mb-4">Image not found</p>
+                <div className="text-sm space-y-2 text-left bg-white/5 p-4 rounded-lg">
+                  <p className="font-semibold mb-2">To fix this:</p>
+                  <p>1. Create a <code className="bg-white/10 px-2 py-1 rounded text-xs">public</code> folder at the root</p>
+                  <p>2. Copy <code className="bg-white/10 px-2 py-1 rounded text-xs">src/assets/dashboard_preview.png</code></p>
+                  <p>3. Paste it to <code className="bg-white/10 px-2 py-1 rounded text-xs">public/dashboard_preview.png</code></p>
+                  <p className="text-xs mt-3 text-white/60">Or restart your dev server if you just added the file</p>
+                </div>
               </div>
             </div>
           )}
