@@ -1,5 +1,5 @@
 // Import the dashboard image
-import dashboardImage from '@/assets/dashboard-preview.png';
+import dashboardImage from '@/assets/dashboard_preview.png';
 
 export function DashboardPreview() {
   return (
