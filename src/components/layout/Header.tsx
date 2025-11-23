@@ -171,7 +171,10 @@ export function Header({ onMenuClick }: HeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
-            <DropdownMenuItem onClick={logout}>
+            <DropdownMenuItem onClick={() => {
+              logout();
+              navigate('/login', { replace: true });
+            }}>
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>
