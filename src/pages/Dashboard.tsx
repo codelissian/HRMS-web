@@ -24,6 +24,7 @@ import { employeeService } from '@/services/employeeService';
 import { attendanceService } from '@/services/attendanceService';
 import { leaveService } from '@/services/leaveService';
 import { ShiftService } from '@/services/shiftService';
+import { designationService } from '@/services/designationService';
 import { useAuth } from '@/hooks/useAuth';
 import { getOrganisationId } from '@/lib/shift-utils';
 import { authToken } from '@/services/authToken';
@@ -49,38 +50,19 @@ import {
   TableRow 
 } from '@/components/ui/table';
 
-// Mock data for charts (replace with real API data later)
-// Using shades of #0B2E5C (navigation drawer color)
-const employeeDistributionData = [
-  { name: 'Software Engineer', value: 50, color: '#0B2E5C' },
-  { name: 'UI/UX Designer', value: 28, color: '#0D3A6B' },
-  { name: 'Data Analyst', value: 25, color: '#0F467A' },
-  { name: 'Mobile Development', value: 10, color: '#115289' },
-  { name: 'Project Manager', value: 7, color: '#135E98' },
+// Color palette for designations chart (shades of #0B2E5C)
+const designationColors = [
+  '#0B2E5C',
+  '#0D3A6B',
+  '#0F467A',
+  '#115289',
+  '#135E98',
+  '#1A6BA7',
+  '#2178B6',
+  '#2885C5',
+  '#2F92D4',
+  '#369FE3',
 ];
-
-const employeeChartConfig = {
-  'Software Engineer': {
-    label: "Software Engineer",
-    color: '#0B2E5C',
-  },
-  'UI/UX Designer': {
-    label: "UI/UX Designer",
-    color: '#0D3A6B',
-  },
-  'Data Analyst': {
-    label: "Data Analyst",
-    color: '#0F467A',
-  },
-  'Mobile Development': {
-    label: "Mobile Development",
-    color: '#115289',
-  },
-  'Project Manager': {
-    label: "Project Manager",
-    color: '#135E98',
-  },
-};
 
 // Mock events data (replace with real API data later)
 const eventsData = [
@@ -195,6 +177,16 @@ export default function Dashboard() {
     }),
   });
 
+  // Fetch designations with employee count for chart
+  const { data: designationsResponse, isLoading: designationsLoading } = useQuery({
+    queryKey: ['designations', 'with-employee-count', { organisationId }],
+    queryFn: () => designationService.getDesignationsWithEmployeeCount({
+      page: 1,
+      page_size: 100,
+    }),
+    enabled: !!organisationId,
+  });
+
   const employees = employeesResponse?.data || [];
   
   // Get statistics from API
@@ -210,6 +202,34 @@ export default function Dashboard() {
   const totalAbsent = statistics.absent || 0;
   const totalOnLeave = statistics.on_leave || 0;
   const totalHalfDay = statistics.half_day || 0;
+
+  // Transform designations data for chart
+  const employeeDistributionData = useMemo(() => {
+    const designations = designationsResponse?.data || [];
+    
+    // Filter out designations with 0 employees and sort by employee_count descending
+    const filteredDesignations = designations
+      .filter((d) => (d.employee_count || 0) > 0)
+      .sort((a, b) => (b.employee_count || 0) - (a.employee_count || 0));
+
+    return filteredDesignations.map((designation, index) => ({
+      name: designation.name,
+      value: designation.employee_count || 0,
+      color: designationColors[index % designationColors.length],
+    }));
+  }, [designationsResponse?.data]);
+
+  // Generate chart config dynamically
+  const employeeChartConfig = useMemo(() => {
+    const config: Record<string, { label: string; color: string }> = {};
+    employeeDistributionData.forEach((item) => {
+      config[item.name] = {
+        label: item.name,
+        color: item.color,
+      };
+    });
+    return config;
+  }, [employeeDistributionData]);
 
   const isLoading = employeesLoading || attendanceLoading || leavesLoading;
 
@@ -307,7 +327,7 @@ export default function Dashboard() {
             <Card className="bg-white border-gray-200">
               <CardContent className="pt-6 pb-6">
                 <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Present</div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
                   {attendanceLoading ? '-' : totalPresent}
                 </div>
               </CardContent>
@@ -327,22 +347,22 @@ export default function Dashboard() {
             <Card className="bg-white border-gray-200">
               <CardContent className="pt-6 pb-6">
                 <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total Half Day</div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
                   {attendanceLoading ? '-' : totalHalfDay}
-                </div>
-              </CardContent>
-            </Card>
+            </div>
+          </CardContent>
+        </Card>
 
             {/* Total On Leave */}
             <Card className="bg-white border-gray-200">
               <CardContent className="pt-6 pb-6">
                 <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Total On Leave</div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white">
                   {attendanceLoading ? '-' : totalOnLeave}
                 </div>
               </CardContent>
             </Card>
-          </div>
+              </div>
               
           {/* Row 2: Employee Chart and Events/Meetings */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -355,51 +375,66 @@ export default function Dashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex-1">
-                <div className="flex items-center justify-between">
-                  <div className="w-48 h-48">
-                    <ChartContainer 
-                      config={employeeChartConfig}
-                      className="h-full w-full"
-                    >
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={employeeDistributionData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={90}
-                            paddingAngle={2}
-                            dataKey="value"
-                          >
-                            {employeeDistributionData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </ChartContainer>
+                {designationsLoading ? (
+                  <div className="flex items-center justify-center h-48">
+                    <LoadingSpinner size="sm" />
                   </div>
-                  <div className="flex-1 space-y-3 ml-6">
-                    {employeeDistributionData.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-sm text-gray-600 dark:text-gray-400">
-                            {item.name}
-                          </span>
-                        </div>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {item.value}
-                        </span>
+                ) : employeeDistributionData.length === 0 ? (
+                  <div className="flex items-center justify-center h-48">
+                    <EmptyState
+                      title="No data available"
+                      description="No designations with employees found"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between">
+                    <div className="w-40 h-40">
+                      <ChartContainer 
+                        config={employeeChartConfig}
+                        className="h-full w-full"
+                      >
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={employeeDistributionData}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={75}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              {employeeDistributionData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </ChartContainer>
+                    </div>
+                    <div className="flex-1 ml-6 max-h-40 overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
+                      <div className="space-y-2 pr-2">
+                        {employeeDistributionData.map((item, index) => (
+                          <div key={index} className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2 min-w-0 flex-1">
+                              <div 
+                                className="w-3 h-3 rounded-full flex-shrink-0" 
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                                {item.name}
+                              </span>
+                            </div>
+                            <span className="text-xs font-semibold text-gray-900 dark:text-white ml-2 flex-shrink-0">
+                              {item.value}
+                            </span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
-                </div>
+                )}
               </CardContent>
               </Card>
             </div>
@@ -522,30 +557,30 @@ export default function Dashboard() {
                               className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                               onClick={() => handleViewEmployee(employee)}
                             >
-                              <TableCell className="text-xs text-gray-900 dark:text-white">
+                            <TableCell className="text-xs text-gray-900 dark:text-white">
                                 {(employee as any).code || employee.id?.slice(-4) || 'N/A'}
-                              </TableCell>
-                              <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
-                                {employee.name || 'N/A'}
-                              </TableCell>
-                              <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                            </TableCell>
+                            <TableCell className="text-xs font-medium text-gray-900 dark:text-white">
+                              {employee.name || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-xs text-gray-600 dark:text-gray-400">
                                 {employee.designation?.name || 'N/A'}
-                              </TableCell>
-                              <TableCell>
-                                <Badge 
-                                  variant={employee.active_flag ? 'default' : 'secondary'}
-                                  className={employee.active_flag 
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
-                                    : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
-                                  }
-                                >
-                                  {employee.active_flag ? 'Active' : 'Inactive'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-xs text-gray-600 dark:text-gray-400">
+                            </TableCell>
+                            <TableCell>
+                              <Badge 
+                                variant={employee.active_flag ? 'default' : 'secondary'}
+                                className={employee.active_flag 
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400'
+                                }
+                              >
+                                {employee.active_flag ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs text-gray-600 dark:text-gray-400">
                                 {employee.department?.name || 'N/A'}
-                              </TableCell>
-                              <TableCell>
+                            </TableCell>
+                            <TableCell>
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
@@ -555,10 +590,10 @@ export default function Dashboard() {
                                     handleViewEmployee(employee);
                                   }}
                                 >
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
                           ))
                         )}
                       </TableBody>
@@ -616,7 +651,7 @@ export default function Dashboard() {
                     <div className="text-2xl font-bold text-gray-400 dark:text-gray-500 mb-1">Coming Soon</div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">This feature is under development</div>
                   </div>
-                </div>
+            </div>
           </CardContent>
         </Card>
         </div>

@@ -56,6 +56,7 @@ const API = {
   DESIGNATIONS_CREATE: `/designations/create`,
   DESIGNATIONS_UPDATE: `/designations/update`,
   DESIGNATIONS_LIST: `/designations/list`,
+  DESIGNATIONS_LIST_WITH_EMPLOYEE_COUNT: `/designations/list-with-employee-count`,
   DESIGNATIONS_ONE: `/designations/one`,
   DESIGNATIONS_DELETE: `/designations/delete`,
 
