@@ -1,20 +1,22 @@
 import React from 'react';
 import { DataTable, Column, TableAction } from '@/components/common/DataTable';
 import { ShiftSummary } from '@/contexts/ShiftsContext';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, UserPlus } from 'lucide-react';
 
 interface ShiftTableProps {
   shifts: ShiftSummary[];
   loading?: boolean;
   onEdit: (shift: ShiftSummary) => void;
   onDelete: (shift: ShiftSummary) => void;
+  onAssignEmployees?: (shift: ShiftSummary) => void;
 }
 
 export function ShiftTable({
   shifts,
   loading = false,
   onEdit,
-  onDelete
+  onDelete,
+  onAssignEmployees
 }: ShiftTableProps) {
   const columns: Column<ShiftSummary>[] = [
     {
@@ -104,6 +106,11 @@ export function ShiftTable({
   ];
 
   const actions: TableAction<ShiftSummary>[] = [
+    ...(onAssignEmployees ? [{
+      label: 'Assign Employees',
+      icon: UserPlus,
+      onClick: onAssignEmployees,
+    }] : []),
     {
       label: 'Edit',
       icon: Edit,

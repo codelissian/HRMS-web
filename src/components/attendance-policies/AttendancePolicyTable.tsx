@@ -1,20 +1,22 @@
 import React from 'react';
 import { DataTable, Column, TableAction } from '@/components/common/DataTable';
 import { AttendancePolicy } from '@/types/attendance';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, UserPlus } from 'lucide-react';
 
 interface AttendancePolicyTableProps {
   policies: AttendancePolicy[];
   loading?: boolean;
   onEdit: (policy: AttendancePolicy) => void;
   onDelete: (policy: AttendancePolicy) => void;
+  onAssignEmployees?: (policy: AttendancePolicy) => void;
 }
 
 export function AttendancePolicyTable({
   policies,
   loading = false,
   onEdit,
-  onDelete
+  onDelete,
+  onAssignEmployees
 }: AttendancePolicyTableProps) {
 
 
@@ -79,6 +81,11 @@ export function AttendancePolicyTable({
   ];
 
   const actions: TableAction<AttendancePolicy>[] = [
+    ...(onAssignEmployees ? [{
+      label: 'Assign Employees',
+      icon: UserPlus,
+      onClick: onAssignEmployees,
+    }] : []),
     {
       label: 'Edit',
       icon: Edit,

@@ -8,7 +8,12 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/hooks/useAuth';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { departmentService } from '@/services/departmentService';
+import { designationService } from '@/services/designationService';
+import { AttendancePolicyService } from '@/services/attendancePolicyService';
+import { ShiftService } from '@/services/shiftService';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -18,9 +23,42 @@ export function Header({ onMenuClick }: HeaderProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const params = useParams<{ type?: string; id?: string }>();
+
+  // Fetch item details for assignment page
+  const isAssignmentPage = location.pathname.startsWith('/admin/employees/assign/');
+  const { data: assignmentItem } = useQuery({
+    queryKey: ['assignment-item-header', params.type, params.id],
+    queryFn: async () => {
+      if (!params.type || !params.id) return null;
+
+      switch (params.type) {
+        case 'department':
+          const deptResponse = await departmentService.getDepartment(params.id);
+          return { name: deptResponse.data.name, type: 'Department' };
+        case 'designation':
+          const desigResponse = await designationService.getDesignation(params.id);
+          return { name: desigResponse.data.name, type: 'Designation' };
+        case 'attendance-policy':
+          const policyResponse = await AttendancePolicyService.getById(params.id);
+          return { name: policyResponse.data.name, type: 'Attendance Policy' };
+        case 'shift':
+          const shiftResponse = await ShiftService.getShift(params.id);
+          return { name: shiftResponse.name, type: 'Shift' };
+        default:
+          return null;
+      }
+    },
+    enabled: isAssignmentPage && !!params.type && !!params.id,
+  });
 
   const getPageTitle = () => {
     const path = location.pathname;
+    
+    // Assignment page
+    if (isAssignmentPage && assignmentItem) {
+      return `Assign Employees to ${assignmentItem.type}`;
+    }
     
     // Admin routes
     if (path.startsWith('/admin')) {
@@ -28,7 +66,7 @@ export function Header({ onMenuClick }: HeaderProps) {
       if (path === '/admin/employees') return 'Employee Management';
       if (path === '/admin/employees/new') return 'Add New Employee';
       if (path.includes('/admin/employees/') && path.includes('/edit')) return 'Edit Employee';
-      if (path.startsWith('/admin/employees/') && !path.includes('/edit')) return 'Employee Details';
+      if (path.startsWith('/admin/employees/') && !path.includes('/edit') && !path.includes('/assign')) return 'Employee Details';
       if (path === '/admin/departments') return 'Department Management';
       if (path === '/admin/shifts') return 'Shift Management';
       if (path === '/admin/attendance-policies') return 'Attendance Policies';
@@ -59,13 +97,18 @@ export function Header({ onMenuClick }: HeaderProps) {
   const getPageDescription = () => {
     const path = location.pathname;
     
+    // Assignment page
+    if (isAssignmentPage && assignmentItem) {
+      return assignmentItem.name;
+    }
+    
     // Admin routes
     if (path.startsWith('/admin')) {
       if (path === '/admin/dashboard') return `Welcome back, ${user?.name}`;
       if (path === '/admin/employees') return 'Manage employee information and details';
       if (path === '/admin/employees/new') return 'Fill in the employee details below';
       if (path.includes('/admin/employees/') && path.includes('/edit')) return 'Update the employee details below';
-      if (path.startsWith('/admin/employees/') && !path.includes('/edit')) return 'View and edit employee details';
+      if (path.startsWith('/admin/employees/') && !path.includes('/edit') && !path.includes('/assign')) return 'View and edit employee details';
       if (path === '/admin/departments') return 'Manage departments and designations';
       if (path === '/admin/shifts') return 'Configure work shifts and schedules';
       if (path === '/admin/attendance-policies') return 'Set attendance rules and policies';

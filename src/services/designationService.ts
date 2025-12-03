@@ -81,6 +81,15 @@ class DesignationService {
     );
     return response.data;
   }
+
+  // Get single designation by ID
+  async getDesignation(id: string): Promise<ApiResponse<Designation>> {
+    const response = await httpClient.post<ApiResponse<Designation>>(
+      API_ENDPOINTS.DESIGNATIONS_ONE,
+      { id }
+    );
+    return response.data;
+  }
 }
 
 export const designationService = new DesignationService(); 

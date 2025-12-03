@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { EmptyState, LoadingSpinner } from '../../components/common';
-import { ShiftForm, ShiftTable } from '../../components/shifts';
+import { useNavigate } from 'react-router-dom';
+import { EmptyState, LoadingSpinner } from '@/components/common';
+import { ShiftForm, ShiftTable } from '@/components/shifts';
 import { Clock, Plus } from 'lucide-react';
-import { useShifts } from '../../contexts/ShiftsContext';
-import { Button } from '../../components/ui/button';
-import { Card, CardContent } from '../../components/ui/card';
-import { Input } from '../../components/ui/input';
-import { Pagination } from '../../components/common';
+import { useShifts } from '@/contexts/ShiftsContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Pagination } from '@/components/common';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ import {
 } from '../../components/ui/alert-dialog';
 
 const ShiftsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [shiftToDelete, setShiftToDelete] = useState<any>(null);
@@ -64,6 +66,10 @@ const ShiftsPage: React.FC = () => {
     }
   };
 
+  const handleAssignEmployees = (shift: any) => {
+    navigate(`/admin/employees/assign/shift/${shift.id}`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Search and Actions */}
@@ -97,6 +103,7 @@ const ShiftsPage: React.FC = () => {
             loading={isLoading}
             onEdit={handleEditShift}
             onDelete={handleDeleteShift}
+            onAssignEmployees={handleAssignEmployees}
           />
 
           {/* Pagination */}

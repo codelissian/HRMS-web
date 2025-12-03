@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Plus, Search, Edit, Trash2, Users, AlertCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, ChevronUp, Plus, Search, Edit, Trash2, Users, AlertCircle, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -26,6 +27,7 @@ interface DepartmentWithDesignations {
 }
 
 export default function DepartmentList() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
   // Removed activeTab state - only departments tab now
@@ -489,6 +491,15 @@ export default function DepartmentList() {
                       <Button 
                         variant="ghost" 
                         size="sm" 
+                        className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                        onClick={() => navigate(`/admin/employees/assign/department/${department.id}`)}
+                        title="Assign Employees"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
                         className="text-gray-400 hover:text-[#0B2E5C] hover:bg-[#0B2E5C]/10 transition-colors"
                         onClick={() => handleEditDepartment(department)}
                         title="Edit Department"
@@ -599,6 +610,15 @@ export default function DepartmentList() {
                               </div>
                               
                               <div className="flex items-center space-x-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-gray-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200"
+                                  onClick={() => navigate(`/admin/employees/assign/designation/${designation.id}`)}
+                                  title="Assign Employees"
+                                >
+                                  <UserPlus className="w-4 h-4" />
+                                </Button>
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 

@@ -200,6 +200,40 @@ class EmployeeService {
     });
     return response.data;
   }
+
+  /**
+   * Bulk update employees
+   * Updates multiple employees with the same data
+   */
+  async bulkUpdateEmployees(
+    employeeIds: string[],
+    updateData: {
+      department_id?: string;
+      designation_id?: string;
+      attendance_rule_id?: string;
+      shift_id?: string;
+    }
+  ): Promise<ApiResponse<{ count: number }[]>> {
+    const requestBody = [
+      {
+        where: {
+          id: {
+            in: employeeIds
+          }
+        },
+        data: updateData
+      }
+    ];
+
+    const response = await httpClient.put<ApiResponse<{ count: number }[]>>(
+      API_ENDPOINTS.EMPLOYEES_UPDATE_MANY,
+      requestBody,
+      {
+        includeOrganisationId: false
+      }
+    );
+    return response.data;
+  }
 }
 
 export const employeeService = new EmployeeService();

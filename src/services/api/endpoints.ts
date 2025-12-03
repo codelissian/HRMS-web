@@ -40,6 +40,7 @@ const API = {
   // Employees
   EMPLOYEES_CREATE: `/employees/create`,
   EMPLOYEES_UPDATE: `/employees/update`,
+  EMPLOYEES_UPDATE_MANY: `/employees/update-many`,
   EMPLOYEES_LIST: `/employees/list`,
   EMPLOYEES_ONE: `/employees/one`,
   EMPLOYEES_DELETE: `/employees/delete`,

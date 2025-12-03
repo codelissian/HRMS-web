@@ -94,6 +94,11 @@ export default function AttendancePoliciesPage() {
     setShowDetails(true);
   };
 
+  // Handle assign employees
+  const handleAssignEmployees = (policy: AttendancePolicy) => {
+    navigate(`/admin/employees/assign/attendance-policy/${policy.id}`);
+  };
+
 
   // Handle details close
   const handleDetailsClose = () => {
@@ -168,6 +173,7 @@ export default function AttendancePoliciesPage() {
         loading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDeletePolicy}
+        onAssignEmployees={handleAssignEmployees}
       />
 
 

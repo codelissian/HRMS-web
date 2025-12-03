@@ -14,6 +14,7 @@ import Dashboard from "@/pages/Dashboard";
 import EmployeeList from "@/pages/employees/EmployeeList";
 import EmployeeDetail from "@/pages/employees/EmployeeDetail";
 import EmployeeFormPage from "@/pages/employees/EmployeeFormPage";
+import EmployeeAssignmentPage from "@/pages/employees/EmployeeAssignmentPage";
 import DepartmentList from "@/pages/departments/DepartmentList";
 import { ShiftsPage } from "@/pages/shifts";
 import { AttendanceManagementPage, TodaysAttendancePage } from "@/pages/attendance";
@@ -107,6 +108,7 @@ function AppRoutes() {
         <Route path="employees/new" element={<EmployeeFormPage />} />
         <Route path="employees/:id" element={<EmployeeDetail />} />
         <Route path="employees/:id/edit" element={<EmployeeFormPage />} />
+        <Route path="employees/assign/:type/:id" element={<EmployeeAssignmentPage />} />
         <Route path="departments" element={<DepartmentList />} />
         <Route path="shifts" element={<ShiftsPage />} />
         <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
