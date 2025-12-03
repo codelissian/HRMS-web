@@ -66,6 +66,67 @@ export interface AttendanceListRequest {
   year?: number;
 }
 
+// Calendar API types
+export interface AttendanceCalendarRequest {
+  shift_id?: string;
+  month: string; // e.g., "October"
+  year: number;
+  page?: number;
+  page_size?: number;
+  search?: {
+    keys: string[];
+    value: string;
+  };
+}
+
+export interface AttendanceCalendarDay {
+  date: string; // ISO datetime string
+  status: 'ABSENT' | 'WEEK_OFF' | 'PRESENT' | 'HALF_DAY' | 'ON_LEAVE';
+  total_work_hours: number;
+  first_clock_in: string | null;
+  last_clock_out: string | null;
+}
+
+export interface AttendanceCalendarEmployee {
+  id: string;
+  name: string;
+  organisation_id: string;
+  mobile: string;
+  email: string;
+  code: string;
+  department_id: string;
+  designation_id: string;
+  shift_id: string;
+  department: {
+    id: string;
+    name: string;
+    organisation_id: string;
+    description: string | null;
+    active_flag: boolean;
+    delete_flag: boolean;
+    modified_at: string;
+    created_at: string;
+    created_by: string | null;
+    modified_by: string | null;
+  };
+  shift: {
+    id: string;
+    name: string;
+    organisation_id: string;
+    start: string;
+    end: string;
+    grace_minutes: number;
+    active_flag: boolean;
+    delete_flag: boolean;
+    modified_at: string;
+    created_at: string;
+    created_by: string | null;
+    modified_by: string | null;
+  };
+  calendar: AttendanceCalendarDay[];
+  [key: string]: any; // For other employee fields
+}
+
 export interface AttendanceStats {
   total_employees: number;
   present_today: number;
@@ -295,6 +356,102 @@ class AttendanceService {
   async getTodayAttendanceStatistics(params: TodayAttendanceStatisticsRequest): Promise<ApiResponse<TodayAttendanceStatistics>> {
     const response = await httpClient.post<ApiResponse<TodayAttendanceStatistics>>(API_ENDPOINTS.ATTENDANCE_STATISTICS, params);
     return response.data;
+  }
+
+  /**
+   * Get attendance calendar data for a specific month/year
+   * Transforms the nested calendar structure to flat AttendanceRecord array
+   */
+  async getAttendanceCalendar(params: AttendanceCalendarRequest): Promise<ApiResponse<AttendanceRecord[]>> {
+    const requestPayload: AttendanceCalendarRequest = {
+      month: params.month,
+      year: params.year,
+      page: params.page || 1,
+      page_size: params.page_size || 1000,
+      ...(params.shift_id && { shift_id: params.shift_id }),
+      ...(params.search && { search: params.search }),
+    };
+
+    console.log('📡 Attendance Calendar API Request:', requestPayload);
+
+    const response = await httpClient.post<ApiResponse<AttendanceCalendarEmployee[]>>(
+      API_ENDPOINTS.ATTENDANCE_CALENDAR,
+      requestPayload
+    );
+
+    console.log('📡 Attendance Calendar API Response:', response.data);
+
+    // Transform nested structure to flat AttendanceRecord array
+    const employees = response.data.data || [];
+    const records: AttendanceRecord[] = [];
+
+    employees.forEach((employee) => {
+      const departmentName = employee.department?.name || 'Unknown';
+      const employeeId = employee.id;
+      const employeeName = employee.name || 'Unknown';
+
+      employee.calendar?.forEach((day) => {
+        // Normalize date to yyyy-MM-dd format
+        const dateStr = day.date.split('T')[0];
+
+        // Map status from API format to UI format
+        let status: 'present' | 'absent' | 'half-day' | 'on-leave' | 'weekend' = 'absent';
+        switch (day.status) {
+          case 'PRESENT':
+            status = 'present';
+            break;
+          case 'ABSENT':
+            status = 'absent';
+            break;
+          case 'HALF_DAY':
+            status = 'half-day';
+            break;
+          case 'ON_LEAVE':
+            status = 'on-leave';
+            break;
+          case 'WEEK_OFF':
+            status = 'weekend';
+            break;
+          default:
+            status = 'absent';
+        }
+
+        // Format check-in/check-out times if available
+        let checkInTime: string | undefined;
+        let checkOutTime: string | undefined;
+        if (day.first_clock_in) {
+          checkInTime = new Date(day.first_clock_in).toLocaleTimeString();
+        }
+        if (day.last_clock_out) {
+          checkOutTime = new Date(day.last_clock_out).toLocaleTimeString();
+        }
+
+        records.push({
+          id: `${employeeId}-${dateStr}`, // Generate unique ID
+          employee_id: employeeId,
+          employee_name: employeeName,
+          department: departmentName,
+          designation: 'Unknown', // Not provided in calendar API
+          date: dateStr,
+          status: status,
+          check_in_time: checkInTime,
+          check_out_time: checkOutTime,
+          total_hours: day.total_work_hours > 0 ? day.total_work_hours : undefined,
+          late_minutes: 0, // Not provided in calendar API
+          early_departure: 0, // Not provided in calendar API
+          avatar: undefined,
+          created_at: day.date,
+          updated_at: day.date,
+        });
+      });
+    });
+
+    console.log(`📊 Transformed ${records.length} records from ${employees.length} employees`);
+
+    return {
+      ...response.data,
+      data: records,
+    };
   }
 }
 

@@ -7,15 +7,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Download, Calendar as CalendarIcon } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { attendanceService, AttendanceRecord } from '@/services/attendanceService';
+import { ShiftService } from '@/services/shiftService';
 import { LoadingSpinner, EmptyState } from '@/components/common';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 import { format, getDaysInMonth, startOfMonth, eachDayOfInterval, isWeekend } from 'date-fns';
+import { getOrganisationId } from '@/lib/shift-utils';
+import { authToken } from '@/services/authToken';
 
 export default function AttendanceManagementPage() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const currentDate = new Date();
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth());
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
+  const [selectedShiftId, setSelectedShiftId] = useState<string>('all');
+  const [shifts, setShifts] = useState<any[]>([]);
+  const [shiftsLoading, setShiftsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
@@ -27,58 +35,88 @@ export default function AttendanceManagementPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // API call for attendance data
+  // Get organisation_id from user, with multiple fallbacks
+  const organisationId = useMemo(() => {
+    const fromUser = user?.organisation_id;
+    const fromStorage = getOrganisationId();
+    const fromAuthToken = authToken.getorganisationId();
+    
+    return fromUser || fromStorage || fromAuthToken || '';
+  }, [user]);
+
+  // Fetch shifts for dropdown
+  useEffect(() => {
+    const fetchShifts = async () => {
+      try {
+        setShiftsLoading(true);
+        const response = await ShiftService.getShifts({ page: 1, page_size: 100 });
+        if (response.status && response.data) {
+          setShifts(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching shifts:', error);
+      } finally {
+        setShiftsLoading(false);
+      }
+    };
+
+    if (organisationId) {
+      fetchShifts();
+    }
+  }, [organisationId]);
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // API call for attendance calendar data
   const { data: attendanceResponse, isLoading, error, refetch } = useQuery({
-    queryKey: ['attendance', 'list', { month: selectedMonth, year: selectedYear, search: debouncedSearchTerm }],
+    queryKey: ['attendance', 'calendar', { month: selectedMonth, year: selectedYear, shiftId: selectedShiftId, search: debouncedSearchTerm }],
     queryFn: () => {
-      console.log('📡 API Call - Month:', selectedMonth, 'Year:', selectedYear, 'Search:', debouncedSearchTerm);
+      const monthName = months[selectedMonth];
+      console.log('📡 Calendar API Call - Month:', monthName, 'Year:', selectedYear, 'Shift:', selectedShiftId, 'Search:', debouncedSearchTerm);
+      
       const params: any = {
-        month: selectedMonth,
-        year: selectedYear
+        month: monthName,
+        year: selectedYear,
+        page: 1,
+        page_size: 1000, // Get all results
       };
+      
+      // Add shift_id only if a specific shift is selected (not "All")
+      if (selectedShiftId && selectedShiftId !== 'all') {
+        params.shift_id = selectedShiftId;
+      }
       
       // Add search parameter if search term exists
       if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
         params.search = {
-          keys: ["employee_name", "department"],
+          keys: ["name", "department"],
           value: debouncedSearchTerm.trim()
         };
       }
       
-      return attendanceService.getAttendanceList(params);
+      return attendanceService.getAttendanceCalendar(params);
     },
     enabled: true,
   });
 
   const attendanceRecords = attendanceResponse?.data || [];
   
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
-  
-  // Filter records by selected month and year
+  // No need to filter by month/year since API returns data for selected month
   const filteredRecords = useMemo(() => {
     if (!attendanceRecords.length) {
       console.log('⚠️ No attendance records received from API');
       return [];
     }
     
-    const monthStart = startOfMonth(new Date(selectedYear, selectedMonth));
-    const monthEnd = new Date(selectedYear, selectedMonth + 1, 0);
-    
-    const filtered = attendanceRecords.filter(record => {
-      if (!record.date) return false;
-      const recordDate = new Date(record.date);
-      return recordDate >= monthStart && recordDate <= monthEnd;
-    });
-    
-    console.log(`📊 Filtered ${filtered.length} records for ${months[selectedMonth]} ${selectedYear} out of ${attendanceRecords.length} total`);
-    if (filtered.length > 0) {
-      console.log('📋 Sample record:', filtered[0]);
+    console.log(`📊 Received ${attendanceRecords.length} records for ${months[selectedMonth]} ${selectedYear}`);
+    if (attendanceRecords.length > 0) {
+      console.log('📋 Sample record:', attendanceRecords[0]);
     }
     
-    return filtered;
+    return attendanceRecords;
   }, [attendanceRecords, selectedMonth, selectedYear, months]);
 
   // Generate all days of the selected month
@@ -233,6 +271,10 @@ export default function AttendanceManagementPage() {
     setSelectedYear(value);
   };
 
+  const handleShiftChange = (value: string) => {
+    setSelectedShiftId(value);
+  };
+
   const handleExportAttendance = async () => {
     try {
       toast({
@@ -275,48 +317,64 @@ export default function AttendanceManagementPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
+      </div>
 
-        <Select value={selectedMonth.toString()} onValueChange={(value) => handleMonthChange(parseInt(value))}>
+              <Select value={selectedMonth.toString()} onValueChange={(value) => handleMonthChange(parseInt(value))}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select Month" />
-          </SelectTrigger>
-          <SelectContent>
-            {months.map((month, index) => (
-              <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                  <SelectValue placeholder="Select Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((month, index) => (
+                    <SelectItem key={index} value={index.toString()}>{month}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-        <Select value={selectedYear.toString()} onValueChange={(value) => handleYearChange(parseInt(value))}>
+              <Select value={selectedYear.toString()} onValueChange={(value) => handleYearChange(parseInt(value))}>
           <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Select Year" />
-          </SelectTrigger>
-          <SelectContent>
-            {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((year) => (
-              <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                  <SelectValue placeholder="Select Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                    <SelectItem key={year} value={year.toString()}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select 
+                value={selectedShiftId} 
+                onValueChange={handleShiftChange}
+                disabled={shiftsLoading}
+              >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder={shiftsLoading ? "Loading..." : "Select Shift"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  {shifts.map((shift) => (
+                    <SelectItem key={shift.id} value={shift.id}>{shift.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
         <Button onClick={handleExportAttendance} variant="outline">
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
-      </div>
+          </div>
 
       {/* Attendance Calendar Grid */}
-      {isLoading ? (
+          {isLoading ? (
         <div className="flex items-center justify-center min-h-[60vh] w-full">
-          <LoadingSpinner />
-        </div>
-      ) : attendanceByEmployee.length === 0 ? (
+              <LoadingSpinner />
+            </div>
+          ) : attendanceByEmployee.length === 0 ? (
         <EmptyState
           icon={CalendarIcon}
           title="No attendance records found"
           description={`No attendance data available for ${months[selectedMonth]} ${selectedYear}. Records will appear here once attendance is tracked.`}
         />
-      ) : (
+          ) : (
         <Card>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
@@ -368,8 +426,8 @@ export default function AttendanceManagementPage() {
                 </TableBody>
               </Table>
             </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
       )}
     </div>
   );

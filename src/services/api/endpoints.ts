@@ -94,6 +94,7 @@ const API = {
   ATTENDANCE_DELETE: `/attendance/delete`,
   ATTENDANCE_DAY: `/attendance/day`,
   ATTENDANCE_STATISTICS: `/attendance/statistics`,
+  ATTENDANCE_CALENDAR: `/attendance/calendar`,
 
   // Leaves
   LEAVES_CREATE: `/leaves/create`,
