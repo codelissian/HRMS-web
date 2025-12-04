@@ -260,10 +260,10 @@ export function PayrollCycleTable({ searchTerm = '' }: PayrollCycleTableProps) {
     return (
       <div className="text-center py-12">
         <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-        <Button onClick={fetchPayrollCycles} className="mt-4">
-          Try Again
-        </Button>
-      </div>
+          <Button onClick={fetchPayrollCycles} className="mt-4">
+            Try Again
+          </Button>
+        </div>
     );
   }
 

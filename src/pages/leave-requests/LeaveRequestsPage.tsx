@@ -315,12 +315,12 @@ export default function LeaveRequestsPage() {
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.PENDING;
     const Icon = config.icon;
 
-    return (
+          return (
       <Badge variant={config.variant} className={`flex items-center justify-center gap-1 min-w-[100px] ${config.className}`}>
-        <Icon className="w-3 h-3" />
-        {config.text}
-      </Badge>
-    );
+          <Icon className="w-3 h-3" />
+          {config.text}
+        </Badge>
+      );
   };
 
   if (isLoading) {
@@ -408,48 +408,48 @@ export default function LeaveRequestsPage() {
       </div>
 
       {/* Filters and Search */}
-      <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 max-w-md">
-          <Input
-            placeholder="Search by employee name or email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+                <Input
+                  placeholder="Search by employee name or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
         
-        <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Filter by department" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Departments</SelectItem>
-            {departments.map((department) => (
-              <SelectItem key={department.id} value={department.id}>
-                {department.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <Select value={selectedDepartment} onValueChange={handleDepartmentChange}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Filter by department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments.map((department) => (
+                  <SelectItem key={department.id} value={department.id}>
+                    {department.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
         
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="APPROVED">Approved</SelectItem>
-            <SelectItem value="REJECTED">Rejected</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="PENDING">Pending</SelectItem>
+                <SelectItem value="APPROVED">Approved</SelectItem>
+                <SelectItem value="REJECTED">Rejected</SelectItem>
+                <SelectItem value="CANCELLED">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
       </div>
 
       {/* Leave Requests Table */}
       {isLoadingRequests ? (
         <div className="flex items-center justify-center min-h-[60vh] w-full">
-          <LoadingSpinner />
-        </div>
+                      <LoadingSpinner />
+                          </div>
       ) : totalCount > 0 ? (
         <>
           <LeaveRequestTable
@@ -477,8 +477,8 @@ export default function LeaveRequestsPage() {
                   }}
                   showFirstLast={false}
                 />
-              </CardContent>
-            </Card>
+        </CardContent>
+      </Card>
           )}
         </>
       ) : (
@@ -524,31 +524,31 @@ export default function LeaveRequestsPage() {
             <button onClick={() => setViewDialogOpen(false)} className="text-gray-400 hover:text-gray-600">
               <XCircle className="h-5 w-5" />
             </button>
-          </div>
-
-          {isLoadingLeaveDetails ? (
-            <div className="flex justify-center py-12">
-              <LoadingSpinner />
             </div>
-          ) : selectedLeaveRequest ? (
+
+            {isLoadingLeaveDetails ? (
+            <div className="flex justify-center py-12">
+                <LoadingSpinner />
+              </div>
+            ) : selectedLeaveRequest ? (
             <div className="p-4 space-y-4">
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-medium">{selectedLeaveRequest.employee?.name}</p>
                   <p className="text-sm text-gray-500">{selectedLeaveRequest.employee?.code}</p>
-                </div>
-                {getStatusBadge(selectedLeaveRequest.status)}
-              </div>
+                  </div>
+                        {getStatusBadge(selectedLeaveRequest.status)}
+                      </div>
 
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-500">Leave Type</span>
                   <span className="font-medium">{selectedLeaveRequest.leave_type_name || selectedLeaveRequest.leave?.name}</span>
-                </div>
+                    </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Duration</span>
                   <span className="font-medium">{selectedLeaveRequest.total_days} day{selectedLeaveRequest.total_days > 1 ? 's' : ''}</span>
-                </div>
+                  </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">From</span>
                   <span>{new Date(selectedLeaveRequest.start_date).toLocaleDateString()}</span>
@@ -556,27 +556,27 @@ export default function LeaveRequestsPage() {
                 <div className="flex justify-between">
                   <span className="text-gray-500">To</span>
                   <span>{new Date(selectedLeaveRequest.end_date).toLocaleDateString()}</span>
-                </div>
+                    </div>
                 {selectedLeaveRequest.is_half_day && (
                   <div className="flex justify-between">
                     <span className="text-gray-500">Half Day</span>
                     <span>Yes</span>
                   </div>
                 )}
-              </div>
+                  </div>
 
               {selectedLeaveRequest.reason && (
                 <div className="pt-3 border-t">
                   <p className="text-sm text-gray-500 mb-1">Reason</p>
                   <p className="text-sm">{selectedLeaveRequest.reason}</p>
-                </div>
+                    </div>
               )}
 
               {selectedLeaveRequest.comments && (
                 <div className="pt-3 border-t">
                   <p className="text-sm text-gray-500 mb-1">Comments</p>
                   <p className="text-sm">{selectedLeaveRequest.comments}</p>
-                </div>
+                  </div>
               )}
 
               {selectedLeaveRequest.work_handover_to && (
@@ -586,7 +586,7 @@ export default function LeaveRequestsPage() {
                 </div>
               )}
 
-              {selectedLeaveRequest.handover_notes && (
+                {selectedLeaveRequest.handover_notes && (
                 <div className="pt-3 border-t">
                   <p className="text-sm text-gray-500 mb-1">Handover Notes</p>
                   <p className="text-sm">{selectedLeaveRequest.handover_notes}</p>
@@ -600,17 +600,17 @@ export default function LeaveRequestsPage() {
                   {selectedLeaveRequest.emergency_contact_phone && (
                     <p className="text-sm text-gray-500">{selectedLeaveRequest.emergency_contact_phone}</p>
                   )}
-                </div>
-              )}
+                  </div>
+                )}
 
-              {selectedLeaveRequest.approver_comments && (
+                {selectedLeaveRequest.approver_comments && (
                 <div className="pt-3 border-t">
                   <p className="text-sm text-gray-500 mb-1">Approver Comments</p>
                   <p className="text-sm">{selectedLeaveRequest.approver_comments}</p>
-                </div>
-              )}
+                  </div>
+                )}
 
-              {selectedLeaveRequest.status === 'PENDING' && (
+                {selectedLeaveRequest.status === 'PENDING' && (
                 <div className="flex gap-2 pt-3 border-t">
                   <Button
                     variant="outline"
@@ -622,23 +622,23 @@ export default function LeaveRequestsPage() {
                   >
                     Reject
                   </Button>
-                  <Button
+                    <Button
                     className="flex-1 bg-green-600 hover:bg-green-700"
-                    onClick={() => {
-                      setViewDialogOpen(false);
-                      showApproveDialog(selectedLeaveRequest.id, selectedLeaveRequest.employee?.name || 'Unknown Employee');
-                    }}
-                  >
+                      onClick={() => {
+                        setViewDialogOpen(false);
+                        showApproveDialog(selectedLeaveRequest.id, selectedLeaveRequest.employee?.name || 'Unknown Employee');
+                      }}
+                    >
                     Approve
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-gray-500">
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-gray-500">
               No details found
-            </div>
-          )}
+              </div>
+            )}
         </div>
       </div>
     </div>

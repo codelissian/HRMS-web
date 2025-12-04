@@ -19,11 +19,11 @@ export function HolidayTable({
 }: HolidayTableProps) {
   const formatDate = (dateString: string) => {
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
     } catch {
       return dateString;
     }
@@ -37,7 +37,7 @@ export function HolidayTable({
       render: (_, holiday) => (
         <div className="font-medium text-gray-900 dark:text-white">
           {holiday.name}
-        </div>
+            </div>
       ),
     },
     {
@@ -47,7 +47,7 @@ export function HolidayTable({
       render: (_, holiday) => (
         <div className="text-sm text-gray-900 dark:text-white whitespace-nowrap">
           {formatDate(holiday.date)}
-        </div>
+          </div>
       ),
     },
     {
@@ -57,7 +57,7 @@ export function HolidayTable({
       render: (_, holiday) => (
         <div className="text-sm text-gray-900 dark:text-white max-w-md truncate" title={holiday.description}>
           {holiday.description || '-'}
-        </div>
+          </div>
       ),
     },
     {
@@ -67,10 +67,10 @@ export function HolidayTable({
       render: (_, holiday) => (
         holiday.is_recurring ? (
           <Badge variant="secondary" className="flex items-center gap-1 w-fit mx-auto">
-            <RotateCcw className="h-3 w-3" />
-            Recurring
-          </Badge>
-        ) : (
+                        <RotateCcw className="h-3 w-3" />
+                        Recurring
+                      </Badge>
+                    ) : (
           <Badge variant="outline" className="mx-auto w-fit">One-time</Badge>
         )
       ),
@@ -84,8 +84,8 @@ export function HolidayTable({
           variant={holiday.active_flag ? 'default' : 'secondary'}
           className={holiday.active_flag ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
         >
-          {holiday.active_flag ? 'Active' : 'Inactive'}
-        </Badge>
+                      {holiday.active_flag ? 'Active' : 'Inactive'}
+                    </Badge>
       ),
     },
   ];

@@ -28,7 +28,7 @@ export function PayrollPage() {
   return (
     <div className="space-y-6">
       {/* Search and Filter */}
-      <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4">
         <div className="flex-1 max-w-md">
           <Input
             placeholder="Search payroll records..."
@@ -39,16 +39,16 @@ export function PayrollPage() {
         
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-            Filter by Cycle:
-          </label>
-          <PayrollCycleFilter 
-            onCycleSelect={handleCycleSelect}
-            selectedCycleId={selectedCycleId}
-          />
-        </div>
+                Filter by Cycle:
+              </label>
+              <PayrollCycleFilter 
+                onCycleSelect={handleCycleSelect}
+                selectedCycleId={selectedCycleId}
+              />
+            </div>
       </div>
 
-      {/* Payroll Table */}
+            {/* Payroll Table */}
       <PayrollTable payrollCycleId={selectedCycleId} searchTerm={debouncedSearchTerm} />
     </div>
   );

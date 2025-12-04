@@ -112,26 +112,26 @@ export function SalaryComponentTypesPage() {
 
   const confirmDeleteComponentType = async () => {
     if (componentTypeToDelete) {
-      try {
-        await httpClient.patch<ApiResponse<any>>('/salary_component_types/delete', {
+    try {
+      await httpClient.patch<ApiResponse<any>>('/salary_component_types/delete', {
           id: componentTypeToDelete.id
-        }, {
-          includeOrganisationId: false
-        });
+      }, {
+        includeOrganisationId: false
+      });
 
-        toast({
-          title: "Success",
-          description: "Component type deleted successfully",
-        });
-        // Refresh the list
-        fetchComponentTypes();
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to delete component type",
-          variant: "destructive",
-        });
-      } finally {
+      toast({
+        title: "Success",
+        description: "Component type deleted successfully",
+      });
+      // Refresh the list
+      fetchComponentTypes();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete component type",
+        variant: "destructive",
+      });
+    } finally {
         setDeleteDialogOpen(false);
         setComponentTypeToDelete(null);
       }
@@ -380,7 +380,7 @@ export function SalaryComponentTypesPage() {
               </DialogContent>
             </Dialog>
       </div>
-      
+
       {isLoadingList ? (
         <div className="flex items-center justify-center min-h-[60vh] w-full">
           <LoadingSpinner />
@@ -395,25 +395,25 @@ export function SalaryComponentTypesPage() {
             onDelete={handleDeleteClick}
           />
 
-          {/* Pagination */}
-          {totalCount > 0 && (
+      {/* Pagination */}
+      {totalCount > 0 && (
             <Card>
-              <CardContent className="p-4">
-                <Pagination
-                  currentPage={currentPage}
-                  pageSize={pageSize}
-                  totalCount={totalCount}
-                  pageCount={pageCount}
-                  onPageChange={setCurrentPage}
-                  onPageSizeChange={(newPageSize) => {
-                    setPageSize(newPageSize);
-                    setCurrentPage(1);
-                  }}
-                  showFirstLast={false}
-                />
-              </CardContent>
-            </Card>
-          )}
+          <CardContent className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newPageSize) => {
+                setPageSize(newPageSize);
+                setCurrentPage(1);
+              }}
+              showFirstLast={false}
+            />
+          </CardContent>
+        </Card>
+      )}
         </>
       ) : (
         <EmptyState

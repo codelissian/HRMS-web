@@ -242,19 +242,19 @@ export default function HolidayList() {
           Create Holiday
         </Button>
       </div>
-      
+
       {loading || isLoading ? (
         <div className="flex items-center justify-center min-h-[60vh] w-full">
           <LoadingSpinner />
         </div>
       ) : filteredHolidays.length > 0 ? (
         <>
-          {/* Holidays Table */}
-          <HolidayTable
-            holidays={filteredHolidays}
+      {/* Holidays Table */}
+      <HolidayTable
+        holidays={filteredHolidays}
             loading={loading || isLoading}
-            onEdit={handleEditHoliday}
-            onDelete={handleDeleteHoliday}
+        onEdit={handleEditHoliday}
+        onDelete={handleDeleteHoliday}
           />
 
           {/* Pagination */}
@@ -286,7 +286,7 @@ export default function HolidayList() {
             label: "Create Holiday",
             onClick: handleCreateHoliday
           }}
-        />
+      />
       )}
 
       {/* Holiday Form Modal */}

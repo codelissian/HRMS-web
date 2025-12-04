@@ -123,10 +123,10 @@ export default function TodaysAttendancePage() {
     }],
     queryFn: () => {
       const params: any = {
-        organisation_id: organisationId,
-        shift_id: selectedShiftId || undefined,
+      organisation_id: organisationId,
+      shift_id: selectedShiftId || undefined,
         date: selectedDateISO,
-        page: currentPage,
+      page: currentPage,
         page_size: pageSize,
         include: ["department", "shift"]
       };
@@ -271,40 +271,40 @@ export default function TodaysAttendancePage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
+      </div>
 
-        <input
-          type="date"
-          value={format(selectedDate, 'yyyy-MM-dd')}
-          onChange={(e) => {
-            const date = new Date(e.target.value);
-            if (!isNaN(date.getTime())) {
-              handleDateChange(date);
-            }
-          }}
+              <input
+                type="date"
+                value={format(selectedDate, 'yyyy-MM-dd')}
+                onChange={(e) => {
+                  const date = new Date(e.target.value);
+                  if (!isNaN(date.getTime())) {
+                    handleDateChange(date);
+                  }
+                }}
           className="w-[180px] px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-sm"
-        />
+              />
 
-        <Select 
-          value={selectedShiftId} 
-          onValueChange={handleShiftChange}
-          disabled={shiftsLoading}
-        >
+              <Select 
+                value={selectedShiftId} 
+                onValueChange={handleShiftChange}
+                disabled={shiftsLoading}
+              >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder={shiftsLoading ? "Loading..." : "Select Shift"} />
-          </SelectTrigger>
-          <SelectContent>
-            {shifts.map((shift) => (
-              <SelectItem key={shift.id} value={shift.id}>{shift.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+                </SelectTrigger>
+                <SelectContent>
+                  {shifts.map((shift) => (
+                    <SelectItem key={shift.id} value={shift.id}>{shift.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
         <Button onClick={handleExportAttendance} variant="outline">
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>
-      </div>
+          </div>
 
       {/* Today's Statistics */}
       <div className="grid gap-4 md:grid-cols-5">
@@ -341,23 +341,23 @@ export default function TodaysAttendancePage() {
       </div>
 
       {/* Today's Attendance Records */}
-      {isLoading ? (
+          {isLoading ? (
         <div className="flex items-center justify-center min-h-[60vh] w-full">
-          <LoadingSpinner />
-        </div>
-      ) : attendanceRecords.length === 0 ? (
+              <LoadingSpinner />
+            </div>
+          ) : attendanceRecords.length === 0 ? (
         <EmptyState
           icon={Users}
           title="No attendance records found"
           description={`No attendance data available for ${format(selectedDate, 'MMMM dd, yyyy')}. Records will appear here once employees check in.`}
         />
-      ) : (
+          ) : (
         <>
           <Card>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
                     <TableRow className="bg-gray-50 dark:bg-gray-800">
                       <TableHead className="w-[200px] text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Employee</TableHead>
                       <TableHead className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Department</TableHead>
@@ -367,8 +367,8 @@ export default function TodaysAttendancePage() {
                       <TableHead className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Is Late</TableHead>
                       <TableHead className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Is Early</TableHead>
                       <TableHead className="text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                  </TableRow>
+                </TableHeader>
                 <TableBody>
                   {attendanceRecords.map((record) => {
                     // Get check-in and check-out times - prefer direct API fields, fallback to attendance_records
@@ -392,7 +392,7 @@ export default function TodaysAttendancePage() {
                     
                     // If not found in direct fields, try attendance_records
                     if (!checkInTime) {
-                      const clockIn = record.attendance_records?.find(r => r.event_type === 'CLOCK_IN');
+                    const clockIn = record.attendance_records?.find(r => r.event_type === 'CLOCK_IN');
                       if (clockIn?.event_time) {
                         checkInTime = new Date(clockIn.event_time);
                       }
@@ -484,8 +484,8 @@ export default function TodaysAttendancePage() {
                         <TableCell className="text-center">
                           {isLate !== null ? (
                             <Badge variant={isLate ? "destructive" : "outline"} className="inline-flex px-2 py-1">
-                              {isLate ? "Yes" : "No"}
-                            </Badge>
+                                {isLate ? "Yes" : "No"}
+                              </Badge>
                           ) : (
                             <span className="text-gray-500 text-sm">-</span>
                           )}
@@ -493,17 +493,17 @@ export default function TodaysAttendancePage() {
                         <TableCell className="text-center">
                           {isEarly !== null ? (
                             <Badge variant={isEarly ? "destructive" : "outline"} className="inline-flex px-2 py-1">
-                              {isEarly ? "Yes" : "No"}
-                            </Badge>
+                                {isEarly ? "Yes" : "No"}
+                              </Badge>
                           ) : (
                             <span className="text-gray-500 text-sm">-</span>
                           )}
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge className={`${getStatusColor(record.status || '')} inline-flex items-center gap-1 px-2 py-1`}>
-                            {getStatusIcon(record.status || '')}
+                              {getStatusIcon(record.status || '')}
                             <span>{formatStatus(record.status || '')}</span>
-                          </Badge>
+                            </Badge>
                         </TableCell>
                       </TableRow>
                     );
@@ -511,13 +511,13 @@ export default function TodaysAttendancePage() {
                 </TableBody>
               </Table>
             </div>
-          </CardContent>
-        </Card>
+        </CardContent>
+      </Card>
 
-        {/* Pagination */}
-        {totalCount > 0 && (
-          <Card>
-            <CardContent className="p-4">
+      {/* Pagination */}
+      {totalCount > 0 && (
+        <Card>
+          <CardContent className="p-4">
               <Pagination
                 currentPage={currentPage}
                 pageSize={pageSize}
@@ -530,8 +530,8 @@ export default function TodaysAttendancePage() {
                 }}
                 showFirstLast={false}
               />
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
         )}
       </>
       )}

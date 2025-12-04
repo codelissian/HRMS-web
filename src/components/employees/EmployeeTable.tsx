@@ -52,7 +52,7 @@ export function EmployeeTable({
             </AvatarFallback>
           </Avatar>
           <div className="text-sm font-medium text-gray-900 dark:text-white">
-            {employee.name}
+              {employee.name}
           </div>
         </div>
       ),
@@ -100,15 +100,15 @@ export function EmployeeTable({
       render: (status, employee) => {
         const isActive = employee.active_flag === true || employee.active_flag === undefined;
         return (
-          <Badge 
+        <Badge 
             variant={isActive ? 'default' : 'secondary'}
             className={isActive 
               ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 inline-flex px-2 py-1' 
               : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 inline-flex px-2 py-1'
             }
-          >
+        >
             {isActive ? 'Active' : 'Inactive'}
-          </Badge>
+        </Badge>
         );
       },
     },

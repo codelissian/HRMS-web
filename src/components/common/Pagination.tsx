@@ -43,20 +43,20 @@ export function Pagination({
           <div className="text-sm text-gray-500 dark:text-gray-400">
             Showing {startItem} to {endItem} of {totalCount} results
           </div>
-        <div className="flex items-center gap-2">
-          <Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(parseInt(value))}>
+          <div className="flex items-center gap-2">
+            <Select value={pageSize.toString()} onValueChange={(value) => onPageSizeChange(parseInt(value))}>
             <SelectTrigger className="w-[70px] h-9">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-              <SelectItem value="100">100</SelectItem>
-            </SelectContent>
-          </Select>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
           <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">per page</span>
-        </div>
+          </div>
         </div>
       );
     }
@@ -112,8 +112,8 @@ export function Pagination({
           
           <div className="flex items-center justify-center min-w-[100px] px-3">
             <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
-              Page {currentPage} of {pageCount}
-            </span>
+            Page {currentPage} of {pageCount}
+          </span>
           </div>
           
           <Button

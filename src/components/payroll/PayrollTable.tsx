@@ -254,9 +254,9 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
         return (
           <div className="text-sm font-semibold text-green-600 dark:text-green-400 whitespace-nowrap">
             {formatCurrency(value, currencySymbol)}
-          </div>
+        </div>
         );
-      },
+    },
     },
   ];
 
@@ -265,13 +265,13 @@ export function PayrollTable({ payrollCycleId, searchTerm = '' }: PayrollTablePr
     return (
       <div className="text-center py-12">
         <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-        <button 
-          onClick={fetchPayrolls} 
+          <button 
+            onClick={fetchPayrolls} 
           className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Try Again
-        </button>
-      </div>
+          >
+            Try Again
+          </button>
+        </div>
     );
   }
 
