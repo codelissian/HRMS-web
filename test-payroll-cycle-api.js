@@ -1,7 +1,7 @@
 // Test script to check Payroll Cycle API response
 // Run this in browser console or Node.js environment
 
-const API_BASE_URL = 'https://hrms-backend-omega.vercel.app/api/v1';
+const API_BASE_URL = 'http://35.224.247.153:9000/api/v1';
 const ENDPOINT = '/payroll_cycles/one';
 
 // You'll need to replace these with actual values

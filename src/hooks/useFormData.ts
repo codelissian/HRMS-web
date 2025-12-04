@@ -81,7 +81,7 @@ export const useFormData = (): UseFormDataReturn => {
         console.log('🔄 httpClient failed, trying direct fetch:', httpClientError);
         
         // Fallback to direct fetch
-        const response = await fetch(`${process.env.VITE_API_BASE_URL || 'https://hrms-backend-omega.vercel.app/api/v1'}/attendance_rules/list`, {
+        const response = await fetch(`${process.env.VITE_API_BASE_URL || 'http://35.224.247.153:9000/api/v1'}/attendance_rules/list`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
