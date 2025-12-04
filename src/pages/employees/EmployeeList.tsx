@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +11,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { getOrganisationId } from '@/lib/shift-utils';
+import { authToken } from '@/services/authToken';
 
 export default function EmployeeList() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,7 +28,19 @@ export default function EmployeeList() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+
+  // Get organisation_id from user, with multiple fallbacks
+  const organisationId = useMemo(() => {
+    const fromUser = user?.organisation_id;
+    const fromStorage = getOrganisationId();
+    const fromAuthToken = authToken.getorganisationId();
+    
+    // Try all sources in order of preference
+    const orgId = fromUser || fromStorage || fromAuthToken || '';
+    
+    return orgId;
+  }, [user]);
 
   // Fetch employees with proper filtering and include department/designation data
   const { 
@@ -42,12 +56,12 @@ export default function EmployeeList() {
       status: statusFilter 
     }],
     queryFn: () => {
-      if (!user?.organisation_id) {
+      if (!organisationId) {
         throw new Error('Organization ID not found');
       }
       
       return employeeService.getEmployees({
-        organisation_id: user.organisation_id,
+        organisation_id: organisationId,
         page: currentPage,
         page_size: pageSize,
         search: searchTerm || undefined,
@@ -56,7 +70,7 @@ export default function EmployeeList() {
         include: ['department', 'designation', 'shift']
       });
     },
-    enabled: !!user?.organisation_id,
+    enabled: !!organisationId && !authLoading,
   });
 
   const employees = employeesResponse?.data || [];
@@ -107,7 +121,7 @@ export default function EmployeeList() {
   };
 
   const handleExportEmployees = async () => {
-    if (!user?.organisation_id) {
+    if (!organisationId) {
       toast({
         title: 'Error',
         description: 'Organization ID not found',
@@ -118,7 +132,7 @@ export default function EmployeeList() {
 
     try {
       const blob = await employeeService.exportEmployees({
-        organisation_id: user.organisation_id,
+        organisation_id: organisationId,
         page: 1,
         page_size: totalCount,
         search: searchTerm || undefined,
@@ -252,16 +266,16 @@ export default function EmployeeList() {
         </div>
       ) : totalCount > 0 ? (
         <>
-          {/* Employee Table */}
-          <EmployeeTable
-            employees={employees}
-            loading={isLoading}
-            onView={handleViewEmployee}
-            onEdit={handleEditEmployee}
-            onDelete={handleDeleteEmployee}
-          />
+      {/* Employee Table */}
+      <EmployeeTable
+        employees={employees}
+        loading={isLoading}
+        onView={handleViewEmployee}
+        onEdit={handleEditEmployee}
+        onDelete={handleDeleteEmployee}
+      />
 
-          {/* Pagination */}
+      {/* Pagination */}
           {totalCount > 0 && (
             <Card>
               <CardContent className="p-4">
