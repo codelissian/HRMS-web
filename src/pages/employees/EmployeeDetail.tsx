@@ -10,7 +10,7 @@ import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Employee } from '../../types/database';
-import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign, Plus, Trash2, Mail, Phone, MapPin, Briefcase, User, Building2, CalendarDays, TrendingUp, TrendingDown, UserCircle, Home, Heart, GraduationCap, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
@@ -245,82 +245,118 @@ export default function EmployeeDetail() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <LoadingSpinner />
       </div>
     );
   }
 
   if (error || !employee) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600 dark:text-red-400">
-          Error loading employee: {error instanceof Error ? error.message : 'Employee not found'}
-        </p>
-        <Button onClick={() => navigate('/admin/employees')} className="mt-4">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Employees
-        </Button>
+      <div className="text-center py-12">
+        <div className="max-w-md mx-auto">
+          <div className="mb-4">
+            <User className="h-16 w-16 mx-auto text-gray-300 dark:text-gray-600" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Employee Not Found
+          </h3>
+          <p className="text-red-600 dark:text-red-400 mb-6">
+            {error instanceof Error ? error.message : 'The employee you are looking for does not exist'}
+          </p>
+          <Button onClick={() => navigate('/admin/employees')} className="bg-[#0B2E5C] hover:bg-[#0B2E5C]/90">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Employees
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
 
-
-      {/* Employee Overview */}
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Employee Overview</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/employees/${id}/edit`)}>
-              <Edit className="h-4 w-4" />
-            </Button>
-          </div>
+      {/* Basic Information Card */}
+      <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+        <CardHeader className="relative pb-4">
+          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Basic information</CardTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-4 right-4 h-8 w-8 text-gray-500 hover:text-[#0B2E5C] hover:bg-[#0B2E5C]/10"
+            onClick={() => navigate(`/admin/employees/${id}/edit`)}
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-start gap-6">
-            <Avatar className="h-20 w-20">
-              <AvatarFallback className="bg-primary text-white text-lg">
-                {getInitials(employee.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                    {employee.name}
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400">{employee.email}</p>
-                  <p className="text-gray-500 dark:text-gray-400">{employee.mobile}</p>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Status:</span>
-                    <Badge 
-                      variant={employee.status === 'active' ? 'default' : 'secondary'}
-                      className={employee.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
-                    >
-                      {employee.status || 'Active'}
-                    </Badge>
+        <CardContent className="pt-0">
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Employee Photo */}
+            <div className="flex-shrink-0">
+              <Avatar className="h-32 w-32 border-2 border-gray-200 dark:border-gray-700">
+                <AvatarFallback className="bg-[#0B2E5C] text-white text-3xl font-semibold">
+                  {getInitials(employee.name)}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+
+            {/* Employee Details */}
+            <div className="flex-1 space-y-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">{employee.name}</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <UserCircle className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">ID Number</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.id || 'N/A'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <UserCircle className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Gender</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.gender || 'Not set'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Phone</p>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.mobile || 'Not set'}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Department:</span>
-                    <span className="text-gray-900 dark:text-white">
-                      {employee.department?.name || employee.department_id || 'Not assigned'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Designation:</span>
-                    <span className="text-gray-900 dark:text-white">
-                      {employee.designation?.name || employee.designation_id || 'Not assigned'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 dark:text-gray-400">Joining Date:</span>
-                    <span className="text-gray-900 dark:text-white">
-                      {employee.joining_date ? format(new Date(employee.joining_date), 'MMM dd, yyyy') : 'Not set'}
-                    </span>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Place of Birth</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.place_of_birth || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Birth Date</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {employee.date_of_birth ? format(new Date(employee.date_of_birth), 'dd MMM yyyy') : 'Not set'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Blood Type</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.blood_type || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Marital Status</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.marital_status || 'Not set'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Religion</p>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{employee.religion || 'Not set'}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -329,136 +365,110 @@ export default function EmployeeDetail() {
         </CardContent>
       </Card>
 
-      {/* Leave Balance Cards */}
-      {employee.employee_leaves && employee.employee_leaves.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-          {employee.employee_leaves.map((employeeLeave) => {
-            const leave = employeeLeave.leave;
-            const daysLeft = employeeLeave.balance;
-            
-            return (
-              <Card key={employeeLeave.id} className="relative overflow-hidden">
-                <div 
-                  className="absolute left-0 top-0 bottom-0 w-1"
-                  style={{ backgroundColor: leave.color || '#6B7280' }}
-                />
-                <CardContent className="p-3 pl-4">
-                  <div className="text-center">
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100 text-xs mb-1 truncate">
-                      {leave.name}
-                    </h3>
-                    <div className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1">
-                      {daysLeft}
-                    </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      days left
-                    </p>
-                  </div>
-                  
-                  {/* Additional leave info - more compact */}
-                  <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                    <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
-                      <div className="flex justify-between">
-                        <span>Accrued:</span>
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">{employeeLeave.total_accrued}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Used:</span>
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">{employeeLeave.total_consumed}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Next:</span>
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">
-                          {employeeLeave.next_accrual_date ? 
-                            format(new Date(employeeLeave.next_accrual_date), 'MMM dd') : 'N/A'
-                          }
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      ) : (
-        <Card className="text-center py-8">
-          <div className="text-gray-500 dark:text-gray-400">
-            <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p className="text-sm">No leave balances available</p>
-            <p className="text-xs text-gray-400 mt-1">Leave balances will appear here once configured</p>
-          </div>
-        </Card>
-      )}
-
       {/* Tabs for detailed information */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="attendance">Attendance</TabsTrigger>
-          <TabsTrigger value="leaves">Leave History</TabsTrigger>
-          <TabsTrigger value="salary">Salary Components</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
+      <Tabs defaultValue="attendance" className="space-y-6">
+        <TabsList className="h-auto p-0 bg-transparent border-b border-gray-200 dark:border-gray-700 rounded-none">
+          <TabsTrigger 
+            value="attendance" 
+            className="data-[state=active]:bg-transparent data-[state=active]:text-[#0B2E5C] data-[state=active]:border-b-2 data-[state=active]:border-[#0B2E5C] data-[state=active]:shadow-none rounded-none px-4 py-3 font-medium dark:data-[state=active]:text-[#0B2E5C]"
+          >
+            Attendance
+          </TabsTrigger>
+          <TabsTrigger 
+            value="salary"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-[#0B2E5C] data-[state=active]:border-b-2 data-[state=active]:border-[#0B2E5C] data-[state=active]:shadow-none rounded-none px-4 py-3 font-medium dark:data-[state=active]:text-[#0B2E5C]"
+          >
+            Salary
+          </TabsTrigger>
+          <TabsTrigger 
+            value="documents"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-[#0B2E5C] data-[state=active]:border-b-2 data-[state=active]:border-[#0B2E5C] data-[state=active]:shadow-none rounded-none px-4 py-3 font-medium dark:data-[state=active]:text-[#0B2E5C]"
+          >
+            Documents
+          </TabsTrigger>
+          <TabsTrigger 
+            value="leave-balance"
+            className="data-[state=active]:bg-transparent data-[state=active]:text-[#0B2E5C] data-[state=active]:border-b-2 data-[state=active]:border-[#0B2E5C] data-[state=active]:shadow-none rounded-none px-4 py-3 font-medium dark:data-[state=active]:text-[#0B2E5C]"
+          >
+            Leave Balance
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Personal Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Date of Birth:</span>
-                  <span className="text-gray-900 dark:text-white">
-                    {employee.date_of_birth ? format(new Date(employee.date_of_birth), 'MMM dd, yyyy') : 'Not set'}
-                  </span>
-                </div>
+        <TabsContent value="leave-balance" className="space-y-6">
+          {employee.employee_leaves && employee.employee_leaves.length > 0 ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {employee.employee_leaves.map((employeeLeave) => {
+                const leave = employeeLeave.leave;
+                const daysLeft = employeeLeave.balance;
+                const usedPercentage = employeeLeave.total_accrued > 0 
+                  ? (employeeLeave.total_consumed / employeeLeave.total_accrued) * 100 
+                  : 0;
+                
+                return (
+                  <Card 
+                    key={employeeLeave.id} 
+                    className="relative overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow"
+                    style={{ borderLeftColor: leave.color || '#6B7280', borderLeftWidth: '4px' }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-2 truncate">
+                            {leave.name}
+                          </h3>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                              {daysLeft}
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400">days</span>
+                          </div>
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
+                            <span>Used: {employeeLeave.total_consumed}</span>
+                            <span>Total: {employeeLeave.total_accrued}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div 
+                              className="h-2 rounded-full transition-all"
+                              style={{ 
+                                width: `${Math.min(usedPercentage, 100)}%`,
+                                backgroundColor: leave.color || '#6B7280'
+                              }}
+                            />
+                          </div>
+                        </div>
 
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">PAN Number:</span>
-                  <span className="text-gray-900 dark:text-white">{employee.pan_number || 'Not set'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Address:</span>
-                  <span className="text-gray-900 dark:text-white">{employee.address || 'Not set'}</span>
-                </div>
-              </CardContent>
+                        {/* Additional Info */}
+                        {employeeLeave.next_accrual_date && (
+                          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Next accrual: <span className="font-medium text-gray-700 dark:text-gray-300">
+                                {format(new Date(employeeLeave.next_accrual_date), 'MMM dd, yyyy')}
+                              </span>
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          ) : (
+            <Card className="text-center py-12 border border-gray-200 dark:border-gray-700">
+              <div className="text-gray-500 dark:text-gray-400">
+                <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                <p className="text-sm font-medium mb-1">No leave balances available</p>
+                <p className="text-xs text-gray-400">Leave balances will appear here once configured</p>
+              </div>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Work Information
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Shift:</span>
-                  <span className="text-gray-900 dark:text-white">
-                    {employee.shift?.name || employee.shift_id || 'Not assigned'}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Role:</span>
-                  <span className="text-gray-900 dark:text-white">{employee.role_id || 'Not assigned'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500 dark:text-gray-400">Payroll Included:</span>
-                  <Badge variant={employee.included_in_payroll ? 'default' : 'secondary'}>
-                    {employee.included_in_payroll ? 'Yes' : 'No'}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="attendance" className="space-y-4">
+        <TabsContent value="attendance" className="space-y-6">
           {/* Convert API attendance data to calendar events */}
           {(() => {
             const attendanceEvents = attendanceResponse?.data?.map(attendance => ({
@@ -479,13 +489,10 @@ export default function EmployeeDetail() {
             })) || [];
 
             return (
-              <div className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Attendance Calendar
-                    </CardTitle>
+              <div className="space-y-6">
+                <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <CardHeader className="relative pb-4">
+                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Attendance Calendar</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <EmployeeAttendanceCalendar
@@ -498,48 +505,63 @@ export default function EmployeeDetail() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Recent Attendance Records
-                    </CardTitle>
+                <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <CardHeader className="relative pb-4">
+                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Recent Attendance Records</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {attendanceResponse?.data && attendanceResponse.data.length > 0 ? (
-                      <div className="space-y-2">
-                        {attendanceResponse.data.map((attendance: any, index: number) => (
-                          <div key={index} className="flex justify-between items-center p-2 border rounded">
+                      <div className="space-y-3">
+                        {attendanceResponse.data.slice(0, 10).map((attendance: any, index: number) => (
+                          <div 
+                            key={index} 
+                            className="flex justify-between items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-all"
+                          >
                             <div className="flex-1">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{attendance.date}</span>
+                              <div className="flex items-center gap-3 mb-2">
+                                <span className="font-semibold text-gray-900 dark:text-white">
+                                  {format(new Date(attendance.date), 'MMM dd, yyyy')}
+                                </span>
                                 {attendance.check_in_time && (
-                                  <span className="text-sm text-gray-500">
-                                    In: {attendance.check_in_time}
+                                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                    <TrendingUp className="h-3.5 w-3.5" />
+                                    {attendance.check_in_time}
                                   </span>
                                 )}
                                 {attendance.check_out_time && (
-                                  <span className="text-sm text-gray-500">
-                                    Out: {attendance.check_out_time}
+                                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                    <TrendingDown className="h-3.5 w-3.5" />
+                                    {attendance.check_out_time}
                                   </span>
                                 )}
                               </div>
                               {attendance.total_hours && (
-                                <p className="text-sm text-gray-500">
-                                  Total: {attendance.total_hours}h
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  Total Hours: <span className="font-medium text-gray-700 dark:text-gray-300">{attendance.total_hours}h</span>
                                 </p>
                               )}
                             </div>
-                            <Badge variant={attendance.status === 'present' ? 'default' : 'secondary'}>
+                            <Badge 
+                              variant={attendance.status === 'present' ? 'default' : 'secondary'}
+                              className={
+                                attendance.status === 'present'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800'
+                                  : attendance.status === 'absent'
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
+                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                              }
+                            >
                               {attendance.status}
                             </Badge>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                        No attendance records found
-                      </p>
+                      <div className="text-center py-12">
+                        <Clock className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                        <p className="text-gray-500 dark:text-gray-400 font-medium">No attendance records found</p>
+                        <p className="text-sm text-gray-400 mt-1">Attendance records will appear here</p>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
@@ -548,56 +570,23 @@ export default function EmployeeDetail() {
           })()}
         </TabsContent>
 
-        <TabsContent value="leaves" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                Leave History
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {leaveHistoryResponse?.data && leaveHistoryResponse.data.length > 0 ? (
-                <div className="space-y-2">
-                  {leaveHistoryResponse.data.map((leave: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center p-2 border rounded">
-                      <div>
-                        <span className="font-medium">{leave.leave_type}</span>
-                        <p className="text-sm text-gray-500">{leave.from_date} - {leave.to_date}</p>
-                      </div>
-                      <Badge variant={leave.status === 'APPROVED' ? 'default' : 'secondary'}>
-                        {leave.status}
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No leave history found
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
 
-        <TabsContent value="salary" className="space-y-4">
-          <Card>
-            <CardHeader>
+        <TabsContent value="salary" className="space-y-6">
+          <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+            <CardHeader className="relative pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4" />
-                  Salary Components
-                </CardTitle>
-                <Dialog open={isSalaryComponentDialogOpen} onOpenChange={setIsSalaryComponentDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      className="flex items-center gap-2"
-                      onClick={fetchComponentTypes}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Add Component
-                    </Button>
-                  </DialogTrigger>
+                <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Salary Components</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Dialog open={isSalaryComponentDialogOpen} onOpenChange={setIsSalaryComponentDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button 
+                        className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
+                        onClick={fetchComponentTypes}
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Component
+                      </Button>
+                    </DialogTrigger>
                   <DialogContent className="sm:max-w-md [&>button]:hidden">
                     <DialogHeader className="space-y-3">
                       <DialogTitle className="text-xl font-semibold">Add Salary Component</DialogTitle>
@@ -689,13 +678,14 @@ export default function EmployeeDetail() {
                         type="button"
                         onClick={handleSalaryComponentSubmit}
                         disabled={isSalaryComponentLoading}
-                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+                        className="w-full sm:w-auto bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
                       >
                         {isSalaryComponentLoading ? "Creating..." : "Create Component"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -703,7 +693,7 @@ export default function EmployeeDetail() {
                 <div className="space-y-4">
                   {/* Summary Cards */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                    <Card className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
@@ -720,7 +710,7 @@ export default function EmployeeDetail() {
                       </CardContent>
                     </Card>
 
-                    <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                    <Card className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
@@ -737,7 +727,7 @@ export default function EmployeeDetail() {
                       </CardContent>
                     </Card>
 
-                    <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                    <Card className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div>
@@ -756,40 +746,46 @@ export default function EmployeeDetail() {
                   </div>
 
                   {/* Detailed Components Table */}
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Component Details</h3>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {salaryComponentsResponse.data
                         .sort((a, b) => (a.salary_component_type?.sequence || 0) - (b.salary_component_type?.sequence || 0))
                         .map((component: SalaryComponent) => (
-                        <div key={component.id} className="flex justify-between items-center p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <div 
+                          key={component.id} 
+                          className="flex justify-between items-center p-5 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-all"
+                        >
                           <div className="flex-1">
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-4">
                               <div className="flex-1">
-                                <h4 className="font-medium text-gray-900 dark:text-white">
+                                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
                                   {component.salary_component_type?.name || 'Unknown Component'}
                                 </h4>
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  {component.salary_component_type?.type || 'Unknown Type'} • 
-                                  {component.calculation === 'FIXED' ? 'Fixed Amount' : 'Percentage'}
-                                  {component.salary_component_type?.sequence && ` • Sequence: ${component.salary_component_type.sequence}`}
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                                  {component.calculation === 'FIXED' 
-                                    ? `₹${component.value.toLocaleString()}`
-                                    : `${component.value}%`
-                                  }
-                                </p>
-                                <div className="flex items-center gap-2 mt-1">
+                                <div className="flex items-center gap-3 flex-wrap">
                                   <Badge 
                                     variant="outline"
                                     className="text-xs"
                                   >
                                     {component.salary_component_type?.type || 'Unknown'}
                                   </Badge>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {component.calculation === 'FIXED' ? 'Fixed Amount' : 'Percentage'}
+                                  </span>
+                                  {component.salary_component_type?.sequence && (
+                                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                                      Sequence: {component.salary_component_type.sequence}
+                                    </span>
+                                  )}
                                 </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-xl font-bold text-gray-900 dark:text-white">
+                                  {component.calculation === 'FIXED' 
+                                    ? `₹${component.value.toLocaleString()}`
+                                    : `${component.value}%`
+                                  }
+                                </p>
                               </div>
                             </div>
                           </div>
@@ -809,11 +805,14 @@ export default function EmployeeDetail() {
                   </div>
 
                   {/* Net Salary Calculation */}
-                  <Card className="bg-gray-50 dark:bg-gray-800/50">
-                    <CardContent className="p-4">
+                  <Card className="bg-gradient-to-r from-[#0B2E5C] to-[#0B2E5C]/90 border border-[#0B2E5C]">
+                    <CardContent className="p-6">
                       <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Net Salary</h3>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <div>
+                          <h3 className="text-lg font-semibold text-white mb-1">Net Salary</h3>
+                          <p className="text-sm text-white/80">Total monthly compensation</p>
+                        </div>
+                        <p className="text-3xl font-bold text-white">
                           ₹{(() => {
                             const basic = salaryComponentsResponse.data
                               .filter(comp => comp.salary_component_type?.type === 'BASIC')
@@ -860,21 +859,30 @@ export default function EmployeeDetail() {
           type="danger"
         />
 
-        <TabsContent value="documents" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Documents
-              </CardTitle>
+        <TabsContent value="documents" className="space-y-6">
+          <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+            <CardHeader className="relative pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Documents</CardTitle>
             </CardHeader>
             <CardContent>
               {documentsResponse?.data && documentsResponse.data.length > 0 ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {documentsResponse.data.map((document: any, index: number) => (
-                    <div key={index} className="flex justify-between items-center p-2 border rounded">
-                      <span>{document.name}</span>
-                      <Button variant="outline" size="sm">
+                    <div 
+                      key={index} 
+                      className="flex justify-between items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-[#0B2E5C]/10 dark:bg-[#0B2E5C]/20 rounded-lg">
+                          <FileText className="h-5 w-5 text-[#0B2E5C]" />
+                        </div>
+                        <span className="font-medium text-gray-900 dark:text-white">{document.name}</span>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="border-[#0B2E5C] text-[#0B2E5C] hover:bg-[#0B2E5C] hover:text-white"
+                      >
                         <Download className="h-4 w-4 mr-2" />
                         Download
                       </Button>
@@ -882,9 +890,11 @@ export default function EmployeeDetail() {
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                  No documents found
-                </p>
+                <div className="text-center py-12">
+                  <FileText className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                  <p className="text-gray-500 dark:text-gray-400 font-medium">No documents found</p>
+                  <p className="text-sm text-gray-400 mt-1">Uploaded documents will appear here</p>
+                </div>
               )}
             </CardContent>
           </Card>

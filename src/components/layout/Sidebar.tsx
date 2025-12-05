@@ -180,7 +180,12 @@ export function Sidebar({ open, setOpen }: SidebarProps) {
   const isModuleActive = (module: any) => {
     // Only check if module itself is active, not sub-modules
     if (module.href) {
-      return pathname === `${basePath}/${module.href}`;
+      const modulePath = `${basePath}/${module.href}`;
+      // For employee management, also check if we're on detail/edit pages
+      if (module.id === 'employee-management') {
+        return pathname === modulePath || pathname.startsWith(`${modulePath}/`);
+      }
+      return pathname === modulePath;
     }
     // If module has sub-modules, don't mark it as active based on sub-module selection
     // This prevents the main nav item from being highlighted when a sub-item is selected
