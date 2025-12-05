@@ -10,10 +10,11 @@ import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Employee } from '../../types/database';
-import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign, Plus, Trash2, Mail, Phone, MapPin, Briefcase, User, Building2, CalendarDays, TrendingUp, TrendingDown, UserCircle, Home, Heart, GraduationCap, Users } from 'lucide-react';
+import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign, Plus, Trash2, Mail, Phone, MapPin, Briefcase, User, Building2, CalendarDays, UserCircle, Home, Heart, GraduationCap, Users } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { EmployeeAttendanceCalendar } from '@/components/employees/EmployeeAttendanceCalendar';
 import { attendanceService } from '@/services/attendanceService';
 import { salaryComponentService, SalaryComponent } from '@/services/salaryComponentService';
@@ -505,66 +506,6 @@ export default function EmployeeDetail() {
                   </CardContent>
                 </Card>
 
-                <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <CardHeader className="relative pb-4">
-                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Recent Attendance Records</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {attendanceResponse?.data && attendanceResponse.data.length > 0 ? (
-                      <div className="space-y-3">
-                        {attendanceResponse.data.slice(0, 10).map((attendance: any, index: number) => (
-                          <div 
-                            key={index} 
-                            className="flex justify-between items-center p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-all"
-                          >
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <span className="font-semibold text-gray-900 dark:text-white">
-                                  {format(new Date(attendance.date), 'MMM dd, yyyy')}
-                                </span>
-                                {attendance.check_in_time && (
-                                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                    <TrendingUp className="h-3.5 w-3.5" />
-                                    {attendance.check_in_time}
-                                  </span>
-                                )}
-                                {attendance.check_out_time && (
-                                  <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                                    <TrendingDown className="h-3.5 w-3.5" />
-                                    {attendance.check_out_time}
-                                  </span>
-                                )}
-                              </div>
-                              {attendance.total_hours && (
-                                <p className="text-sm text-gray-500 dark:text-gray-400">
-                                  Total Hours: <span className="font-medium text-gray-700 dark:text-gray-300">{attendance.total_hours}h</span>
-                                </p>
-                              )}
-                            </div>
-                            <Badge 
-                              variant={attendance.status === 'present' ? 'default' : 'secondary'}
-                              className={
-                                attendance.status === 'present'
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800'
-                                  : attendance.status === 'absent'
-                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800'
-                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
-                              }
-                            >
-                              {attendance.status}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-12">
-                        <Clock className="h-12 w-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-                        <p className="text-gray-500 dark:text-gray-400 font-medium">No attendance records found</p>
-                        <p className="text-sm text-gray-400 mt-1">Attendance records will appear here</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
               </div>
             );
           })()}
@@ -691,116 +632,58 @@ export default function EmployeeDetail() {
             <CardContent>
               {salaryComponentsResponse?.data && salaryComponentsResponse.data.length > 0 ? (
                 <div className="space-y-4">
-                  {/* Summary Cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <Card className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-green-600 dark:text-green-400">Basic Salary</p>
-                            <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                              ₹{salaryComponentsResponse.data
-                                .filter(comp => comp.salary_component_type?.type === 'BASIC')
-                                .reduce((sum, comp) => sum + comp.value, 0)
-                                .toLocaleString()}
-                            </p>
-                          </div>
-                          <DollarSign className="h-8 w-8 text-green-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Allowances</p>
-                            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-                              ₹{salaryComponentsResponse.data
-                                .filter(comp => comp.salary_component_type?.type === 'ALLOWANCE')
-                                .reduce((sum, comp) => sum + comp.value, 0)
-                                .toLocaleString()}
-                            </p>
-                          </div>
-                          <DollarSign className="h-8 w-8 text-blue-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-red-600 dark:text-red-400">Deductions</p>
-                            <p className="text-2xl font-bold text-red-700 dark:text-red-300">
-                              ₹{salaryComponentsResponse.data
-                                .filter(comp => comp.salary_component_type?.type === 'DEDUCTION')
-                                .reduce((sum, comp) => sum + comp.value, 0)
-                                .toLocaleString()}
-                            </p>
-                          </div>
-                          <DollarSign className="h-8 w-8 text-red-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-
                   {/* Detailed Components Table */}
                   <div className="space-y-4">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Component Details</h3>
-                    <div className="space-y-3">
-                      {salaryComponentsResponse.data
-                        .sort((a, b) => (a.salary_component_type?.sequence || 0) - (b.salary_component_type?.sequence || 0))
-                        .map((component: SalaryComponent) => (
-                        <div 
-                          key={component.id} 
-                          className="flex justify-between items-center p-5 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-all"
-                        >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-4">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
-                                  {component.salary_component_type?.name || 'Unknown Component'}
-                                </h4>
-                                <div className="flex items-center gap-3 flex-wrap">
-                                  <Badge 
-                                    variant="outline"
-                                    className="text-xs"
-                                  >
-                                    {component.salary_component_type?.type || 'Unknown'}
-                                  </Badge>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {component.calculation === 'FIXED' ? 'Fixed Amount' : 'Percentage'}
-                                  </span>
-                                  {component.salary_component_type?.sequence && (
-                                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                                      Sequence: {component.salary_component_type.sequence}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xl font-bold text-gray-900 dark:text-white">
-                                  {component.calculation === 'FIXED' 
-                                    ? `₹${component.value.toLocaleString()}`
-                                    : `${component.value}%`
-                                  }
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteClick(component.id)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-gray-50 dark:bg-gray-800/50">
+                            <TableHead className="font-semibold text-gray-900 dark:text-white">Component Name</TableHead>
+                            <TableHead className="font-semibold text-gray-900 dark:text-white">Type</TableHead>
+                            <TableHead className="font-semibold text-gray-900 dark:text-white">Calculation Type</TableHead>
+                            <TableHead className="font-semibold text-gray-900 dark:text-white text-right">Value</TableHead>
+                            <TableHead className="font-semibold text-gray-900 dark:text-white text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {salaryComponentsResponse.data
+                            .sort((a, b) => (a.salary_component_type?.sequence || 0) - (b.salary_component_type?.sequence || 0))
+                            .map((component: SalaryComponent) => (
+                            <TableRow key={component.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
+                              <TableCell className="font-medium text-gray-900 dark:text-white">
+                                {component.salary_component_type?.name || 'Unknown Component'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge 
+                                  variant="outline"
+                                  className="text-xs"
+                                >
+                                  {component.salary_component_type?.type || 'Unknown'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-gray-600 dark:text-gray-400">
+                                {component.calculation === 'FIXED' ? 'Fixed Amount' : 'Percentage'}
+                              </TableCell>
+                              <TableCell className="text-right font-semibold text-gray-900 dark:text-white">
+                                {component.calculation === 'FIXED' 
+                                  ? `₹${component.value.toLocaleString()}`
+                                  : `${component.value}%`
+                                }
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(component.id)}
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </div>
                   </div>
 
