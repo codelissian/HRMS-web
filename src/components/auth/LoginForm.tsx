@@ -204,7 +204,7 @@ export function LoginForm() {
 
         {/* Footer */}
         <div className="p-4 flex items-center justify-between text-xs text-gray-500 flex-shrink-0">
-          <span>Copyright © 2025 OneHR Enterprises LTD.</span>
+          <span>onehr by wesolvr</span>
           <button className="hover:underline">Privacy Policy</button>
         </div>
       </div>
