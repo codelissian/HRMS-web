@@ -1,0 +1,2 @@
+export { SalaryComponentTypeTable } from './SalaryComponentTypeTable';
+

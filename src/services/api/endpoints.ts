@@ -1,5 +1,5 @@
 // Backend base (POST/PUT/PATCH only; no GET)
-export const API_BASE_URL = 'https://hrms-backend-omega.vercel.app/api/v1';
+export const API_BASE_URL = 'http://35.224.247.153:9000/api/v1';
 
 const API = {
   // Auth (open)
@@ -40,6 +40,7 @@ const API = {
   // Employees
   EMPLOYEES_CREATE: `/employees/create`,
   EMPLOYEES_UPDATE: `/employees/update`,
+  EMPLOYEES_UPDATE_MANY: `/employees/update-many`,
   EMPLOYEES_LIST: `/employees/list`,
   EMPLOYEES_ONE: `/employees/one`,
   EMPLOYEES_DELETE: `/employees/delete`,
@@ -55,6 +56,7 @@ const API = {
   DESIGNATIONS_CREATE: `/designations/create`,
   DESIGNATIONS_UPDATE: `/designations/update`,
   DESIGNATIONS_LIST: `/designations/list`,
+  DESIGNATIONS_LIST_WITH_EMPLOYEE_COUNT: `/designations/list-with-employee-count`,
   DESIGNATIONS_ONE: `/designations/one`,
   DESIGNATIONS_DELETE: `/designations/delete`,
 
@@ -83,7 +85,7 @@ const API = {
   ATTENDANCE_POLICIES_CREATE: `/attendance_rules/create`,
   ATTENDANCE_POLICIES_UPDATE: `/attendance_rules/update`,
   ATTENDANCE_POLICIES_LIST: `/attendance_rules/list`,
-  ATTENDANCE_POLICIES_ONE: `/attendance_policies/one`,
+  ATTENDANCE_POLICIES_ONE: `/attendance_rules/one`,
   ATTENDANCE_POLICIES_DELETE: `/attendance_rules/delete`,
 
   // Attendance
@@ -92,6 +94,9 @@ const API = {
   ATTENDANCE_LIST: `/attendance/list`,
   ATTENDANCE_ONE: `/attendance/one`,
   ATTENDANCE_DELETE: `/attendance/delete`,
+  ATTENDANCE_DAY: `/attendance/day`,
+  ATTENDANCE_STATISTICS: `/attendance/statistics`,
+  ATTENDANCE_CALENDAR: `/attendance/calendar`,
 
   // Leaves
   LEAVES_CREATE: `/leaves/create`,
@@ -107,6 +112,13 @@ const API = {
   LEAVE_REQUESTS_ONE: `/requests/one`,
   LEAVE_REQUESTS_DELETE: `/leave_requests/delete`,
   LEAVE_REQUESTS_STATISTICS: `/requests/statistics`,
+
+  // Holidays
+  HOLIDAYS_CREATE: `/holidays/create`,
+  HOLIDAYS_UPDATE: `/holidays/update`,
+  HOLIDAYS_LIST: `/holidays/list`,
+  HOLIDAYS_ONE: `/holidays/one`,
+  HOLIDAYS_DELETE: `/holidays/delete`,
 
   // Leave Encashments
   LEAVE_ENCASHMENTS_CREATE: `/leave-encashments/create`,
@@ -128,6 +140,42 @@ const API = {
   CURRENCY_EXCHANGE_RATES_LIST: `/currency-exchange-rates/list`,
   CURRENCY_EXCHANGE_RATES_ONE: `/currency-exchange-rates/one`,
   CURRENCY_EXCHANGE_RATES_DELETE: `/currency-exchange-rates/delete`,
+
+  // Work Day Rules
+  WORK_DAY_RULES_CREATE: `/working_day_rules/create`,
+  WORK_DAY_RULES_UPDATE: `/working_day_rule/update`,
+  WORK_DAY_RULES_LIST: `/working_day_rules/list`,
+  WORK_DAY_RULES_ONE: `/working_day_rule/one`,
+  WORK_DAY_RULES_DELETE: `/working_day_rule/delete`,
+
+  // Salary Components
+  SALARY_COMPONENTS_CREATE: `/salary_components/create`,
+  SALARY_COMPONENTS_UPDATE: `/salary_components/update`,
+  SALARY_COMPONENTS_LIST: `/salary_components/list`,
+  SALARY_COMPONENTS_ONE: `/salary_components/one`,
+  SALARY_COMPONENTS_DELETE: `/salary_components/delete`,
+
+  // Salary Component Types
+  SALARY_COMPONENT_TYPES_CREATE: `/salary_component_types/create`,
+  SALARY_COMPONENT_TYPES_UPDATE: `/salary_component_types/update`,
+  SALARY_COMPONENT_TYPES_LIST: `/salary_component_types/list`,
+  SALARY_COMPONENT_TYPES_ONE: `/salary_component_types/one`,
+  SALARY_COMPONENT_TYPES_DELETE: `/salary_component_types/delete`,
+
+  // Payroll Cycles
+  PAYROLL_CYCLES_CREATE: `/payroll_cycles/create`,
+  PAYROLL_CYCLES_UPDATE: `/payroll_cycles/update`,
+  PAYROLL_CYCLES_LIST: `/payroll_cycles/list`,
+  PAYROLL_CYCLES_ONE: `/payroll_cycles/one`,
+  PAYROLL_CYCLES_DELETE: `/payroll_cycles/delete`,
+
+  // Payrolls
+  PAYROLLS_CREATE: `/payrolls/create`,
+  PAYROLLS_UPDATE: `/payrolls/update`,
+  PAYROLLS_LIST: `/payrolls/list`,
+  PAYROLLS_ONE: `/payrolls/one`,
+  PAYROLLS_DELETE: `/payrolls/delete`,
+  PAYROLLS_DOWNLOAD: `/payrolls/download`,
 };
 
 export const API_ENDPOINTS = API;

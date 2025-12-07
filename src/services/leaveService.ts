@@ -103,7 +103,7 @@ class LeaveService {
         organisation_id: filters.organisation_id,
         type: filters.type,
         page: filters.page || 1,
-        page_size: filters.page_size || 50,
+        page_size: filters.page_size || 10,
         include: ["employee", "leave"]
       };
 

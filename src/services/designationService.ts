@@ -14,6 +14,7 @@ export interface Designation {
   modified_at: Date;
   created_by?: string;
   modified_by?: string;
+  employee_count?: number;
 }
 
 interface GetDesignationsRequest {
@@ -78,6 +79,31 @@ class DesignationService {
     const response = await httpClient.patch<ApiResponse<any>>(
       API_ENDPOINTS.DESIGNATIONS_DELETE,
       { id: designationId }
+    );
+    return response.data;
+  }
+
+  // Get single designation by ID
+  async getDesignation(id: string): Promise<ApiResponse<Designation>> {
+    const response = await httpClient.post<ApiResponse<Designation>>(
+      API_ENDPOINTS.DESIGNATIONS_ONE,
+      { id }
+    );
+    return response.data;
+  }
+
+  // Get designations with employee count
+  async getDesignationsWithEmployeeCount(params?: {
+    page?: number;
+    page_size?: number;
+  }): Promise<ApiResponse<Designation[]>> {
+    const requestBody = {
+      page: params?.page || 1,
+      page_size: params?.page_size || 100,
+    };
+    const response = await httpClient.post<ApiResponse<Designation[]>>(
+      API_ENDPOINTS.DESIGNATIONS_LIST_WITH_EMPLOYEE_COUNT,
+      requestBody
     );
     return response.data;
   }

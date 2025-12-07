@@ -40,6 +40,14 @@ class DepartmentService {
     );
     return response.data;
   }
+
+  async getDepartment(id: string): Promise<ApiResponse<Department>> {
+    const response = await httpClient.post<ApiResponse<Department>>(
+      API_ENDPOINTS.DEPARTMENTS_ONE,
+      { id }
+    );
+    return response.data;
+  }
 }
 
 export const departmentService = new DepartmentService(); 

@@ -6,11 +6,12 @@ export interface AttendancePolicy {
   geo_radius_meters: number;
   latitude?: string;
   longitude?: string;
-  address?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;
   regularization_enabled: boolean;
+  on_duty_enabled?: boolean;
+  work_from_home_enabled?: boolean;
   grace_period_minutes?: number;
   overtime_threshold_hours?: number;
   break_management_enabled?: boolean;
@@ -29,11 +30,12 @@ export interface CreateAttendancePolicyRequest {
   geo_radius_meters: number;
   latitude?: string;
   longitude?: string;
-  address?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;
   regularization_enabled: boolean;
+  on_duty_enabled?: boolean;
+  work_from_home_enabled?: boolean;
 }
 
 export interface UpdateAttendancePolicyRequest extends CreateAttendancePolicyRequest {
@@ -60,10 +62,11 @@ export interface AttendancePolicyFormData {
   geo_radius_meters: number;
   latitude?: string;
   longitude?: string;
-  address?: string;
   selfie_required: boolean;
   web_attendance_enabled: boolean;
   mobile_attendance_enabled: boolean;
   regularization_enabled: boolean;
+  on_duty_enabled: boolean;
+  work_from_home_enabled: boolean;
 }
 

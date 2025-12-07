@@ -16,7 +16,7 @@ export class AttendancePolicyService {
   }
 
   static async update(data: UpdateAttendancePolicyRequest): Promise<ApiResponse<AttendancePolicy>> {
-    const response = await httpClient.post<ApiResponse<AttendancePolicy>>(API_ENDPOINTS.ATTENDANCE_POLICIES_UPDATE, data);
+    const response = await httpClient.put<ApiResponse<AttendancePolicy>>(API_ENDPOINTS.ATTENDANCE_POLICIES_UPDATE, data);
     return response.data;
   }
 
@@ -37,4 +37,3 @@ export class AttendancePolicyService {
 }
 
 export const attendancePolicyService = new AttendancePolicyService();
-

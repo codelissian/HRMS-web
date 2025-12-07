@@ -8,7 +8,7 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
-      <Card className="w-full max-w-md mx-4 shadow-lg">
+      <Card className="w-full max-w-md mx-4 border-gray-200">
         <CardContent className="pt-6 text-center">
           <div className="flex flex-col items-center mb-6">
             <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-4">

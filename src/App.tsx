@@ -8,26 +8,43 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { ShiftsProvider } from "@/contexts/ShiftsContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
-import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Dashboard from "@/pages/Dashboard";
 import EmployeeList from "@/pages/employees/EmployeeList";
 import EmployeeDetail from "@/pages/employees/EmployeeDetail";
+import EmployeeFormPage from "@/pages/employees/EmployeeFormPage";
+import EmployeeAssignmentPage from "@/pages/employees/EmployeeAssignmentPage";
 import DepartmentList from "@/pages/departments/DepartmentList";
 import { ShiftsPage } from "@/pages/shifts";
-import { AttendancePoliciesPage } from "@/pages/attendance-policies";
-import { AttendanceManagementPage } from "@/pages/attendance";
+import { AttendanceManagementPage, TodaysAttendancePage } from "@/pages/attendance";
 import { LeaveManagementPage } from "@/pages/leave-management";
 import { LeaveRequestsPage } from "@/pages/leave-requests";
 import { OrganizationPage } from "@/pages/organization";
+import { AttendancePoliciesPage } from "@/pages/attendance-policies";
+import CreateAttendancePolicyPage from "@/pages/attendance-policies/CreateAttendancePolicyPage";
+import { WorkDayRulePage } from "@/pages/work-day-rule";
+import { PayrollPage } from "@/pages/payroll";
+import { PayrollCyclePage } from "@/pages/payroll-cycle";
+import PayrollCycleDetailsPage from "@/pages/payroll-cycle/PayrollCycleDetailsPage";
+import PayrollCycleDetailsTest from "@/pages/payroll-cycle/PayrollCycleDetailsTest";
+import { SalaryComponentTypesPage } from "@/pages/salary-component-types";
+import HolidayList from "@/pages/holidays/HolidayList";
+import HolidayDetail from "@/pages/holidays/HolidayDetail";
 import NotFound from "@/pages/not-found";
+import EmployeeLayout from "@/employee/layout/EmployeeLayout";
+import EmployeeDashboard from "@/employee/pages/Dashboard";
+import EmployeeLeaveRequests from "@/employee/pages/LeaveRequests";
+import EmployeeProfile from "@/employee/pages/Profile";
 import VerifyEmail from "@/pages/VerifyEmail";
 import { createTheme, ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { CssBaseline } from '@mui/material';
 
 // Create Material-UI theme that matches your design
 const muiTheme = createTheme({
+  typography: {
+    fontFamily: '"Public Sans", sans-serif',
+  },
   palette: {
     primary: {
       main: '#3b82f6', // Blue color to match your design
@@ -71,7 +88,7 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<LandingPage />} />
+      <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
@@ -88,13 +105,29 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="organization" element={<OrganizationPage />} />
         <Route path="employees" element={<EmployeeList />} />
+        <Route path="employees/new" element={<EmployeeFormPage />} />
         <Route path="employees/:id" element={<EmployeeDetail />} />
+        <Route path="employees/:id/edit" element={<EmployeeFormPage />} />
+        <Route path="employees/assign/:type/:id" element={<EmployeeAssignmentPage />} />
         <Route path="departments" element={<DepartmentList />} />
         <Route path="shifts" element={<ShiftsPage />} />
         <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
+        <Route path="attendance-policies/create" element={<CreateAttendancePolicyPage />} />
+        <Route path="attendance-policies/:id/edit" element={<CreateAttendancePolicyPage />} />
+        <Route path="work-day-rules" element={<WorkDayRulePage />} />
+        {/* Redirect old combined route to attendance-policies */}
+        <Route path="attendance-and-work-day-rule" element={<Navigate to="/admin/attendance-policies" replace />} />
+        <Route path="attendance/today" element={<TodaysAttendancePage />} />
         <Route path="attendance" element={<AttendanceManagementPage />} />
         <Route path="leave-requests" element={<LeaveRequestsPage />} />
         <Route path="leave-management" element={<LeaveManagementPage />} />
+        <Route path="holidays" element={<HolidayList />} />
+        <Route path="holidays/:id" element={<HolidayDetail />} />
+        <Route path="salary-component-types" element={<SalaryComponentTypesPage />} />
+        <Route path="payroll-cycle" element={<PayrollCyclePage />} />
+        <Route path="payroll-cycle/:id" element={<PayrollCycleDetailsPage />} />
+        <Route path="payroll-cycle/test" element={<PayrollCycleDetailsTest />} />
+        <Route path="payroll" element={<PayrollPage />} />
         <Route path="" element={<Navigate to="/admin/dashboard" replace />} />
       </Route>
 
@@ -103,13 +136,13 @@ function AppRoutes() {
         path="/employee"
         element={
           <ProtectedRoute allowedRoles={["employee"]}>
-            <AppLayout />
+            <EmployeeLayout />
           </ProtectedRoute>
         }
       >
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="attendance-policies" element={<AttendancePoliciesPage />} />
-        <Route path="leave-requests" element={<LeaveRequestsPage />} />
+        <Route path="dashboard" element={<EmployeeDashboard />} />
+        <Route path="leave-requests" element={<EmployeeLeaveRequests />} />
+        <Route path="profile" element={<EmployeeProfile />} />
         <Route path="" element={<Navigate to="/employee/dashboard" replace />} />
       </Route>
 

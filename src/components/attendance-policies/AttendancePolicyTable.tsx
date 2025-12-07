@@ -1,21 +1,22 @@
 import React from 'react';
 import { DataTable, Column, TableAction } from '@/components/common/DataTable';
-import { Badge } from '@/components/ui/badge';
 import { AttendancePolicy } from '@/types/attendance';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, UserPlus } from 'lucide-react';
 
 interface AttendancePolicyTableProps {
   policies: AttendancePolicy[];
   loading?: boolean;
   onEdit: (policy: AttendancePolicy) => void;
   onDelete: (policy: AttendancePolicy) => void;
+  onAssignEmployees?: (policy: AttendancePolicy) => void;
 }
 
 export function AttendancePolicyTable({
   policies,
   loading = false,
   onEdit,
-  onDelete
+  onDelete,
+  onAssignEmployees
 }: AttendancePolicyTableProps) {
 
 
@@ -25,6 +26,7 @@ export function AttendancePolicyTable({
     {
       key: 'name',
       header: 'Policy Name',
+      align: 'left',
       render: (_, policy) => (
         <div className="font-medium text-gray-900 dark:text-white">
           {policy.name}
@@ -34,16 +36,12 @@ export function AttendancePolicyTable({
     {
       key: 'geo_tracking_enabled',
       header: 'Geo Tracking',
+      align: 'center',
       render: (_, policy) => (
-        <div className="flex flex-col items-center space-y-1">
-          <Badge 
-            variant={policy.geo_tracking_enabled ? 'default' : 'secondary'}
-            className={policy.geo_tracking_enabled ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
-          >
-            {policy.geo_tracking_enabled ? 'Enabled' : 'Disabled'}
-          </Badge>
+        <div className="text-sm text-gray-900 dark:text-white">
+          <span>{policy.geo_tracking_enabled ? 'Enabled' : 'Disabled'}</span>
           {policy.geo_tracking_enabled && policy.geo_radius_meters && (
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               ({policy.geo_radius_meters}m radius)
             </div>
           )}
@@ -53,79 +51,41 @@ export function AttendancePolicyTable({
     {
       key: 'selfie_required',
       header: 'Selfie Required',
+      align: 'center',
       render: (_, policy) => (
-        <div className="flex justify-center">
-          <Badge 
-            variant={policy.selfie_required ? 'default' : 'secondary'}
-            className={policy.selfie_required ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : ''}
-          >
-            {policy.selfie_required ? 'Yes' : 'No'}
-          </Badge>
-        </div>
+        <span className="block text-sm text-gray-900 dark:text-white">
+          {policy.selfie_required ? 'Yes' : 'No'}
+        </span>
       ),
     },
     {
       key: 'web_attendance_enabled',
       header: 'Web Attendance',
+      align: 'center',
       render: (_, policy) => (
-        <div className="flex justify-center">
-          <Badge 
-            variant={policy.web_attendance_enabled ? 'default' : 'secondary'}
-            className={policy.web_attendance_enabled ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : ''}
-          >
-            {policy.web_attendance_enabled ? 'Enabled' : 'Disabled'}
-          </Badge>
-        </div>
+        <span className="block text-sm text-gray-900 dark:text-white">
+          {policy.web_attendance_enabled ? 'Enabled' : 'Disabled'}
+        </span>
       ),
     },
     {
       key: 'mobile_attendance_enabled',
       header: 'Mobile Attendance',
+      align: 'center',
       render: (_, policy) => (
-        <div className="flex justify-center">
-          <Badge 
-            variant={policy.mobile_attendance_enabled ? 'default' : 'secondary'}
-            className={policy.mobile_attendance_enabled ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' : ''}
-          >
-            {policy.mobile_attendance_enabled ? 'Enabled' : 'Disabled'}
-          </Badge>
-        </div>
+        <span className="block text-sm text-gray-900 dark:text-white">
+          {policy.mobile_attendance_enabled ? 'Enabled' : 'Disabled'}
+        </span>
       ),
-    },
-    {
-      key: 'modified_at',
-      header: 'Last Modified',
-      render: (_, policy) => {
-        const formatDate = (dateString?: string) => {
-          if (!dateString) return '-';
-          try {
-            return new Date(dateString).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            });
-          } catch {
-            return '-';
-          }
-        };
-
-        return (
-          <div className="flex flex-col items-center space-y-1 text-center">
-            <span className="text-sm text-gray-900 dark:text-white">
-              {formatDate(policy.modified_at || policy.created_at)}
-            </span>
-            {policy.modified_by && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                by {policy.modified_by}
-              </div>
-            )}
-          </div>
-        );
-      },
     },
   ];
 
   const actions: TableAction<AttendancePolicy>[] = [
+    ...(onAssignEmployees ? [{
+      label: 'Assign Employees',
+      icon: UserPlus,
+      onClick: onAssignEmployees,
+    }] : []),
     {
       label: 'Edit',
       icon: Edit,

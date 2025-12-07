@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import { AttendancePolicyTable } from '@/components/attendance-policies/AttendancePolicyTable';
-import { AttendancePolicyForm } from '@/components/attendance-policies/AttendancePolicyForm';
 import { AttendancePolicyDetails } from '@/components/attendance-policies/AttendancePolicyDetails';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { AttendancePolicy } from '@/types/attendance';
@@ -11,16 +10,15 @@ import { Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AttendancePolicyService } from '@/services/attendancePolicyService';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 export default function AttendancePoliciesPage() {
-  const [showForm, setShowForm] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(10);
   
   // Modal states
   const [showDetails, setShowDetails] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState<AttendancePolicy | null>(null);
-  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   
   // Delete confirmation states
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -28,6 +26,7 @@ export default function AttendancePoliciesPage() {
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   // Fetch attendance policies with React Query
   const { 
@@ -59,47 +58,6 @@ export default function AttendancePoliciesPage() {
     error
   });
 
-  // Create policy mutation
-  const createPolicyMutation = useMutation({
-    mutationFn: (data: any) => AttendancePolicyService.create(data),
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Attendance policy created successfully',
-      });
-      setShowForm(false);
-      queryClient.invalidateQueries({ queryKey: ['attendance-policies', 'list'] });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create policy',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Update policy mutation
-  const updatePolicyMutation = useMutation({
-    mutationFn: (data: any) => AttendancePolicyService.update(data),
-    onSuccess: () => {
-      toast({
-        title: 'Success',
-        description: 'Attendance policy updated successfully',
-      });
-      setShowForm(false);
-      setFormMode('create');
-      setSelectedPolicy(null);
-      queryClient.invalidateQueries({ queryKey: ['attendance-policies', 'list'] });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to update policy',
-        variant: 'destructive',
-      });
-    },
-  });
 
   // Delete policy mutation
   const deletePolicyMutation = useMutation({
@@ -122,16 +80,12 @@ export default function AttendancePoliciesPage() {
 
   // Handle create new policy
   const handleCreate = () => {
-    setFormMode('create');
-    setSelectedPolicy(null);
-    setShowForm(true);
+    navigate('/admin/attendance-policies/create');
   };
 
   // Handle edit policy
   const handleEdit = (policy: AttendancePolicy) => {
-    setFormMode('edit');
-    setSelectedPolicy(policy);
-    setShowForm(true);
+    navigate(`/admin/attendance-policies/${policy.id}/edit`);
   };
 
   // Handle view policy details
@@ -140,17 +94,11 @@ export default function AttendancePoliciesPage() {
     setShowDetails(true);
   };
 
-  // Handle form success
-  const handleFormSuccess = () => {
-    // refreshPolicies(); // This function is no longer available
-    setShowForm(false);
+  // Handle assign employees
+  const handleAssignEmployees = (policy: AttendancePolicy) => {
+    navigate(`/admin/employees/assign/attendance-policy/${policy.id}`);
   };
 
-  // Handle form close
-  const handleFormClose = () => {
-    setShowForm(false);
-    setSelectedPolicy(null);
-  };
 
   // Handle details close
   const handleDetailsClose = () => {
@@ -161,9 +109,7 @@ export default function AttendancePoliciesPage() {
   // Handle edit from details view
   const handleEditFromDetails = (policy: AttendancePolicy) => {
     setShowDetails(false);
-    setFormMode('edit');
-    setSelectedPolicy(policy);
-    setShowForm(true);
+    navigate(`/admin/attendance-policies/${policy.id}/edit`);
   };
 
   // Handle delete policy
@@ -227,6 +173,7 @@ export default function AttendancePoliciesPage() {
         loading={isLoading}
         onEdit={handleEdit}
         onDelete={handleDeletePolicy}
+        onAssignEmployees={handleAssignEmployees}
       />
 
 
@@ -291,14 +238,6 @@ export default function AttendancePoliciesPage() {
         </Card>
       )}
 
-      {/* Create/Edit Form Modal */}
-      <AttendancePolicyForm
-        open={showForm}
-        onClose={handleFormClose}
-        policy={selectedPolicy}
-        mode={formMode}
-        onSuccess={handleFormSuccess}
-      />
 
       {/* View Details Modal */}
       <AttendancePolicyDetails

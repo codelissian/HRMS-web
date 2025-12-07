@@ -1,46 +1,75 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { 
   Plus, 
-  Calendar, 
-  Clock, 
-  Settings, 
-  Eye, 
-  Edit, 
-  Trash2,
-  MoreVertical
+  Calendar
 } from 'lucide-react';
 import { LeaveForm } from '@/components/leave-form';
-import { ConfirmationDialog } from '@/components/common';
+import { ConfirmationDialog, Pagination, EmptyState, LoadingSpinner } from '@/components/common';
+import { LeaveTable } from '@/components/leaves';
 import { Leave } from '../../types/database';
 import { leaveService } from '@/services/leaveService';
 import { useToast } from '@/hooks/use-toast';
-import { LoadingSpinner } from '@/components/common';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LeaveManagementPage() {
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingLeave, setEditingLeave] = useState<Leave | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Confirmation dialog state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [leaveToDelete, setLeaveToDelete] = useState<Leave | null>(null);
 
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // Reset to page 1 when search term changes
+      if (searchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
+      }
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Fetch leaves from API
   const fetchLeaves = async () => {
     try {
       setLoading(true);
-      const response = await leaveService.getLeaveTypes({
-        page: 1,
-        page_size: 1000 // Get all leaves for now
-      });
+      const requestBody: any = {
+        page: currentPage,
+        page_size: pageSize,
+        active_flag: true,
+        delete_flag: false
+      };
+
+      // Add search parameter if debouncedSearchTerm exists
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        requestBody.search = {
+          keys: ["name", "code"],
+          value: debouncedSearchTerm.trim()
+        };
+      }
+
+      const response = await leaveService.getLeaveTypes(requestBody);
       
       if (response.status && response.data) {
         setLeaves(response.data);
+        setTotalCount(response.total_count || 0);
+        setPageCount(response.page_count || 0);
       } else {
         toast({
           title: "Error",
@@ -60,10 +89,10 @@ export default function LeaveManagementPage() {
     }
   };
 
-  // Load leaves on component mount
+  // Load leaves on component mount and when pagination/search changes
   useEffect(() => {
     fetchLeaves();
-  }, []);
+  }, [currentPage, pageSize, debouncedSearchTerm]);
 
   const handleCreateLeave = () => {
     setEditingLeave(null);
@@ -113,162 +142,71 @@ export default function LeaveManagementPage() {
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'PAID': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      case 'UNPAID': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'HALF_DAY': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400';
-    }
-  };
-
-  const getAccrualMethodLabel = (method: string) => {
-    switch (method) {
-      case 'MONTHLY': return 'Monthly';
-      case 'YEARLY': return 'Yearly';
-      case 'QUARTERLY': return 'Quarterly';
-      case 'NONE': return 'No Accrual';
-      default: return method;
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-end items-center">      
-        <div className="flex items-center space-x-3">
-          <Button onClick={handleCreateLeave}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Leave Type
-          </Button>
+      {/* Search and Actions */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 max-w-md">
+          <Input
+            placeholder="Search leave types..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
         </div>
-      </div>
-
-      {/* Leave Types Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {leaves.map((leave) => (
-          <Card key={leave.id} className="hover:shadow-lg transition-shadow duration-200">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  <div 
-                    className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
-                    style={{ backgroundColor: leave.color || '#6B7280' }}
-                  >
-                    {leave.icon || '📋'}
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{leave.name}</CardTitle>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">{leave.code}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Badge 
-                    variant={leave.active_flag ? 'default' : 'secondary'}
-                    className={leave.active_flag ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
-                  >
-                    {leave.active_flag ? 'Active' : 'Inactive'}
-                  </Badge>
-                  
-                  <Button variant="ghost" size="sm">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            
-            <CardContent className="space-y-4">
-              {leave.description && (
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {leave.description}
-                </p>
-              )}
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Category:</span>
-                  <Badge className={getCategoryColor(leave.category || 'PAID')}>
-                    {leave.category || 'PAID'}
-                  </Badge>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Accrual:</span>
-                  <span className="font-medium">
-                    {leave.accrual_method === 'NONE' ? 'No Accrual' : 
-                      `${leave.accrual_rate || 0} days ${getAccrualMethodLabel(leave.accrual_method || 'MONTHLY').toLowerCase()}`}
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Balance:</span>
-                  <span className="font-medium">
-                    {leave.initial_balance} days
-                  </span>
-                </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">Approval:</span>
-                  <span className="font-medium">
-                    {leave.requires_approval ? `${leave.approval_levels} level(s)` : 'Auto-approve'}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-2 pt-2">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => handleEditLeave(leave)}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
                 
                 <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="flex-1"
-                  onClick={() => handleDeleteLeave(leave)}
+          onClick={handleCreateLeave}
+          className="flex items-center gap-2 bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white"
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete
+          <Plus className="h-4 w-4" />
+          Create Leave Type
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
       </div>
 
-      {/* Empty State */}
-      {leaves.length === 0 && !loading && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <div className="text-gray-400 dark:text-gray-500 mb-4">
-              <Calendar className="h-16 w-16 mx-auto" />
+      {loading ? (
+        <div className="flex items-center justify-center min-h-[60vh] w-full">
+          <LoadingSpinner />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-              No leave types found
-            </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Get started by creating your first leave type.
-            </p>
-            <Button onClick={handleCreateLeave}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Leave Type
-            </Button>
+      ) : totalCount > 0 ? (
+        <>
+          {/* Leave Types Table */}
+          <LeaveTable
+            leaves={leaves}
+            loading={loading}
+            onEdit={handleEditLeave}
+            onDelete={handleDeleteLeave}
+          />
+
+      {/* Pagination */}
+      {totalCount > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalCount={totalCount}
+              pageCount={pageCount}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={(newPageSize) => {
+                setPageSize(newPageSize);
+                    setCurrentPage(1);
+              }}
+              showFirstLast={false}
+            />
           </CardContent>
         </Card>
+          )}
+        </>
+      ) : (
+        <EmptyState
+          icon={Calendar}
+          title="No leave types configured"
+          description="Get started by creating your first leave type. You can set up different leave types like annual leave, sick leave, or personal leave."
+          action={{
+            label: "Create Leave Type",
+            onClick: handleCreateLeave
+          }}
+        />
       )}
 
       {/* Leave Form Modal */}
@@ -283,8 +221,7 @@ export default function LeaveManagementPage() {
               const response = await leaveService.updateLeaveType({
                 id: editingLeave.id,
                 ...leaveData,
-                approval_levels: Number(leaveData.approval_levels), // Ensure it's sent as a number
-              } as any); // Type assertion to bypass schema mismatch
+              });
               
               if (response.status && response.data) {
                 toast({
@@ -301,11 +238,19 @@ export default function LeaveManagementPage() {
               }
             } else {
               // Create new leave
+              if (!user?.organisation_id) {
+                toast({
+                  title: "Error",
+                  description: "Organization ID not found. Please log in again.",
+                  variant: "destructive",
+                });
+                return;
+              }
+              
               const response = await leaveService.createLeaveType({
                 ...leaveData,
-                approval_levels: Number(leaveData.approval_levels), // Ensure it's sent as a number
-                organisation_id: "1823a724-3843-4aef-88b4-7505e4aa88f7", // TODO: Get from auth context
-              } as any); // Type assertion to bypass schema mismatch
+                organisation_id: user.organisation_id,
+              });
               
               if (response.status && response.data) {
                 toast({
@@ -339,7 +284,7 @@ export default function LeaveManagementPage() {
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
         title="Delete Leave Type"
-        description="Are you sure you want to delete this leave type? This action cannot be undone."
+        description={`Are you sure you want to delete the leave type "${leaveToDelete?.name}"? This action cannot be undone and will permanently remove the leave type from the system.`}
         type="delete"
         confirmText="Delete Leave Type"
         onConfirm={confirmDeleteLeave}

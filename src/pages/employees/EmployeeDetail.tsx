@@ -5,25 +5,43 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { EmployeeForm } from '@/components/employees/EmployeeForm';
 import { ConfirmationDialog } from '@/components/common';
 import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Employee } from '../../types/database';
-import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign } from 'lucide-react';
+import { ArrowLeft, Edit, Download, Calendar, Clock, FileText, DollarSign, Plus, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmployeeTable } from '@/components/employees/EmployeeTable';
 import { EmployeeAttendanceCalendar } from '@/components/employees/EmployeeAttendanceCalendar';
 import { attendanceService } from '@/services/attendanceService';
+import { salaryComponentService, SalaryComponent } from '@/services/salaryComponentService';
+import { salaryComponentTypeService, SalaryComponentType } from '@/services/salaryComponentTypeService';
+import { httpClient } from '@/lib/httpClient';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 export default function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [showEditForm, setShowEditForm] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Salary Component Form States
+  const [isSalaryComponentDialogOpen, setIsSalaryComponentDialogOpen] = useState(false);
+  const [selectedComponentType, setSelectedComponentType] = useState('');
+  const [calculationType, setCalculationType] = useState<'fixed' | 'percentage'>('fixed');
+  const [componentValue, setComponentValue] = useState('');
+  const [isSalaryComponentLoading, setIsSalaryComponentLoading] = useState(false);
+  const [componentTypes, setComponentTypes] = useState<SalaryComponentType[]>([]);
+  const [deletingComponentId, setDeletingComponentId] = useState<string | null>(null);
+  const [deletingComponentName, setDeletingComponentName] = useState<string>('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Fetch employee details
   const { 
@@ -59,12 +77,169 @@ export default function EmployeeDetail() {
     enabled: !!id,
   });
 
+  // Fetch employee salary components
+  const { data: salaryComponentsResponse } = useQuery({
+    queryKey: ['employee', 'salary-components', id],
+    queryFn: () => salaryComponentService.getEmployeeSalaryComponents(id!, employee?.organisation_id || ''),
+    enabled: !!id && !!employee?.organisation_id,
+  });
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase();
+  };
+
+  // Fetch component types for the dropdown
+  const fetchComponentTypes = async () => {
+    try {
+      const response = await salaryComponentTypeService.getSalaryComponentTypes({
+        page: 1,
+        page_size: 100
+      });
+      setComponentTypes(response.data || []);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch component types",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle salary component form submission
+  const handleSalaryComponentSubmit = async () => {
+    if (!selectedComponentType || !componentValue) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if component already exists
+    if (salaryComponentsResponse?.data) {
+      const existingComponent = salaryComponentsResponse.data.find(
+        comp => comp.salary_component_type_id === selectedComponentType
+      );
+      
+      if (existingComponent) {
+        const componentTypeName = componentTypes.find(type => type.id === selectedComponentType)?.name || 'this component type';
+        toast({
+          title: "Error",
+          description: `A salary component for ${componentTypeName} already exists. Please select a different component type or delete the existing one first.`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Validate percentage value
+    if (calculationType === 'percentage') {
+      const percentageValue = parseFloat(componentValue);
+      if (isNaN(percentageValue) || percentageValue < 0 || percentageValue > 100) {
+        toast({
+          title: "Error",
+          description: "Percentage value must be between 0 and 100",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Validate fixed amount value
+    if (calculationType === 'fixed') {
+      const fixedValue = parseFloat(componentValue);
+      if (isNaN(fixedValue) || fixedValue < 0) {
+        toast({
+          title: "Error",
+          description: "Fixed amount must be a positive number",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    setIsSalaryComponentLoading(true);
+    try {
+      const payload = {
+        employee_id: id!,
+        organisation_id: employee?.organisation_id!,
+        salary_component_type_id: selectedComponentType,
+        calculation: (calculationType === 'fixed' ? 'FIXED' : 'PERCENTAGE') as 'FIXED' | 'PERCENTAGE',
+        value: parseFloat(componentValue)
+      };
+
+      await salaryComponentService.createSalaryComponent(payload);
+
+      toast({
+        title: "Success",
+        description: "Salary component created successfully",
+      });
+
+      // Reset form
+      setSelectedComponentType('');
+      setCalculationType('fixed');
+      setComponentValue('');
+      setIsSalaryComponentDialogOpen(false);
+
+      // Refresh salary components data
+      queryClient.invalidateQueries({ queryKey: ['employee', 'salary-components', id] });
+    } catch (error) {
+      console.error('Error creating salary component:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to create salary component",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSalaryComponentLoading(false);
+    }
+  };
+
+  // Handle delete salary component
+  const handleDeleteSalaryComponent = async () => {
+    if (!deletingComponentId) return;
+
+    try {
+      await httpClient.patch('/salary_components/internal/many', {
+        id: deletingComponentId
+      });
+
+      toast({
+        title: "Success",
+        description: "Salary component deleted successfully",
+      });
+
+      // Reset delete state
+      setDeletingComponentId(null);
+      setDeletingComponentName('');
+      setShowDeleteDialog(false);
+
+      // Refresh salary components data
+      queryClient.invalidateQueries({ queryKey: ['employee', 'salary-components', id] });
+    } catch (error) {
+      console.error('Error deleting salary component:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete salary component",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handle delete button click
+  const handleDeleteClick = (componentId: string) => {
+    // Find the component to get its type name
+    const component = salaryComponentsResponse?.data?.find(comp => comp.id === componentId);
+    const componentTypeName = component?.salary_component_type?.name || 'Unknown Component';
+    
+    setDeletingComponentId(componentId);
+    setDeletingComponentName(componentTypeName);
+    setShowDeleteDialog(true);
   };
 
   if (isLoading) {
@@ -98,7 +273,7 @@ export default function EmployeeDetail() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Employee Overview</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => setShowEditForm(true)}>
+            <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/employees/${id}/edit`)}>
               <Edit className="h-4 w-4" />
             </Button>
           </div>
@@ -222,6 +397,7 @@ export default function EmployeeDetail() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="attendance">Attendance</TabsTrigger>
           <TabsTrigger value="leaves">Leave History</TabsTrigger>
+          <TabsTrigger value="salary">Salary Components</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
@@ -288,7 +464,7 @@ export default function EmployeeDetail() {
             const attendanceEvents = attendanceResponse?.data?.map(attendance => ({
               id: attendance.id,
               date: attendance.date,
-              type: attendance.status === 'on-leave' ? 'leave' : 'attendance',
+              type: attendance.status === 'on-leave' ? 'leave' as const : 'attendance' as const,
               title: attendance.status === 'on-leave' ? 'On Leave' : 
                      attendance.status === 'half-day' ? 'Half Day' : 
                      attendance.status === 'present' ? 'Present' : 'Absent',
@@ -404,6 +580,286 @@ export default function EmployeeDetail() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="salary" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Salary Components
+                </CardTitle>
+                <Dialog open={isSalaryComponentDialogOpen} onOpenChange={setIsSalaryComponentDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      className="flex items-center gap-2"
+                      onClick={fetchComponentTypes}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Component
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md [&>button]:hidden">
+                    <DialogHeader className="space-y-3">
+                      <DialogTitle className="text-xl font-semibold">Add Salary Component</DialogTitle>
+                      <DialogDescription className="text-sm text-gray-600">
+                        Create a new salary component for this employee
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      {/* Component Type Dropdown */}
+                      <div className="space-y-2">
+                        <Label htmlFor="component-type" className="text-sm font-medium text-gray-700">
+                          Component Type *
+                        </Label>
+                        <Select value={selectedComponentType} onValueChange={setSelectedComponentType}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select component type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {componentTypes.map((type) => {
+                              const isAlreadyUsed = salaryComponentsResponse?.data?.some(
+                                comp => comp.salary_component_type_id === type.id
+                              );
+                              return (
+                                <SelectItem 
+                                  key={type.id} 
+                                  value={type.id}
+                                  disabled={isAlreadyUsed}
+                                  className={isAlreadyUsed ? 'opacity-50' : ''}
+                                >
+                                  <div className="flex items-center justify-between w-full">
+                                    <span>{type.name}</span>
+                                    {isAlreadyUsed && (
+                                      <span className="text-xs text-gray-500 ml-2">(Already exists)</span>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-gray-500">
+                          Component types that are already used for this employee are disabled.
+                        </p>
+                      </div>
+
+                      {/* Fixed/Percentage Radio */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-medium text-gray-700">
+                          Calculation Type *
+                        </Label>
+                        <RadioGroup value={calculationType} onValueChange={(value: 'fixed' | 'percentage') => setCalculationType(value)} className="flex space-x-6">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="fixed" id="fixed" />
+                            <Label htmlFor="fixed">Fixed Amount</Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="percentage" id="percentage" />
+                            <Label htmlFor="percentage">Percentage</Label>
+                          </div>
+                        </RadioGroup>
+                      </div>
+
+                      {/* Value Input */}
+                      <div className="space-y-2">
+                        <Label htmlFor="value" className="text-sm font-medium text-gray-700">
+                          Value *
+                        </Label>
+                        <Input
+                          id="value"
+                          type="number"
+                          value={componentValue}
+                          onChange={(e) => setComponentValue(e.target.value)}
+                          placeholder={calculationType === 'fixed' ? 'Enter amount' : 'Enter percentage'}
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                    <DialogFooter className="gap-2 sm:gap-0">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setIsSalaryComponentDialogOpen(false)}
+                        disabled={isSalaryComponentLoading}
+                        className="w-full sm:w-auto"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        onClick={handleSalaryComponentSubmit}
+                        disabled={isSalaryComponentLoading}
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700"
+                      >
+                        {isSalaryComponentLoading ? "Creating..." : "Create Component"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {salaryComponentsResponse?.data && salaryComponentsResponse.data.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-green-600 dark:text-green-400">Basic Salary</p>
+                            <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+                              ₹{salaryComponentsResponse.data
+                                .filter(comp => comp.salary_component_type?.type === 'BASIC')
+                                .reduce((sum, comp) => sum + comp.value, 0)
+                                .toLocaleString()}
+                            </p>
+                          </div>
+                          <DollarSign className="h-8 w-8 text-green-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Allowances</p>
+                            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                              ₹{salaryComponentsResponse.data
+                                .filter(comp => comp.salary_component_type?.type === 'ALLOWANCE')
+                                .reduce((sum, comp) => sum + comp.value, 0)
+                                .toLocaleString()}
+                            </p>
+                          </div>
+                          <DollarSign className="h-8 w-8 text-blue-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-red-600 dark:text-red-400">Deductions</p>
+                            <p className="text-2xl font-bold text-red-700 dark:text-red-300">
+                              ₹{salaryComponentsResponse.data
+                                .filter(comp => comp.salary_component_type?.type === 'DEDUCTION')
+                                .reduce((sum, comp) => sum + comp.value, 0)
+                                .toLocaleString()}
+                            </p>
+                          </div>
+                          <DollarSign className="h-8 w-8 text-red-500" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  {/* Detailed Components Table */}
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Component Details</h3>
+                    <div className="space-y-2">
+                      {salaryComponentsResponse.data
+                        .sort((a, b) => (a.salary_component_type?.sequence || 0) - (b.salary_component_type?.sequence || 0))
+                        .map((component: SalaryComponent) => (
+                        <div key={component.id} className="flex justify-between items-center p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-900 dark:text-white">
+                                  {component.salary_component_type?.name || 'Unknown Component'}
+                                </h4>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">
+                                  {component.salary_component_type?.type || 'Unknown Type'} • 
+                                  {component.calculation === 'FIXED' ? 'Fixed Amount' : 'Percentage'}
+                                  {component.salary_component_type?.sequence && ` • Sequence: ${component.salary_component_type.sequence}`}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                                  {component.calculation === 'FIXED' 
+                                    ? `₹${component.value.toLocaleString()}`
+                                    : `${component.value}%`
+                                  }
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge 
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    {component.salary_component_type?.type || 'Unknown'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="ml-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteClick(component.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Net Salary Calculation */}
+                  <Card className="bg-gray-50 dark:bg-gray-800/50">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Net Salary</h3>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                          ₹{(() => {
+                            const basic = salaryComponentsResponse.data
+                              .filter(comp => comp.salary_component_type?.type === 'BASIC')
+                              .reduce((sum, comp) => sum + comp.value, 0);
+                            const allowances = salaryComponentsResponse.data
+                              .filter(comp => comp.salary_component_type?.type === 'ALLOWANCE')
+                              .reduce((sum, comp) => sum + comp.value, 0);
+                            const deductions = salaryComponentsResponse.data
+                              .filter(comp => comp.salary_component_type?.type === 'DEDUCTION')
+                              .reduce((sum, comp) => sum + comp.value, 0);
+                            return (basic + allowances - deductions).toLocaleString();
+                          })()}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <DollarSign className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p className="text-gray-500 dark:text-gray-400">No salary components configured</p>
+                  <p className="text-sm text-gray-400 mt-1">Salary components will appear here once configured</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Delete Confirmation Dialog */}
+        <ConfirmationDialog
+          open={showDeleteDialog}
+          onOpenChange={(open) => {
+            setShowDeleteDialog(open);
+            if (!open) {
+              setDeletingComponentId(null);
+              setDeletingComponentName('');
+            }
+          }}
+          onConfirm={handleDeleteSalaryComponent}
+          title="Delete Salary Component"
+          description={`Are you sure you want to delete the salary component type "${deletingComponentName}"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          type="danger"
+        />
+
         <TabsContent value="documents" className="space-y-4">
           <Card>
             <CardHeader>
@@ -435,20 +891,6 @@ export default function EmployeeDetail() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Employee Form Modal */}
-      <EmployeeForm
-        open={showEditForm}
-        onOpenChange={setShowEditForm}
-        onSubmit={(data) => {
-          // TODO: Implement update functionality
-          console.log('Update employee:', data);
-          setShowEditForm(false);
-        }}
-        loading={false}
-        initialData={employee}
-        title="Edit Employee"
-        description="Update employee information"
-      />
     </div>
   );
 }

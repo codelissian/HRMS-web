@@ -31,8 +31,19 @@ export function EmployeeTable({
 
   const columns: Column<EmployeeWithRelations>[] = [
     {
+      key: 'id',
+      header: 'Employee ID',
+      align: 'left',
+      render: (_, employee) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {(employee as any).code || employee.id?.slice(-4) || 'N/A'}
+        </div>
+      ),
+    },
+    {
       key: 'name',
-      header: 'Employee',
+      header: 'Name',
+      align: 'left',
       render: (_, employee) => (
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
@@ -40,49 +51,76 @@ export function EmployeeTable({
               {getInitials(employee.name)}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <div className="font-medium text-gray-900 dark:text-white">
+          <div className="text-sm font-medium text-gray-900 dark:text-white">
               {employee.name}
-            </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">
-              {employee.email}
-            </div>
           </div>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      header: 'Email',
+      align: 'left',
+      render: (_, employee) => (
+        <div className="text-sm text-gray-900 dark:text-white">
+          {employee.email || '-'}
         </div>
       ),
     },
     {
       key: 'department_id',
       header: 'Department',
+      align: 'left',
       render: (value, employee) => {
-        if (!value) return '-';
-        return employee.department?.name || value;
+        if (!value) return <span className="text-sm text-gray-500 dark:text-gray-400">-</span>;
+        return (
+          <div className="text-sm text-gray-900 dark:text-white">
+            {employee.department?.name || value}
+          </div>
+        );
       },
     },
     {
       key: 'designation_id',
       header: 'Designation',
+      align: 'left',
       render: (value, employee) => {
-        if (!value) return '-';
-        return employee.designation?.name || value;
+        if (!value) return <span className="text-sm text-gray-500 dark:text-gray-400">-</span>;
+        return (
+          <div className="text-sm text-gray-900 dark:text-white">
+            {employee.designation?.name || value}
+          </div>
+        );
       },
     },
     {
       key: 'status',
       header: 'Status',
-      render: (status) => (
+      align: 'center',
+      render: (status, employee) => {
+        const isActive = employee.active_flag === true || employee.active_flag === undefined;
+        return (
         <Badge 
-          variant={status === 'active' ? 'default' : 'secondary'}
-          className={status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
+            variant={isActive ? 'default' : 'secondary'}
+            className={isActive 
+              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 inline-flex px-2 py-1' 
+              : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 inline-flex px-2 py-1'
+            }
         >
-          {status || 'Active'}
+            {isActive ? 'Active' : 'Inactive'}
         </Badge>
-      ),
+        );
+      },
     },
     {
       key: 'joining_date',
       header: 'Joining Date',
-      render: (date) => date ? format(new Date(date), 'MMM dd, yyyy') : '-',
+      align: 'left',
+      render: (date) => (
+        <div className="text-sm text-gray-900 dark:text-white whitespace-nowrap">
+          {date ? format(new Date(date), 'MMM dd, yyyy') : '-'}
+        </div>
+      ),
     },
   ];
 
@@ -111,6 +149,7 @@ export function EmployeeTable({
       columns={columns}
       actions={actions}
       loading={loading}
+      onRowClick={onView}
     />
   );
 }

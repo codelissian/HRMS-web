@@ -81,10 +81,9 @@ const LocationButtonIcon = ({ className }: { className?: string }) => (
 const attendancePolicySchema = z.object({
   name: z.string().min(1, 'Policy name is required'),
   geo_tracking_enabled: z.boolean(),
-  geo_radius_meters: z.number().min(1, 'Radius must be at least 1 meter').optional(),
+  geo_radius_meters: z.number().min(1, 'Radius must be at least 1 meter'),
   latitude: z.string().optional(),
   longitude: z.string().optional(),
-  address: z.string().optional(),
   selfie_required: z.boolean(),
   web_attendance_enabled: z.boolean(),
   mobile_attendance_enabled: z.boolean(),
@@ -125,7 +124,6 @@ export function AttendancePolicyForm({
       geo_radius_meters: 100,
       latitude: '',
       longitude: '',
-      address: '',
       selfie_required: false,
       web_attendance_enabled: true,
       mobile_attendance_enabled: true,
@@ -136,22 +134,22 @@ export function AttendancePolicyForm({
   const geoTrackingEnabled = watch('geo_tracking_enabled');
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationData, setLocationData] = useState<{
-    address: string;
     latitude: number;
     longitude: number;
   } | null>(null);
 
   // Handle location selection from LocationTracker
   const handleLocationSelect = (location: {
-    address: string;
     latitude: number;
     longitude: number;
   }) => {
-    setLocationData(location);
+    setLocationData({
+      latitude: location.latitude,
+      longitude: location.longitude,
+    });
     // Update form values
     reset({
       ...watch(),
-      address: location.address,
       latitude: location.latitude.toString(),
       longitude: location.longitude.toString(),
     });
@@ -206,7 +204,6 @@ export function AttendancePolicyForm({
         geo_radius_meters: policy.geo_radius_meters,
         latitude: policy.latitude || '',
         longitude: policy.longitude || '',
-        address: policy.address || '',
         selfie_required: policy.selfie_required,
         web_attendance_enabled: policy.web_attendance_enabled,
         mobile_attendance_enabled: policy.mobile_attendance_enabled,
@@ -381,7 +378,31 @@ export function AttendancePolicyForm({
                   </div>
                   
                   {/* Location Fields */}
-
+                  
+                  {/* Geo Radius Field */}
+                  <div className="space-y-2">
+                    <Label htmlFor="geo_radius_meters" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Geo Radius (meters) <span className="text-red-500">*</span>
+                    </Label>
+                    <Controller
+                      name="geo_radius_meters"
+                      control={control}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          type="number"
+                          min="1"
+                          placeholder="e.g., 100"
+                          className="h-12 text-base"
+                          error={errors.geo_radius_meters?.message}
+                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        />
+                      )}
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Set the radius in meters for location validation
+                    </p>
+                  </div>
 
                   {/* Google Maps Location Tracker */}
                   <div className="mt-6">

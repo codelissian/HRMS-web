@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { ShiftService, CreateShiftData, Shift, ShiftsResponse } from '@/services/shiftService';
 import { getOrganisationId } from '@/lib/shift-utils';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 // Optimized shift data structure - only essential fields
 export interface ShiftSummary {
@@ -19,15 +20,22 @@ interface ShiftsContextValue {
   selectedShift: ShiftSummary | null;
   isLoading: boolean;
   totalCount: number;
+  pageCount: number;
+  currentPage: number;
+  pageSize: number;
+  searchTerm: string;
   
   // Actions
-  fetchShifts: () => Promise<void>;
+  fetchShifts: (page?: number, pageSize?: number) => Promise<void>;
   selectShift: (shift: ShiftSummary) => void;
   clearSelection: () => void;
   createShift: (data: CreateShiftData) => Promise<void>;
   updateShift: (id: string, data: Partial<CreateShiftData>) => Promise<void>;
   deleteShift: (id: string) => Promise<void>;
   toggleShiftStatus: (id: string) => Promise<void>;
+  setCurrentPage: (page: number) => void;
+  setPageSize: (size: number) => void;
+  setSearchTerm: (term: string) => void;
 }
 
 const ShiftsContext = createContext<ShiftsContextValue | undefined>(undefined);
@@ -37,7 +45,26 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
   const [selectedShift, setSelectedShift] = useState<ShiftSummary | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
+
+  // Debounce search term
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // Reset to page 1 when search term changes
+      if (searchTerm !== debouncedSearchTerm) {
+        setCurrentPage(1);
+      }
+    }, 500); // 500ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
 
   // Transform API response to store only essential data
   const transformShiftData = useCallback((apiShift: Shift): ShiftSummary => {
@@ -54,27 +81,47 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     return transformed;
   }, []);
 
-  const fetchShifts = useCallback(async () => {
+  const fetchShifts = useCallback(async (page?: number, size?: number) => {
+    // Don't fetch if user is not authenticated
+    if (!isAuthenticated) {
+      return;
+    }
+
     try {
       setIsLoading(true);
       const organisationId = getOrganisationId();
       
       if (!organisationId) {
-        toast({
-          title: "Error",
-          description: "Organisation ID not found. Please log in again.",
-          variant: "destructive",
-        });
+        // Silently return if no organisation ID (user might not be logged in yet)
+        setIsLoading(false);
         return;
       }
 
-      const response: ShiftsResponse = await ShiftService.getShifts(organisationId);
+      const requestBody: any = {
+        page: page ?? currentPage,
+        page_size: size ?? pageSize,
+        active_flag: true,
+        delete_flag: false
+      };
+
+      // Add search parameter if debouncedSearchTerm exists
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        requestBody.search = {
+          keys: ["name"],
+          value: debouncedSearchTerm.trim()
+        };
+      }
+
+      const response: ShiftsResponse = await ShiftService.getShifts(requestBody);
       
       if (response.status && response.data) {
         // Transform and store only essential data
         const transformedShifts = response.data.map(transformShiftData);
         setShifts(transformedShifts);
-        setTotalCount(response.total_count);
+        setTotalCount(response.total_count || 0);
+        setPageCount(response.page_count || 0);
+        if (page !== undefined) setCurrentPage(page);
+        if (size !== undefined) setPageSize(size);
       } else {
         console.error('API returned error:', response.message);
         toast({
@@ -94,7 +141,7 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [toast, transformShiftData]);
+  }, [toast, transformShiftData, currentPage, pageSize, debouncedSearchTerm, isAuthenticated]);
 
   const selectShift = useCallback((shift: ShiftSummary) => {
     setSelectedShift(shift);
@@ -224,11 +271,33 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [shifts, toast, transformShiftData]);
 
+  const handleSetCurrentPage = useCallback((page: number) => {
+    setCurrentPage(page);
+    fetchShifts(page, undefined);
+  }, [fetchShifts]);
+
+  const handleSetPageSize = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+    fetchShifts(1, size);
+  }, [fetchShifts]);
+
+  // Fetch shifts when debouncedSearchTerm changes, but only if user is authenticated
+  useEffect(() => {
+    if (debouncedSearchTerm !== undefined && isAuthenticated) {
+      fetchShifts();
+    }
+  }, [debouncedSearchTerm, isAuthenticated]);
+
   const value: ShiftsContextValue = {
     shifts,
     selectedShift,
     isLoading,
     totalCount,
+    pageCount,
+    currentPage,
+    pageSize,
+    searchTerm,
     fetchShifts,
     selectShift,
     clearSelection,
@@ -236,6 +305,9 @@ export function ShiftsProvider({ children }: { children: React.ReactNode }) {
     updateShift,
     deleteShift,
     toggleShiftStatus,
+    setCurrentPage: handleSetCurrentPage,
+    setPageSize: handleSetPageSize,
+    setSearchTerm,
   };
 
   return (

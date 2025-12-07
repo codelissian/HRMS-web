@@ -23,6 +23,7 @@ export default defineConfig({
       "@assets": path.resolve(__dirname, "attached_assets"),
     },
   },
+  assetsInclude: ["**/*.png", "**/*.PNG", "**/*.jpg", "**/*.JPG", "**/*.jpeg", "**/*.JPEG", "**/*.svg", "**/*.webp"],
   root: path.resolve(__dirname),
   build: {
     outDir: path.resolve(__dirname, "dist"),
