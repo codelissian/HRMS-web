@@ -470,45 +470,21 @@ export default function EmployeeDetail() {
         </TabsContent>
 
         <TabsContent value="attendance" className="space-y-6">
-          {/* Convert API attendance data to calendar events */}
-          {(() => {
-            const attendanceEvents = attendanceResponse?.data?.map(attendance => ({
-              id: attendance.id,
-              date: attendance.date,
-              type: attendance.status === 'on-leave' ? 'leave' as const : 'attendance' as const,
-              title: attendance.status === 'on-leave' ? 'On Leave' : 
-                     attendance.status === 'half-day' ? 'Half Day' : 
-                     attendance.status === 'present' ? 'Present' : 'Absent',
-              status: attendance.status,
-              leaveType: attendance.status === 'on-leave' ? 'personal' : undefined,
-              description: attendance.status === 'on-leave' ? 'Employee on leave' : undefined,
-              checkInTime: attendance.check_in_time,
-              checkOutTime: attendance.check_out_time,
-              totalHours: attendance.total_hours,
-              lateMinutes: attendance.late_minutes,
-              earlyDeparture: attendance.early_departure
-            })) || [];
-
-            return (
-              <div className="space-y-6">
-                <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <CardHeader className="relative pb-4">
-                    <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Attendance Calendar</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <EmployeeAttendanceCalendar
-                      employeeId={employee.id}
-                      employeeName={employee.name}
-                      events={attendanceEvents}
-                      onDateClick={(date) => console.log('Date clicked:', date)}
-                      onEventClick={(event) => console.log('Event clicked:', event)}
-                    />
-                  </CardContent>
-                </Card>
-
-              </div>
-            );
-          })()}
+          <div className="space-y-6">
+            <Card className="border border-gray-200 dark:border-gray-700 shadow-sm">
+              <CardHeader className="relative pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">Attendance Calendar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EmployeeAttendanceCalendar
+                  employeeId={employee.id}
+                  employeeName={employee.name}
+                  organisationId={employee.organisation_id}
+                  onDateClick={(date) => console.log('Date clicked:', date)}
+                  onEventClick={(event) => console.log('Event clicked:', event)}
+                />
+              </CardContent>
+            </Card>
         </TabsContent>
 
 

@@ -186,6 +186,51 @@ export interface TodayAttendanceStatistics {
   half_day: number;
 }
 
+// Employee Attendance API types (POST /employees/attendance)
+export interface ClockRecord {
+  id: string;
+  event_time: string; // ISO 8601 datetime string
+  event_type: 'CHECK_IN' | 'CHECK_OUT';
+}
+
+export interface Shift {
+  id: string;
+  name: string;
+  start: string; // Time string (e.g., "09:00")
+  end: string; // Time string (e.g., "18:00")
+}
+
+export interface Attendance {
+  id: string;
+  employee_id: string;
+  organisation_id: string;
+  holiday_id?: string | null;
+  date: string; // ISO 8601 datetime string
+  shift?: Shift | null;
+  first_clock_record?: ClockRecord | null;
+  last_clock_record?: ClockRecord | null;
+  total_work_hours?: number | null;
+  status: 'PRESENT' | 'ABSENT' | 'HALF_DAY' | 'ON_LEAVE' | 'WEEK_OFF';
+  is_late?: boolean | null;
+  is_early_departure?: boolean | null;
+  remarks?: string | null;
+  active_flag?: boolean | null;
+  delete_flag?: boolean | null;
+  modified_at?: string | null;
+  created_at?: string | null;
+  created_by?: string | null;
+  modified_by?: string | null;
+}
+
+export interface EmployeeAttendanceRequest {
+  employee_id: string;
+  organisation_id: string;
+  date: {
+    gte: string; // ISO 8601 format (start of day)
+    lte: string; // ISO 8601 format (end of day)
+  };
+}
+
 class AttendanceService {
   // Transform raw events into attendance records for UI display
   private transformEventsToRecords(events: AttendanceEvent[]): AttendanceRecord[] {
@@ -324,6 +369,43 @@ class AttendanceService {
       ...response.data,
       data: records
     };
+  }
+
+  /**
+   * Get employee attendance by date range using POST /employees/attendance
+   * Transforms API response to EmployeeAttendanceEvent format for calendar component
+   */
+  async getEmployeeAttendanceByDateRange(
+    employeeId: string,
+    organisationId: string,
+    startDate: Date,
+    endDate: Date
+  ): Promise<ApiResponse<Attendance[]>> {
+    // Format dates to ISO 8601 with start/end of day
+    const startOfDay = new Date(startDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const requestPayload: EmployeeAttendanceRequest = {
+      employee_id: employeeId,
+      organisation_id: organisationId,
+      date: {
+        gte: startOfDay.toISOString(),
+        lte: endOfDay.toISOString(),
+      },
+    };
+
+    console.log('📡 Employee Attendance API Request:', requestPayload);
+
+    const response = await httpClient.post<ApiResponse<Attendance[]>>(
+      API_ENDPOINTS.EMPLOYEES_ATTENDANCE,
+      requestPayload
+    );
+
+    console.log('📡 Employee Attendance API Response:', response.data);
+
+    return response.data;
   }
 
   async createAttendance(data: Partial<AttendanceRecord>): Promise<ApiResponse<AttendanceEvent>> {

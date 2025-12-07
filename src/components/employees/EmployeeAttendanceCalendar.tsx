@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +16,8 @@ import {
   TrendingDown
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { attendanceService, Attendance } from '@/services/attendanceService';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 
 export interface EmployeeAttendanceEvent {
   id: string;
@@ -34,7 +37,8 @@ export interface EmployeeAttendanceEvent {
 interface EmployeeAttendanceCalendarProps {
   employeeId: string;
   employeeName: string;
-  events?: EmployeeAttendanceEvent[];
+  organisationId?: string; // Optional - if provided, will fetch data from API
+  events?: EmployeeAttendanceEvent[]; // Optional - if provided, will use this instead of fetching
   onDateClick?: (date: string) => void;
   onEventClick?: (event: EmployeeAttendanceEvent) => void;
   className?: string;
@@ -50,7 +54,8 @@ const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 export function EmployeeAttendanceCalendar({
   employeeId,
   employeeName,
-  events = [],
+  organisationId,
+  events: providedEvents = [],
   onDateClick,
   onEventClick,
   className
@@ -68,6 +73,103 @@ export function EmployeeAttendanceCalendar({
     
     return { firstDay, daysInMonth, daysInPrevMonth, year, month };
   }, [selectedMonth, selectedYear]);
+
+  // Calculate date range for the selected month
+  const { startDate, endDate } = useMemo(() => {
+    const start = new Date(selectedYear, selectedMonth, 1);
+    const end = new Date(selectedYear, selectedMonth + 1, 0);
+    return { startDate: start, endDate: end };
+  }, [selectedMonth, selectedYear]);
+
+  // Fetch attendance data from API if organisationId is provided and no events are provided
+  const shouldFetchFromAPI = !!organisationId && providedEvents.length === 0;
+  
+  const { data: attendanceResponse, isLoading: isLoadingAttendance } = useQuery({
+    queryKey: ['employee-attendance', employeeId, organisationId, selectedMonth, selectedYear],
+    queryFn: () => {
+      if (!organisationId) {
+        throw new Error('Organisation ID is required');
+      }
+      return attendanceService.getEmployeeAttendanceByDateRange(
+        employeeId,
+        organisationId,
+        startDate,
+        endDate
+      );
+    },
+    enabled: shouldFetchFromAPI,
+  });
+
+  // Transform API response to EmployeeAttendanceEvent format
+  const apiEvents = useMemo(() => {
+    if (!attendanceResponse?.data) return [];
+    
+    return attendanceResponse.data.map((attendance: Attendance): EmployeeAttendanceEvent => {
+      const dateStr = new Date(attendance.date).toISOString().split('T')[0];
+      
+      // Map API status to component status
+      let status: 'present' | 'absent' | 'half-day' | 'late' | 'early-departure' = 'absent';
+      let type: 'attendance' | 'leave' | 'holiday' | 'weekend' = 'attendance';
+      let title = 'Absent';
+      
+      switch (attendance.status) {
+        case 'PRESENT':
+          status = attendance.is_late ? 'late' : 'present';
+          type = 'attendance';
+          title = attendance.is_late ? 'Present (Late)' : 'Present';
+          break;
+        case 'ABSENT':
+          status = 'absent';
+          type = 'attendance';
+          title = 'Absent';
+          break;
+        case 'HALF_DAY':
+          status = 'half-day';
+          type = 'attendance';
+          title = 'Half Day';
+          break;
+        case 'ON_LEAVE':
+          status = 'present';
+          type = 'leave';
+          title = 'On Leave';
+          break;
+        case 'WEEK_OFF':
+          status = 'present';
+          type = 'weekend';
+          title = 'Week Off';
+          break;
+      }
+      
+      if (attendance.is_early_departure && status === 'present') {
+        status = 'early-departure';
+        title = 'Present (Early Departure)';
+      }
+
+      // Extract check-in/check-out times
+      const checkInTime = attendance.first_clock_record?.event_time
+        ? new Date(attendance.first_clock_record.event_time).toLocaleTimeString()
+        : undefined;
+      const checkOutTime = attendance.last_clock_record?.event_time
+        ? new Date(attendance.last_clock_record.event_time).toLocaleTimeString()
+        : undefined;
+
+      return {
+        id: attendance.id,
+        date: dateStr,
+        type,
+        title,
+        status,
+        checkInTime,
+        checkOutTime,
+        totalHours: attendance.total_work_hours || undefined,
+        lateMinutes: attendance.is_late ? undefined : undefined, // Can be calculated if needed
+        earlyDeparture: attendance.is_early_departure ? undefined : undefined, // Can be calculated if needed
+      };
+    });
+  }, [attendanceResponse]);
+
+  // Use provided events if available, otherwise use API events
+  const events = providedEvents.length > 0 ? providedEvents : apiEvents;
 
   const eventsMap = useMemo(() => {
     const map: Record<string, EmployeeAttendanceEvent[]> = {};
@@ -302,6 +404,17 @@ export function EmployeeAttendanceCalendar({
       attendanceRate: Math.round(attendanceRate * 100) / 100
     };
   }, [events, selectedMonth, selectedYear]);
+
+  // Show loading state if fetching from API
+  if (shouldFetchFromAPI && isLoadingAttendance) {
+    return (
+      <Card className={cn("w-full", className)}>
+        <CardContent className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={cn("w-full", className)}>

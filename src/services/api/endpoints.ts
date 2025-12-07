@@ -44,6 +44,7 @@ const API = {
   EMPLOYEES_LIST: `/employees/list`,
   EMPLOYEES_ONE: `/employees/one`,
   EMPLOYEES_DELETE: `/employees/delete`,
+  EMPLOYEES_ATTENDANCE: `/employees/attendance`,
 
   // Departments
   DEPARTMENTS_CREATE: `/departments/create`,
