@@ -282,9 +282,9 @@ export default function Dashboard() {
                   </p>
                 </div>
                 <div className="mt-4">
-                  <Button className="w-full bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white">
-                    Review it
-                  </Button>
+                <Button className="w-full bg-[#0B2E5C] hover:bg-[#0B2E5C]/90 text-white">
+                  Review it
+                </Button>
                 </div>
               </div>
             </CardContent>
@@ -387,52 +387,52 @@ export default function Dashboard() {
                     />
                   </div>
                 ) : (
-                  <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between">
                     <div className="w-40 h-40">
-                      <ChartContainer 
-                        config={employeeChartConfig}
-                        className="h-full w-full"
-                      >
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={employeeDistributionData}
-                              cx="50%"
-                              cy="50%"
+                    <ChartContainer 
+                      config={employeeChartConfig}
+                      className="h-full w-full"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={employeeDistributionData}
+                            cx="50%"
+                            cy="50%"
                               innerRadius={50}
                               outerRadius={75}
-                              paddingAngle={2}
-                              dataKey="value"
-                            >
-                              {employeeDistributionData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <ChartTooltip content={<ChartTooltipContent />} />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </ChartContainer>
-                    </div>
+                            paddingAngle={2}
+                            dataKey="value"
+                          >
+                            {employeeDistributionData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </div>
                     <div className="flex-1 ml-6 max-h-40 overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-500">
                       <div className="space-y-2 pr-2">
-                        {employeeDistributionData.map((item, index) => (
-                          <div key={index} className="flex items-center justify-between">
+                    {employeeDistributionData.map((item, index) => (
+                      <div key={index} className="flex items-center justify-between">
                             <div className="flex items-center space-x-2 min-w-0 flex-1">
-                              <div 
+                          <div 
                                 className="w-3 h-3 rounded-full flex-shrink-0" 
-                                style={{ backgroundColor: item.color }}
-                              />
+                            style={{ backgroundColor: item.color }}
+                          />
                               <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                                {item.name}
-                              </span>
-                            </div>
+                            {item.name}
+                          </span>
+                        </div>
                             <span className="text-xs font-semibold text-gray-900 dark:text-white ml-2 flex-shrink-0">
-                              {item.value}
-                            </span>
-                          </div>
-                        ))}
+                          {item.value}
+                        </span>
                       </div>
-                    </div>
+                    ))}
+                  </div>
+                </div>
                   </div>
                 )}
               </CardContent>
