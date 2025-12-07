@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  ChevronLeft, 
-  ChevronRight, 
   Calendar as CalendarIcon,
   Clock,
   Home,
@@ -308,43 +306,6 @@ export function EmployeeAttendanceCalendar({
   return (
     <Card className={cn("w-full", className)}>
       <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl font-semibold">
-              {employeeName}'s Attendance Calendar
-            </CardTitle>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {MONTHS[selectedMonth]} {selectedYear}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToToday}
-              className="text-sm"
-            >
-              Today
-            </Button>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigateMonth('prev')}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigateMonth('next')}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-
         {/* Monthly Statistics */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
           <div className="text-center">
