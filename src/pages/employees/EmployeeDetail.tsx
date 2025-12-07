@@ -485,6 +485,7 @@ export default function EmployeeDetail() {
                 />
               </CardContent>
             </Card>
+          </div>
         </TabsContent>
 
 
