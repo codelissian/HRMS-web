@@ -1,5 +1,5 @@
 // Backend base (POST/PUT/PATCH only; no GET)
-export const API_BASE_URL = 'http://35.224.247.153:9000/api/v1';
+export const API_BASE_URL = 'https://api.wesolvr.com/api/v1';
 
 const API = {
   // Auth (open)
