@@ -1,4 +1,5 @@
-import { Menu, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { Menu, ArrowLeft, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
@@ -14,6 +15,7 @@ import { departmentService } from '@/services/departmentService';
 import { designationService } from '@/services/designationService';
 import { AttendancePolicyService } from '@/services/attendancePolicyService';
 import { ShiftService } from '@/services/shiftService';
+import { HelpSupportDialog } from '@/components/common';
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -24,6 +26,7 @@ export function Header({ onMenuClick }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const params = useParams<{ type?: string; id?: string }>();
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
 
   // Fetch item details for assignment page
   const isAssignmentPage = location.pathname.startsWith('/admin/employees/assign/');
@@ -202,6 +205,17 @@ export function Header({ onMenuClick }: HeaderProps) {
       </div>
 
       <div className="flex items-center space-x-4">
+        {/* Help & Support Button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setHelpDialogOpen(true)}
+          className="h-8 w-8"
+          title="Help & Support"
+        >
+          <HelpCircle className="h-5 w-5" />
+        </Button>
+
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -223,6 +237,12 @@ export function Header({ onMenuClick }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Help & Support Dialog */}
+      <HelpSupportDialog
+        open={helpDialogOpen}
+        onOpenChange={setHelpDialogOpen}
+      />
     </header>
   );
 }

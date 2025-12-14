@@ -77,6 +77,7 @@ export interface AttendanceCalendarRequest {
     keys: string[];
     value: string;
   };
+  employee_search_value?: string;
 }
 
 export interface AttendanceCalendarDay {
@@ -452,6 +453,7 @@ class AttendanceService {
       page_size: params.page_size || 1000,
       ...(params.shift_id && { shift_id: params.shift_id }),
       ...(params.search && { search: params.search }),
+      ...(params.employee_search_value && { employee_search_value: params.employee_search_value }),
     };
 
     console.log('📡 Attendance Calendar API Request:', requestPayload);

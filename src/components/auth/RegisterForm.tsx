@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { authService } from '@/services/authService';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
+import { Eye, EyeOff, UserPlus, HelpCircle } from 'lucide-react';
 import { DashboardPreview } from './DashboardPreview';
 import { Settings2 } from 'lucide-react';
+import { HelpSupportDialog } from '@/components/common';
 
 const registerSchema = z.object({
   full_name: z.string().min(2, 'Full name must be at least 2 characters'),
@@ -24,6 +25,7 @@ type RegisterFormData = z.infer<typeof registerSchema>;
 export function RegisterForm() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -62,11 +64,21 @@ export function RegisterForm() {
       <div className="w-full lg:w-1/2 bg-white flex flex-col h-full">
         {/* Header */}
         <div className="p-4 lg:p-6 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#0B2E5C] flex items-center justify-center">
-              <Settings2 className="w-4 h-4 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#0B2E5C] flex items-center justify-center">
+                <Settings2 className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-lg font-bold text-gray-900">OneHR</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">OneHR</span>
+            <Button
+              variant="ghost"
+              onClick={() => setHelpDialogOpen(true)}
+              className="h-auto py-1.5 px-3 gap-2"
+            >
+              <HelpCircle className="h-4 w-4 text-gray-600" />
+              <span className="text-sm text-gray-700">Help and Support</span>
+            </Button>
           </div>
         </div>
 
@@ -208,6 +220,12 @@ export function RegisterForm() {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0B2E5C] to-[#0D3A6B] h-full overflow-hidden">
         <DashboardPreview />
       </div>
+
+      {/* Help & Support Dialog */}
+      <HelpSupportDialog
+        open={helpDialogOpen}
+        onOpenChange={setHelpDialogOpen}
+      />
     </div>
   );
 }

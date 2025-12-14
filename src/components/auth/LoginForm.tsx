@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { Eye, EyeOff, LogIn, HelpCircle } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { DashboardPreview } from './DashboardPreview';
 import { Settings2 } from 'lucide-react';
+import { HelpSupportDialog } from '@/components/common';
 
 export function LoginForm() {
   const [email, setEmail] = useState('');
@@ -18,6 +19,7 @@ export function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   
   const { login } = useAuth();
   const { toast } = useToast();
@@ -79,11 +81,21 @@ export function LoginForm() {
       <div className="w-full lg:w-1/2 bg-white flex flex-col h-full">
         {/* Header */}
         <div className="p-4 lg:p-6 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-[#0B2E5C] flex items-center justify-center">
-              <Settings2 className="w-4 h-4 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-[#0B2E5C] flex items-center justify-center">
+                <Settings2 className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-lg font-bold text-gray-900">OneHR</span>
             </div>
-            <span className="text-lg font-bold text-gray-900">OneHR</span>
+            <Button
+              variant="ghost"
+              onClick={() => setHelpDialogOpen(true)}
+              className="h-auto py-1.5 px-3 gap-2"
+            >
+              <HelpCircle className="h-4 w-4 text-gray-600" />
+              <span className="text-sm text-gray-700">Help and Support</span>
+            </Button>
           </div>
         </div>
 
@@ -213,6 +225,12 @@ export function LoginForm() {
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#0B2E5C] to-[#0D3A6B] h-full overflow-hidden">
         <DashboardPreview />
       </div>
+
+      {/* Help & Support Dialog */}
+      <HelpSupportDialog
+        open={helpDialogOpen}
+        onOpenChange={setHelpDialogOpen}
+      />
     </div>
   );
 }

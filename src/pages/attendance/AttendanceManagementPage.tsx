@@ -91,10 +91,7 @@ export default function AttendanceManagementPage() {
       
       // Add search parameter if search term exists
       if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
-        params.search = {
-          keys: ["name", "department"],
-          value: debouncedSearchTerm.trim()
-        };
+        params.employee_search_value = debouncedSearchTerm.trim();
       }
       
       return attendanceService.getAttendanceCalendar(params);

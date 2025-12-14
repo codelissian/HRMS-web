@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +16,7 @@ import { authToken } from '@/services/authToken';
 
 export default function EmployeeList() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,6 +43,16 @@ export default function EmployeeList() {
     return orgId;
   }, [user]);
 
+  // Debounce search term to avoid excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      // Reset to page 1 when search changes
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // Fetch employees with proper filtering and include department/designation data
   const { 
     data: employeesResponse, 
@@ -51,7 +62,7 @@ export default function EmployeeList() {
     queryKey: ['employees', 'list', { 
       page: currentPage, 
       page_size: pageSize, 
-      search: searchTerm,
+      search: debouncedSearchTerm,
       department_id: departmentFilter,
       status: statusFilter 
     }],
@@ -60,15 +71,24 @@ export default function EmployeeList() {
         throw new Error('Organization ID not found');
       }
       
-      return employeeService.getEmployees({
+      const filters: any = {
         organisation_id: organisationId,
         page: currentPage,
         page_size: pageSize,
-        search: searchTerm || undefined,
         department_id: departmentFilter === 'all' ? undefined : departmentFilter,
         status: statusFilter === 'all' ? undefined : statusFilter,
         include: ['department', 'designation', 'shift']
-      });
+      };
+
+      // Add search with object format if search term exists
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        filters.search = {
+          value: debouncedSearchTerm.trim(),
+          keys: ['name', 'email', 'code', 'mobile']
+        };
+      }
+      
+      return employeeService.getEmployees(filters);
     },
     enabled: !!organisationId && !authLoading,
   });
@@ -131,14 +151,23 @@ export default function EmployeeList() {
     }
 
     try {
-      const blob = await employeeService.exportEmployees({
+      const exportFilters: any = {
         organisation_id: organisationId,
         page: 1,
         page_size: totalCount,
-        search: searchTerm || undefined,
         department_id: departmentFilter === 'all' ? undefined : departmentFilter,
         status: statusFilter === 'all' ? undefined : statusFilter,
-      });
+      };
+
+      // Add search with object format if search term exists
+      if (debouncedSearchTerm && debouncedSearchTerm.trim()) {
+        exportFilters.search = {
+          value: debouncedSearchTerm.trim(),
+          keys: ['name', 'email', 'code', 'mobile']
+        };
+      }
+
+      const blob = await employeeService.exportEmployees(exportFilters);
       
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');

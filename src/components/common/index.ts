@@ -7,4 +7,5 @@ export { LoadingSpinner } from './LoadingSpinner';
 export { default as Snackbar } from './Snackbar';
 export { ConfirmationDialog } from './ConfirmationDialog';
 export { ColorPicker } from './ColorPicker'; 
-export { Pagination } from './Pagination'; 
+export { Pagination } from './Pagination';
+export { HelpSupportDialog } from './HelpSupportDialog'; 
